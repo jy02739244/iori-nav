@@ -675,6 +675,53 @@ function bindActionEvents() {
   })
 }
 
+function handleEdit(id) {
+  const config = allConfigs.find(c => c.id == id);
+  if (!config) {
+    showMessage('找不到书签数据', 'error');
+    return;
+  }
+  
+  document.getElementById('editBookmarkId').value = config.id;
+  document.getElementById('editBookmarkName').value = config.name;
+  document.getElementById('editBookmarkUrl').value = config.url;
+  document.getElementById('editBookmarkLogo').value = config.logo;
+  document.getElementById('editBookmarkDesc').value = config.desc;
+  document.getElementById('editBookmarkSortOrder').value = config.sort_order;
+  document.getElementById('editBookmarkIsPrivate').checked = !!config.is_private;
+  
+  // Ensure we have categories tree for the dropdown
+  if (categoriesTree.length === 0) {
+      // If tree is empty (e.g. direct load), try to build it from available data or fetch
+      // But fetchConfigs usually runs first.
+      // Fallback: fetch again if needed, but for now assuming data exists or handle gracefully
+  }
+  
+  createCascadingDropdown('editBookmarkCatelogWrapper', 'editBookmarkCatelog', categoriesTree, config.catelog_id);
+  
+  const editModal = document.getElementById('editBookmarkModal');
+  if (editModal) editModal.style.display = 'block';
+}
+
+function handleDelete(id) {
+  if (!confirm('确定删除该书签吗？')) return;
+  
+  fetch(`/api/config/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' }
+  }).then(res => res.json())
+    .then(data => {
+      if (data.code === 200) {
+        showMessage('删除成功', 'success');
+        fetchConfigs();
+      } else {
+        showMessage(data.message || '删除失败', 'error');
+      }
+    }).catch(err => {
+      showMessage('网络错误', 'error');
+    });
+}
+
 function setupDragAndDrop() {
   const cards = document.querySelectorAll('#configGrid .site-card');
   let draggedItem = null;

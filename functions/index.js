@@ -301,7 +301,9 @@ export async function onRequest(context) {
           
           const baseClass = "flex items-center px-3 py-2 rounded-lg w-full transition-colors duration-200";
           const activeClass = isActive ? "bg-secondary-100 text-primary-700" : "hover:bg-gray-100 text-gray-700";
-          const iconClass = isActive ? "text-primary-600" : "text-gray-400";
+          // Use darker icon color for custom wallpaper mode to ensure visibility
+          const defaultIconColor = isCustomWallpaper ? "text-gray-600" : "text-gray-400";
+          const iconClass = isActive ? "text-primary-600" : defaultIconColor;
           const indent = level * 12; 
           
           let html = `
