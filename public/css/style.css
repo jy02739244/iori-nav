@@ -163,3 +163,42 @@
   animation: cardEnter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   opacity: 0;
 }
+
+/* 针对小屏手机 (< 410px) 的卡片布局优化 */
+@media (max-width: 410px) {
+  .site-card .p-5 {
+    padding: 0.75rem !important; /* p-3 */
+  }
+
+  .site-card .flex.items-start {
+    flex-direction: column;
+    align-items: center; /* 居中 */
+    text-align: center; /* 文本居中 */
+  }
+
+  .site-card .site-icon {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+    /* 保持图标大小 */
+    width: 2.5rem; 
+    height: 2.5rem;
+  }
+
+  .site-card .flex-1 {
+    width: 100%;
+  }
+
+  .site-card .site-title {
+    text-align: center;
+    width: 100%;
+  }
+
+  /* 隐藏复制按钮文字 */
+  .copy-text {
+    display: none;
+  }
+  
+  .copy-btn svg {
+    margin-right: 0 !important;
+  }
+}
