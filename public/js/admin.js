@@ -1270,6 +1270,9 @@ function renderCategoryCards(categories) {
     const sortValue = item.sort_order === null || item.sort_order === 9999 ? '默认' : item.sort_order;
     const subCount = item.children ? item.children.length : 0;
 
+    // Private Icon
+    const privateIcon = item.is_private ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" title="私密分类"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>` : '';
+
     card.className = 'site-card group bg-white border border-primary-100/60 rounded-xl shadow-sm overflow-hidden relative cursor-move';
     card.draggable = true;
     card.dataset.id = item.id;
@@ -1291,8 +1294,11 @@ function renderCategoryCards(categories) {
 
       <div class="p-5">
         <div class="flex items-center justify-between mb-2">
-            <h3 class="text-lg font-medium text-gray-900 truncate" title="${safeName}">${safeName}</h3>
-            <span class="bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full border border-primary-100">ID: ${item.id}</span>
+            <div class="flex items-center min-w-0">
+                 <h3 class="text-lg font-medium text-gray-900 truncate" title="${safeName}">${safeName}</h3>
+                 ${privateIcon}
+            </div>
+            <span class="bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full border border-primary-100 flex-shrink-0 ml-2">ID: ${item.id}</span>
         </div>
         
         <div class="flex items-center text-sm text-gray-500 mt-4 space-x-4">
@@ -1341,6 +1347,7 @@ function bindCategoryEvents() {
         document.getElementById('editCategoryName').value = category.catelog;
         const sortOrder = category.sort_order;
         document.getElementById('editCategorySortOrder').value = (sortOrder === null || sortOrder === 9999) ? '' : sortOrder;
+        document.getElementById('editCategoryIsPrivate').checked = !!category.is_private;
         
         createCascadingDropdown('editCategoryParentWrapper', 'editCategoryParent', categoriesTree, category.parent_id || '0', category.id);
 
@@ -1553,6 +1560,7 @@ if (editCategoryForm) {
     const categoryName = document.getElementById('editCategoryName').value.trim();
     const sortOrder = document.getElementById('editCategorySortOrder').value.trim();
     const parentId = document.getElementById('editCategoryParent').value;
+    const isPrivate = document.getElementById('editCategoryIsPrivate').checked;
 
     if (!categoryName) {
       showMessage('分类名称不能为空', 'error');
@@ -1568,7 +1576,8 @@ if (editCategoryForm) {
 
     const payload = {
       catelog: categoryName,
-      parent_id: parentId
+      parent_id: parentId,
+      is_private: isPrivate
     };
 
     if (sortOrder !== '') {
@@ -1604,6 +1613,7 @@ if (addCategoryForm) {
     const categoryName = document.getElementById('newCategoryName').value.trim();
     const sortOrder = document.getElementById('newCategorySortOrder').value.trim();
     const parentId = document.getElementById('newCategoryParent').value;
+    const isPrivate = document.getElementById('newCategoryIsPrivate').checked;
 
     if (!categoryName) {
       showMessage('分类名称不能为空', 'error');
@@ -1612,7 +1622,8 @@ if (addCategoryForm) {
 
     const payload = {
       catelog: categoryName,
-      parent_id: parentId
+      parent_id: parentId,
+      is_private: isPrivate
     };
 
     if (sortOrder !== '') {
