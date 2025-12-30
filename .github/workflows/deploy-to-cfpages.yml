@@ -25,71 +25,53 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
 
-      - name: 安装 nodejs 环境
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: 安装 Wrangler
-        run: npm install wrangler --save-dev
-
-      - name: 生成 Wrangler 配置
-        shell: bash
+      - name: 安装 nodejs 环境与 CF cli
         run: |
-          # 构建 wrangler.toml
+          uses: actions/setup-node@v4
+          with:
+            node-version: 20
+          npm install wrangler --save-dev
+
+      - name: 部署并初始化
+        id: deploy
+        run: |
+          mkdir -p public
+          
+          # 生成配置文件
           cat > wrangler.toml <<EOF
           name = "$PROJECT_NAME"
           compatibility_date = "2025-12-01"
           pages_build_output_dir = "public"
-
           [[d1_databases]]
           binding = "NAV_DB"
           database_name = "$NAV_D1_NAME"
           database_id = "$NAV_D1_ID"
-
           [[kv_namespaces]]
           binding = "NAV_AUTH"
           id = "$NAV_KV_ID"
           EOF
 
-      - name: 部署并初始化数据库
-        id: deploy
-        run: |
-          mkdir -p public
+          # 执行数据库初始化
+          [ -f "schema.sql" ] && npx wrangler d1 execute ${NAV_D1_NAME} --remote --file=./schema.sql -y
 
-          # 执行 D1 数据库初始化
-          if [ -f "schema.sql" ]; then
-            npx wrangler d1 execute ${NAV_D1_NAME} --remote --file=./schema.sql -y
-          fi
-
-          # 部署项目到 Cloudflare Pages
+          # 部署并提取 URL
           DEPLOY_OUTPUT=$(npx wrangler pages deploy public --project-name ${PROJECT_NAME})
           PAGES_URL=$(echo "$DEPLOY_OUTPUT" | sed 's/\x1b\[[0-9;]*m//g' | grep -oE "https://[^ ]+\.pages\.dev" | head -n 1)
           echo "PAGES_URL=$PAGES_URL" >> $GITHUB_ENV
 
-          # 自动写入 KV 管理员账号
+          # 写入 KV 账号密码
           npx wrangler kv:key put --binding=NAV_AUTH "admin_username" "${ADMIN_USER}" --preview false
           npx wrangler kv:key put --binding=NAV_AUTH "admin_password" "${ADMIN_PASS}" --preview false
 
-      - name: 绑定自定义域名
-        if: env.CUSTOM_DOMAIN != ''
-        run: |
-          # 自动绑定自定义域名
-          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT_NAME}/domains" \
-               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-               -H "Content-Type: application/json" \
-               --data "{\"name\":\"${CUSTOM_DOMAIN}\"}"
+          # 绑定域名
+          [ -n "${CUSTOM_DOMAIN}" ] && npx wrangler pages domains create ${PROJECT_NAME} --domain ${CUSTOM_DOMAIN} || true
 
-      - name: 输出部署结果
+      - name: 输出结果
         run: |
           echo "=========================================="
-          echo "🎉🎉🎉 恭喜！部署完成！"
+          echo "🎉 部署完成！"
           echo "🔗 默认 Pages 地址: ${PAGES_URL}"
-          
-          if [ -n "${CUSTOM_DOMAIN}" ]; then
-            echo "🌐 自定义域名地址: https://${CUSTOM_DOMAIN}"
-          fi
-          
+          [ -n "${CUSTOM_DOMAIN}" ] && echo "🌐 自定义域名地址: https://${CUSTOM_DOMAIN}"
           echo "👤 管理员用户名: ${ADMIN_USER}"
           echo "🔑 管理员密码: ${ADMIN_PASS}"
           echo "=========================================="
