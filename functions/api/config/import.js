@@ -182,7 +182,7 @@ export async function onRequestPost(context) {
     let itemsAdded = 0;
     let itemsUpdated = 0;
     let itemsSkipped = 0;
-    const iconAPI = env.ICON_API || 'https://favicon.im/';
+    const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
 
     for (const site of sitesToImport) {
         const sanitizedUrl = (site.url || '').trim();
@@ -232,7 +232,7 @@ export async function onRequestPost(context) {
         let sanitizedLogo = (site.logo || '').trim();
         if ((!sanitizedLogo || sanitizedLogo.startsWith('data:image')) && sanitizedUrl.startsWith('http')) {
             const domain = sanitizedUrl.replace(/^https?:\/\//, '').split('/')[0];
-            sanitizedLogo = `${iconAPI}${domain}${!env.ICON_API ? '?larger=true' : ''}`;
+            sanitizedLogo = `${iconAPI}${domain}`;
         }
         if (!sanitizedLogo) sanitizedLogo = null;
 

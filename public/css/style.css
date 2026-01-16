@@ -5,6 +5,54 @@
   --frosted-glass-blur: 15px; /* Default blur */
 }
 
+/* ========================================= */
+/*  Theme Switch Animation (View Transitions)*/
+/* ========================================= */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* 仅在主题切换时应用自定义动画 */
+.theme-animating::view-transition-group(root) {
+  animation-duration: 0.5s;
+}
+
+.theme-animating::view-transition-old(root) {
+  z-index: 1;
+}
+
+/* 默认：从上往下 (Dark Mode 出现) */
+.theme-animating.dark::view-transition-new(root) {
+  z-index: 999;
+  animation: theme-wipe-down 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* 反向：从下往上 (Light Mode 出现) */
+.theme-animating:not(.dark)::view-transition-new(root) {
+  z-index: 999;
+  animation: theme-wipe-up 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes theme-wipe-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes theme-wipe-up {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

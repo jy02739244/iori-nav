@@ -16,15 +16,12 @@ export async function onRequestPost(context) {
     if (!id || typeof description !== 'string') {
       return errorResponse('Bookmark ID and description are required', 400);
     }
-    const iconAPI=env.ICON_API ||'https://favicon.im/';
+    const iconAPI=env.ICON_API ||'https://faviconsnap.com/api/favicon?url=';
     let sanitizedLogo = (logo || '').trim() || null;
     if(!logo && url){
       if(url.startsWith('https://') || url.startsWith('http://')){
         const domain = url.replace(/^https?:\/\//, '').split('/')[0];
         sanitizedLogo = iconAPI+domain;
-        if(!env.ICON_API){
-          sanitizedLogo+='?larger=true'
-        }
       }
       
     }

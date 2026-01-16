@@ -13,5 +13,6 @@ AGENTS.md
 # Editor
 .vscode/
 .idea/
+.trae/
 *.swp
 *.swo

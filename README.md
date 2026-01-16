@@ -59,7 +59,7 @@
 - 🧹 **输入与展示双重校验**：新增 URL 规范化、HTML 转义与排序值归一化逻辑，前后台同时防止脏数据和潜在 XSS。
 - 🚪 **访客投稿可控**：通过 `ENABLE_PUBLIC_SUBMISSION` 环境变量即可关闭前台投稿入口，相关接口自动返回 403，方便运营期按需开关。
 - ⚙️ **增加AI一键自动生成描述**：提供Workers AI,Google Gemini和OpenAI接口。
-- 📝 **增加logo自动生成**：默认使用 https://favicon.im 接口，可在环境变量中自定义
+- 📝 **增加logo自动生成**：默认使用 https://faviconsnap.com 接口，可在环境变量中自定义
 - 📦 **导入导出数据**：提供书签数据的导入与导出，支持chorme导出的html格式一键导入
 
 
@@ -133,7 +133,7 @@
 | SITE_NAME | `灰色轨迹` |❌| 网站名称以及首页显示名称 |
 | SITE_DESCRIPTION | `一个简单易用的书签导航系统` |❌| 首页副标题 |
 | FOOTER_TEXT | `曾梦想仗剑走天涯` |❌| 首页页脚 |
-| ICON_API | `https://favicon.im/` |❌| 图标API |
+| ICON_API | `https://faviconsnap.com/api/favicon?url=` |❌| 图标API |
 | AI_REQUEST_DELAY | 1500 |❌| AI一键补全描述时的调用间隔 |
 | DISPLAY_CATEGORY | 无 |❌| 首页默认显示分类，如设置 `常用推荐 `，访问首页就默认显示常用推荐的书签 |
 

@@ -19,14 +19,11 @@ export async function onRequestPut(context) {
     const config = results[0];
     let { logo, url } = config;
     let sanitizedLogo = logo;
-    const iconAPI=env.ICON_API ||'https://favicon.im/';
+    const iconAPI=env.ICON_API ||'https://faviconsnap.com/api/favicon?url=';
     if(!logo && url){
       if(url.startsWith('https://') || url.startsWith('http://')){
         const domain = url.replace(/^https?:\/\//, '').split('/')[0];
         sanitizedLogo = iconAPI+domain;
-        if(!env.ICON_API){
-          sanitizedLogo+='?larger=true'
-        }
       }
       
     }

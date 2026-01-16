@@ -1318,10 +1318,18 @@ export async function onRequest(context) {
 
   // 自动注入字体资源
   // ... (existing code omitted for brevity but I should match context)
-  const usedFonts = new Set([
-      homeTitleFont, homeSubtitleFont, homeStatsFont, homeHitokotoFont,
-      cardTitleFont, cardDescFont
-  ]);
+  const usedFonts = new Set();
+  
+  // 只有在元素显示时才添加对应的字体
+  if (!layoutHideTitle && homeTitleFont) usedFonts.add(homeTitleFont);
+  if (!layoutHideSubtitle && homeSubtitleFont) usedFonts.add(homeSubtitleFont);
+  if (!homeHideStats && homeStatsFont) usedFonts.add(homeStatsFont);
+  if (!homeHideHitokoto && homeHitokotoFont) usedFonts.add(homeHitokotoFont);
+  
+  // 卡片字体始终添加，因为它们是卡片的基本元素
+  if (cardTitleFont) usedFonts.add(cardTitleFont);
+  if (cardDescFont) usedFonts.add(cardDescFont);
+  
   let fontLinksHtml = '';
   
   usedFonts.forEach(font => {

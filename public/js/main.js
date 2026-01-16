@@ -831,9 +831,34 @@ document.addEventListener('DOMContentLoaded', function() {
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   if (themeToggleBtn) {
       themeToggleBtn.addEventListener('click', () => {
-          document.documentElement.classList.toggle('dark');
           const isDark = document.documentElement.classList.contains('dark');
-          localStorage.setItem('theme', isDark ? 'dark' : 'light');
+          const nextState = isDark ? 'light' : 'dark';
+
+          const updateTheme = () => {
+              if (nextState === 'dark') {
+                  document.documentElement.classList.add('dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+              }
+              localStorage.setItem('theme', nextState);
+          };
+
+          // Fallback for browsers without View Transitions
+          if (!document.startViewTransition) {
+              updateTheme();
+              return;
+          }
+
+          // Add class for custom transition CSS
+          document.documentElement.classList.add('theme-animating');
+
+          const transition = document.startViewTransition(() => {
+              updateTheme();
+          });
+
+          transition.finished.finally(() => {
+              document.documentElement.classList.remove('theme-animating');
+          });
       });
   }
 });

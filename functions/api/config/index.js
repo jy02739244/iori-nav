@@ -109,7 +109,7 @@ export async function onRequestPost(context) {
   try {
     const config = await request.json();
     const { name, url, logo, desc, catelogId, sort_order, is_private } = config;
-    const iconAPI=env.ICON_API ||'https://favicon.im/';
+    const iconAPI=env.ICON_API ||'https://faviconsnap.com/api/favicon?url=';
     
     const sanitizedName = (name || '').trim();
     const sanitizedUrl = (url || '').trim();
@@ -132,9 +132,6 @@ export async function onRequestPost(context) {
       if(url.startsWith('https://') || url.startsWith('http://')){
         const domain = url.replace(/^https?:\/\//, '').split('/')[0];
         sanitizedLogo = iconAPI+domain;
-        if(!env.ICON_API){
-          sanitizedLogo+='?larger=true'
-      }
     }
       
     }
