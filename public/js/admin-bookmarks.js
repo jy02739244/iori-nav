@@ -14,6 +14,7 @@ if (addBookmarkBtn) {
             window.createCascadingDropdown('addBookmarkCatelogWrapper', 'addBookmarkCatelog', window.categoriesTree);
          }
          addBookmarkModal.style.display = 'block';
+         document.body.classList.add('modal-open');
     } else {
         // Fallback fetch
         fetch('/api/categories?pageSize=9999').then(res => res.json()).then(data => {
@@ -26,6 +27,7 @@ if (addBookmarkBtn) {
                 window.createCascadingDropdown('addBookmarkCatelogWrapper', 'addBookmarkCatelog', window.categoriesTree);
               }
               addBookmarkModal.style.display = 'block';
+              document.body.classList.add('modal-open');
             } else {
               window.showMessage('无法加载分类数据', 'error');
             }
@@ -37,6 +39,7 @@ if (addBookmarkBtn) {
 if (closeBookmarkModal) {
   closeBookmarkModal.addEventListener('click', () => {
     addBookmarkModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
     if (addBookmarkForm) addBookmarkForm.reset();
   });
 }
@@ -45,6 +48,7 @@ const cancelAddBookmarkBtn = document.getElementById('cancelAddBookmarkBtn');
 if (cancelAddBookmarkBtn) {
   cancelAddBookmarkBtn.addEventListener('click', () => {
     addBookmarkModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
     if (addBookmarkForm) addBookmarkForm.reset();
   });
 }
@@ -132,6 +136,7 @@ if (addBookmarkForm) {
         window.showMessage('添加成功', 'success');
         setTimeout(() => {
           addBookmarkModal.style.display = 'none';
+          document.body.classList.remove('modal-open');
           addBookmarkForm.reset();
           // 关闭模态框后恢复按钮状态
           submitBtn.disabled = false;
@@ -160,12 +165,18 @@ const closeEditBookmarkModal = document.getElementById('closeEditBookmarkModal')
 const editBookmarkForm = document.getElementById('editBookmarkForm');
 
 if (closeEditBookmarkModal) {
-  closeEditBookmarkModal.addEventListener('click', () => { editBookmarkModal.style.display = 'none'; });
+  closeEditBookmarkModal.addEventListener('click', () => { 
+      editBookmarkModal.style.display = 'none'; 
+      document.body.classList.remove('modal-open');
+  });
 }
 
 const cancelEditBookmarkBtn = document.getElementById('cancelEditBookmarkBtn');
 if (cancelEditBookmarkBtn) {
-  cancelEditBookmarkBtn.addEventListener('click', () => { editBookmarkModal.style.display = 'none'; });
+  cancelEditBookmarkBtn.addEventListener('click', () => { 
+      editBookmarkModal.style.display = 'none'; 
+      document.body.classList.remove('modal-open');
+  });
 }
 
 if (editBookmarkForm) {
@@ -199,6 +210,7 @@ if (editBookmarkForm) {
           if (typeof window.fetchConfigs === 'function') window.fetchConfigs();
           if (typeof window.fetchCategories === 'function') window.fetchCategories();
           editBookmarkModal.style.display = 'none';
+          document.body.classList.remove('modal-open');
           // 关闭模态框后恢复按钮状态
           submitBtn.disabled = false;
           submitBtn.innerHTML = originalText;

@@ -63,7 +63,10 @@ function initCategoryEvents() {
                 window.createCascadingDropdown('newCategoryParentWrapper', 'newCategoryParent', window.categoriesTree, '0');
             }
             const modal = document.getElementById('addCategoryModal');
-            if (modal) modal.style.display = 'block';
+            if (modal) {
+                modal.style.display = 'block';
+                document.body.classList.add('modal-open');
+            }
         });
     }
 }
@@ -266,6 +269,7 @@ function bindCategoryEvents() {
                 }
 
                 document.getElementById('editCategoryModal').style.display = 'block';
+                document.body.classList.add('modal-open');
             } else {
                 window.showMessage('找不到分类数据', 'error');
             }
@@ -307,11 +311,15 @@ function bindCategoryEvents() {
                      deleteModal.style.display = 'none';
                 });
                 
-                const closeModal = () => deleteModal.style.display = 'none';
+                const closeModal = () => {
+                     deleteModal.style.display = 'none';
+                     document.body.classList.remove('modal-open');
+                }
                 cancelBtn.onclick = closeModal;
                 closeBtn.onclick = closeModal;
                 
                 deleteModal.style.display = 'block';
+                document.body.classList.add('modal-open');
             } else if (confirm('确定删除该分类吗？')) {
                 deleteCategory(category_id);
             }
@@ -438,12 +446,14 @@ const cancelEditCategoryBtn = document.getElementById('cancelEditCategoryBtn');
 if (cancelEditCategoryBtn) {
   cancelEditCategoryBtn.addEventListener('click', () => {
     editCategoryModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
   });
 }
 
 if (closeEditCategoryModal) {
     closeEditCategoryModal.addEventListener('click', () => {
         editCategoryModal.style.display = 'none';
+        document.body.classList.remove('modal-open');
     });
 }
 
@@ -490,6 +500,7 @@ if (editCategoryForm) {
                 if (data.code === 200) {
                     window.showMessage('分类更新成功', 'success');
                     editCategoryModal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
                     fetchCategories(categoryCurrentPage);
                     // 刷新主界面数据（因为分类名可能变了）
                     if (typeof fetchConfigs === 'function') fetchConfigs();
@@ -512,6 +523,7 @@ const cancelAddCategoryBtn = document.getElementById('cancelAddCategoryBtn');
 if (cancelAddCategoryBtn) {
   cancelAddCategoryBtn.addEventListener('click', () => {
     addCategoryModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
     if (addCategoryForm) addCategoryForm.reset();
   });
 }
@@ -519,6 +531,7 @@ if (cancelAddCategoryBtn) {
 if (closeCategoryModal) {
     closeCategoryModal.addEventListener('click', () => {
         addCategoryModal.style.display = 'none';
+        document.body.classList.remove('modal-open');
         addCategoryForm.reset();
     });
 }
@@ -559,6 +572,7 @@ if (addCategoryForm) {
                 if (data.code === 201 || data.code === 200) {
                     window.showMessage('分类创建成功', 'success');
                     addCategoryModal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
                     addCategoryForm.reset();
 
                     fetchCategories();

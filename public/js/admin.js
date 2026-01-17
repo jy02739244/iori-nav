@@ -384,6 +384,16 @@ if (categoryFilter) {
 
 // Fetch Configs (Bookmarks)
 window.fetchConfigs = function(page = currentPage, keyword = currentSearchKeyword, catalogId = currentCategoryFilter) {
+  // 显示加载状态
+  if (configGrid) {
+      configGrid.innerHTML = `
+        <div class="col-span-full flex flex-col items-center justify-center py-20">
+            <div class="w-10 h-10 border-4 border-gray-200 border-t-primary-500 rounded-full animate-spin mb-4"></div>
+            <p class="text-gray-500 text-sm">正在加载书签数据...</p>
+        </div>
+      `;
+  }
+
   let url = `/api/config?page=${page}&pageSize=${pageSize}`;
   const params = new URLSearchParams();
   params.append('page', page);
@@ -412,9 +422,12 @@ window.fetchConfigs = function(page = currentPage, keyword = currentSearchKeywor
         updatePaginationButtons();
       } else {
         window.showMessage(data.message, 'error');
+        // 错误时清空或显示错误信息
+        if (configGrid) configGrid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">${data.message}</div>`;
       }
     }).catch(err => {
       window.showMessage('网络错误', 'error');
+      if (configGrid) configGrid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">网络错误: ${err.message}</div>`;
     })
 }
 
@@ -562,7 +575,7 @@ function renderConfig(configs) {
     // Private Icon
     const privateIcon = config.is_private ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 ml-1 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" title="私密书签"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>` : '';
 
-    card.className = 'site-card group bg-white border border-primary-100/60 rounded-xl shadow-sm overflow-hidden relative cursor-pointer';
+    card.className = 'site-card group cursor-pointer';
     card.draggable = true;
     card.dataset.id = config.id;
     
@@ -574,47 +587,47 @@ function renderConfig(configs) {
 
     let logoHtml = '';
     if (normalizedLogo) {
-      logoHtml = `<img src="${window.escapeHTML(normalizedLogo)}" alt="${safeName}" class="w-10 h-10 rounded-lg object-cover bg-gray-100">`;
+      logoHtml = `<img src="${window.escapeHTML(normalizedLogo)}" alt="${safeName}" class="w-full h-full rounded-lg object-cover bg-gray-50">`;
     } else {
-      logoHtml = `<div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-lg shadow-inner">${cardInitial}</div>`;
+      logoHtml = `<div class="w-full h-full rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-lg">${cardInitial}</div>`;
     }
 
     card.innerHTML = `
       <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-         <button class="edit-btn p-1.5 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors" title="编辑" data-id="${config.id}">
+         <button class="edit-btn p-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors shadow-sm" title="编辑" data-id="${config.id}">
              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
              </svg>
          </button>
-         <button class="del-btn p-1.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors" title="删除" data-id="${config.id}">
+         <button class="del-btn p-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors shadow-sm" title="删除" data-id="${config.id}">
              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
              </svg>
          </button>
       </div>
 
-      <div class="p-5 cursor-move">
+      <div class="p-5">
         <div class="block">
             <div class="flex items-start">
-               <div class="site-icon flex-shrink-0 mr-4 transition-all duration-300 group-hover:scale-105">
+               <div class="site-icon flex-shrink-0 mr-4">
                   ${logoHtml}
                </div>
                <div class="flex-1 min-w-0">
-                  <div class="flex items-center">
-                      <h3 class="site-title text-base font-medium text-gray-900 truncate" title="${safeName}">${safeName}</h3>
+                  <div class="flex items-center gap-1">
+                      <h3 class="site-title truncate" title="${safeName}">${safeName}</h3>
                       ${privateIcon}
                   </div>
-                  <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-secondary-100 text-primary-700">
+                  <span class="inline-flex items-center px-2 py-0.5 mt-1.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
                     ${safeCatalog}
                   </span>
                </div>
             </div>
-            <p class="mt-3 text-sm text-gray-600 leading-relaxed line-clamp-2 h-10" title="${descCell}">${descCell}</p>
+            <p class="mt-3 text-sm text-gray-500 leading-relaxed line-clamp-2 h-10" title="${descCell}">${descCell}</p>
         </div>
         
-        <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-             <span class="truncate max-w-[150px]" title="${displayUrl}">${displayUrl}</span>
-             <span class="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">ID: ${config.id}</span>
+        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+             <span class="truncate max-w-[150px] font-mono" title="${displayUrl}">${displayUrl}</span>
+             <span class="bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded border border-gray-100">ID: ${config.id}</span>
         </div>
       </div>
     `;
@@ -661,7 +674,10 @@ window.handleEdit = function(id) {
   window.createCascadingDropdown('editBookmarkCatelogWrapper', 'editBookmarkCatelog', window.categoriesTree, config.catelog_id);
   
   const editModal = document.getElementById('editBookmarkModal');
-  if (editModal) editModal.style.display = 'block';
+  if (editModal) {
+      editModal.style.display = 'block';
+      document.body.classList.add('modal-open');
+  }
 }
 
 // Delete Logic Variables for sharing
@@ -672,6 +688,7 @@ window.handleDelete = function(id) {
   const deleteConfirmModal = document.getElementById('deleteConfirmModal');
   if (deleteConfirmModal) {
       deleteConfirmModal.style.display = 'block';
+      document.body.classList.add('modal-open');
   } else if (confirm('确定删除该书签吗？')) {
       window.performDelete(id);
   }
@@ -783,6 +800,20 @@ function saveSortOrder() {
 // Init Data
 fetchConfigs();
 
+// Check public config to show/hide pending tab
+fetch('/api/public-config')
+    .then(res => res.json())
+    .then(data => {
+        if (data && !data.submissionEnabled) {
+            const pendingTabBtn = document.querySelector('.tab-button[data-tab="pending"]');
+            if (pendingTabBtn) {
+                pendingTabBtn.style.display = 'none';
+            }
+        }
+    })
+    .catch(err => console.error('Failed to fetch public config:', err));
+
+
 // ==========================================
 // 私密分类与书签联动逻辑
 // ==========================================
@@ -853,11 +884,13 @@ document.addEventListener('DOMContentLoaded', () => {
        if (closeDeleteConfirmModal) {
            closeDeleteConfirmModal.onclick = () => {
                deleteConfirmModal.style.display = 'none';
+               document.body.classList.remove('modal-open');
            };
        }
        if (cancelDeleteBtn) {
            cancelDeleteBtn.onclick = () => {
                deleteConfirmModal.style.display = 'none';
+               document.body.classList.remove('modal-open');
            };
        }
        if (confirmDeleteBtn) {
@@ -865,6 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
                if (window.deleteTargetId) {
                    window.performDelete(window.deleteTargetId);
                    deleteConfirmModal.style.display = 'none';
+                   document.body.classList.remove('modal-open');
                }
            };
        }
@@ -872,6 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
        deleteConfirmModal.onclick = (e) => {
            if (e.target === deleteConfirmModal) {
                deleteConfirmModal.style.display = 'none';
+               document.body.classList.remove('modal-open');
            }
        };
    }
@@ -879,6 +914,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 监听新增按钮点击
 const addBookmarkBtnRef = document.getElementById('addBookmarkBtn');
+if (addBookmarkBtnRef) {
+    addBookmarkBtnRef.addEventListener('click', () => {
+        // ... (existing logic) ...
+        document.body.classList.add('modal-open');
+        // ...
+    });
+}
 if (addBookmarkBtnRef) {
     addBookmarkBtnRef.addEventListener('click', () => {
         setTimeout(() => {

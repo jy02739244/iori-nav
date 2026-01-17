@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>书签管理页面</title>
     <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
-    <link rel="stylesheet" href="/css/admin.css?v=75e408e5" />
-    <link rel="stylesheet" href="/css/admin-dropdown.css?v=fd5a5197" />
+    <link rel="stylesheet" href="/css/admin.css?v=15d7b510" />
+    <link rel="stylesheet" href="/css/admin-dropdown.css?v=9efddb85" />
     <link
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap"
       rel="stylesheet"
@@ -54,7 +54,7 @@
       </header>
 
       <div class="import-export">
-        <div id="categoryFilterWrapper" class="custom-dropdown-wrapper mr-2 !w-auto" style="min-width: 150px;"></div>
+        <div id="categoryFilterWrapper" class="custom-dropdown-wrapper min-w-[150px]"></div>
         <input type="hidden" id="categoryFilter" value="">
         <input
           type="text"
@@ -63,7 +63,7 @@
           autocomplete="off"
           readonly
           onfocus="this.removeAttribute('readonly');"
-          class="flex-grow max-w-xs mr-auto px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow h-[42px]"
           placeholder="搜索书签(名称, URL, 分类)"
         />
         <input
@@ -72,13 +72,19 @@
           accept=".json,.html,.htm"
           style="display: none"
         />
-        <div class="flex flex-wrap gap-2">
-            <button id="batchBtn" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors">批量</button>
-            <button id="importBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">导入</button>
-            <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">导出</button>
-            <button id="addCategoryBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors">新增分类</button>
-            <button id="addBookmarkBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">新增书签</button>
-            <button id="settingsBtn" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors">设置</button>
+        <div class="flex flex-wrap gap-2 items-center">
+            <button id="batchBtn" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">批量管理</button>
+            <button id="importBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">导入</button>
+            <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">导出</button>
+            <button id="addCategoryBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-sm font-medium text-sm flex items-center gap-1 h-[42px] whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                新增分类
+            </button>
+            <button id="addBookmarkBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm flex items-center gap-1 h-[42px] whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                新增书签
+            </button>
+            <button id="settingsBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">设置</button>
         </div>
       </div>
 
@@ -957,12 +963,12 @@
 
       <!-- 批量管理模态框 -->
       <div id="batchModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 900px; width: 90%; max-height: 90vh; display: flex; flex-direction: column; margin: 0;">
+        <div class="modal-content flex flex-col" style="max-width: 900px; width: 90%; height: 80vh; max-height: 800px; margin: auto;">
           <span class="modal-close" id="closeBatchModal">×</span>
           <h2 class="mb-4">批量管理</h2>
           
           <!-- 顶部工具栏 -->
-          <div class="flex flex-wrap gap-4 justify-between items-center mb-4 p-2 bg-gray-50 rounded">
+          <div class="flex flex-wrap gap-4 justify-between items-center mb-4 p-2 bg-gray-50 rounded shrink-0">
             <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-700">过滤:</span>
                 <div id="batchCategoryFilterWrapper" class="custom-dropdown-wrapper" style="width: 200px;"></div>
@@ -977,7 +983,7 @@
           </div>
 
           <!-- 表格区域 -->
-          <div class="flex-1 overflow-auto border rounded border-gray-200" style="min-height: 300px;">
+          <div class="flex-1 overflow-auto border rounded border-gray-200 min-h-0">
               <table class="w-full text-left border-collapse">
                   <thead class="bg-gray-100 sticky top-0 z-10">
                       <tr>
@@ -998,7 +1004,7 @@
           </div>
 
           <!-- 底部通过分页 -->
-          <div class="mt-4 flex justify-between items-center">
+          <div class="mt-4 flex justify-between items-center shrink-0">
              <div class="text-sm text-gray-500">
                  已选 <span id="batchSelectedCount" class="font-bold text-gray-800">0</span> 项
              </div>
@@ -1059,11 +1065,11 @@
           </div>
       </div>
 
-    <script src="/js/admin.js?v=8a55a80e"></script>
-    <script src="/js/admin-categories.js?v=1960f2dc"></script>
-    <script src="/js/admin-bookmarks.js?v=e1eab2bc"></script>
+    <script src="/js/admin.js?v=e45a348a"></script>
+    <script src="/js/admin-categories.js?v=1489aca0"></script>
+    <script src="/js/admin-bookmarks.js?v=050f96b1"></script>
     <script src="/js/admin-batch.js?v=a09a01ec"></script>
-    <script src="/js/admin-settings.js?v=c6ba1701"></script>
+    <script src="/js/admin-settings.js?v=98ad0b1b"></script>
     <script src="/js/admin-import-export.js?v=43a1de60"></script>
   </body>
 </html>
