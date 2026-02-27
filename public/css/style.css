@@ -253,6 +253,13 @@ header {
   cursor: pointer; text-decoration: none; height: 2.5rem;
 }
 
+body:not(.app-ready) .nav-btn,
+body:not(.app-ready) .dropdown-item,
+body:not(.app-ready) #sidebar a[data-id],
+body:not(.app-ready) #sidebar a[href="?catalog=all"] {
+  transition: none !important;
+}
+
 .nav-btn.inactive {
   background-color: rgba(255, 255, 255, 0.15); color: white; backdrop-filter: blur(4px);
 }

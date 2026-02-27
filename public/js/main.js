@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // 为初始 SSR 渲染的卡片设置动画延迟（已从服务端移至前端）
   const initialCards = document.querySelectorAll('.site-card.card-anim-enter');
+  const sitesGrid = document.getElementById('sitesGrid');
   initialCards.forEach((card, index) => {
     const delay = Math.min(index, 20) * 30;
     if (delay > 0) card.style.animationDelay = `${delay}ms`;
@@ -35,35 +36,37 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // ========== 复制链接功能 ==========
-  document.querySelectorAll('.copy-btn').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      const url = this.getAttribute('data-url');
-      if (!url) return;
+  sitesGrid?.addEventListener('click', function (e) {
+    const btn = e.target.closest('.copy-btn');
+    if (!btn) return;
 
-      navigator.clipboard.writeText(url).then(() => {
-        showCopySuccess(this);
-      }).catch(() => {
-        // 备用方法
-        const textarea = document.createElement('textarea');
-        textarea.value = url;
-        textarea.style.position = 'fixed';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand('copy');
-          showCopySuccess(this);
-        } catch (e) {
-          alert('复制失败,请手动复制');
-        }
-        document.body.removeChild(textarea);
-      });
+    e.preventDefault();
+    e.stopPropagation();
+    const url = btn.getAttribute('data-url');
+    if (!url) return;
+
+    navigator.clipboard.writeText(url).then(() => {
+      showCopySuccess(btn);
+    }).catch(() => {
+      // 备用方法
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      textarea.style.position = 'fixed';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showCopySuccess(btn);
+      } catch (err) {
+        alert('复制失败,请手动复制');
+      }
+      document.body.removeChild(textarea);
     });
   });
 
   function showCopySuccess(btn) {
     const successMsg = btn.querySelector('.copy-success');
+    if (!successMsg) return;
     successMsg.classList.remove('hidden');
     successMsg.classList.add('copy-success-animation');
     setTimeout(() => {
@@ -74,16 +77,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ========== 返回顶部 ==========
   const backToTop = document.getElementById('backToTop');
+  const appScroll = document.getElementById('app-scroll');
 
-  window.addEventListener('scroll', function () {
-    if (window.pageYOffset > 300) {
+  const onScroll = () => {
+    const top = appScroll ? appScroll.scrollTop : window.pageYOffset;
+    if (top > 300) {
       backToTop?.classList.remove('opacity-0', 'invisible');
     } else {
       backToTop?.classList.add('opacity-0', 'invisible');
     }
-  });
+  };
+
+  if (appScroll) {
+    appScroll.addEventListener('scroll', onScroll);
+  } else {
+    window.addEventListener('scroll', onScroll);
+  }
 
   backToTop?.addEventListener('click', function () {
+    if (appScroll) {
+      appScroll.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
@@ -189,7 +204,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ========== 搜索功能 ==========
   const searchInputs = document.querySelectorAll('.search-input-target');
-  const sitesGrid = document.getElementById('sitesGrid');
 
   // Initialize Search Engine UI based on saved preference
   const engineOptions = document.querySelectorAll('.search-engine-option');
@@ -675,28 +689,6 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
 
       sitesGrid.appendChild(card);
-
-      const copyBtn = card.querySelector('.copy-btn');
-      if (copyBtn) {
-        copyBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          const url = this.getAttribute('data-url');
-          if (!url) return;
-
-          navigator.clipboard.writeText(url).then(() => {
-            showCopySuccess(this);
-          }).catch(() => {
-            const textarea = document.createElement('textarea');
-            textarea.value = url;
-            textarea.style.position = 'fixed';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try { document.execCommand('copy'); showCopySuccess(this); } catch (e) { }
-            document.body.removeChild(textarea);
-          });
-        });
-      }
     });
   }
 
@@ -856,6 +848,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   })();
+
+  requestAnimationFrame(() => {
+    document.body.classList.add('app-ready');
+  });
 
   // Theme Toggle Logic
   const themeToggleBtn = document.getElementById('themeToggleBtn');

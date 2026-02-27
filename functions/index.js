@@ -253,30 +253,7 @@ export async function onRequest(context) {
         <label class="search-engine-option" data-engine="google"><span>Google</span></label>
         <label class="search-engine-option" data-engine="baidu"><span>Baidu</span></label>
         <label class="search-engine-option" data-engine="bing"><span>Bing</span></label>
-    </div>
-    <script>
-    (function(){
-      try {
-        var saved = localStorage.getItem('search_engine');
-        if(saved && saved !== 'local'){
-          var wrappers = document.querySelectorAll('.search-engine-wrapper');
-          wrappers.forEach(function(w){
-             var opts = w.querySelectorAll('.search-engine-option');
-             opts.forEach(function(opt){
-               if(opt.dataset.engine === saved) opt.classList.add('active');
-               else opt.classList.remove('active');
-             });
-          });
-          var inputs = document.querySelectorAll('.search-input-target');
-          var ph = '搜索书签...';
-          if(saved === 'google') ph = 'Google 搜索...';
-          if(saved === 'baidu') ph = '百度搜索...';
-          if(saved === 'bing') ph = 'Bing 搜索...';
-          inputs.forEach(function(i){ i.placeholder = ph; });
-        }
-      } catch(e){}
-    })();
-    </script>` : '';
+    </div>` : '';
 
   // === 14. Header HTML ===
   const horizontalTitleHtml = S.layout_hide_title ? '' : `<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3 ${titleColorClass}" ${titleStyle}>{{SITE_NAME}}</h1>`;
