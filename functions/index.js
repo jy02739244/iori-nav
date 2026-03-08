@@ -1,64 +1,13 @@
 // functions/index.js
 import { isAdminAuthenticated } from './_middleware';
-import { FONT_MAP, SCHEMA_VERSION } from './constants';
+import { FONT_MAP } from './constants';
 import { escapeHTML, sanitizeUrl, normalizeSortOrder, getStyleStr } from './lib/utils';
 import { getSettingsKeys, parseSettings } from './lib/settings-parser';
 import { renderHorizontalMenu, renderVerticalMenu } from './lib/menu-renderer';
 import { renderSiteCards, renderEmptyState } from './lib/card-renderer';
 
-// 内存缓存：热状态下跳过 KV 读取，只有冷启动时才查 KV
-let schemaMigrated = false;
-
-async function ensureSchema(env) {
-  if (schemaMigrated) return;
-
-  const migrated = await env.NAV_AUTH.get(`schema_migrated_${SCHEMA_VERSION}`);
-  if (migrated) {
-    schemaMigrated = true;
-    return;
-  }
-
-  try {
-    await env.NAV_DB.batch([
-      env.NAV_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sites_catelog_id ON sites(catelog_id)"),
-      env.NAV_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sites_sort_order ON sites(sort_order)")
-    ]);
-
-    const sitesColumns = await env.NAV_DB.prepare("PRAGMA table_info(sites)").all();
-    const sitesCols = new Set(sitesColumns.results.map(c => c.name));
-    const categoryColumns = await env.NAV_DB.prepare("PRAGMA table_info(category)").all();
-    const categoryCols = new Set(categoryColumns.results.map(c => c.name));
-    const pendingColumns = await env.NAV_DB.prepare("PRAGMA table_info(pending_sites)").all();
-    const pendingCols = new Set(pendingColumns.results.map(c => c.name));
-
-    const alterStatements = [];
-    if (!sitesCols.has('is_private')) alterStatements.push(env.NAV_DB.prepare("ALTER TABLE sites ADD COLUMN is_private INTEGER DEFAULT 0"));
-    if (!sitesCols.has('catelog_name')) alterStatements.push(env.NAV_DB.prepare("ALTER TABLE sites ADD COLUMN catelog_name TEXT"));
-    if (!pendingCols.has('catelog_name')) alterStatements.push(env.NAV_DB.prepare("ALTER TABLE pending_sites ADD COLUMN catelog_name TEXT"));
-    if (!categoryCols.has('is_private')) alterStatements.push(env.NAV_DB.prepare("ALTER TABLE category ADD COLUMN is_private INTEGER DEFAULT 0"));
-    if (!categoryCols.has('parent_id')) alterStatements.push(env.NAV_DB.prepare("ALTER TABLE category ADD COLUMN parent_id INTEGER DEFAULT 0"));
-
-    if (alterStatements.length > 0) {
-      for (const stmt of alterStatements) {
-        try { await stmt.run(); } catch (e) { /* 字段可能已存在 */ }
-      }
-      if (!sitesCols.has('catelog_name')) {
-        await env.NAV_DB.prepare(`
-          UPDATE sites SET catelog_name = (SELECT catelog FROM category WHERE category.id = sites.catelog_id) WHERE catelog_name IS NULL
-        `).run();
-      }
-    }
-
-    await env.NAV_AUTH.put(`schema_migrated_${SCHEMA_VERSION}`, 'true');
-    schemaMigrated = true;
-  } catch (e) {
-    console.error('Schema migration failed:', e);
-  }
-}
-
 export async function onRequest(context) {
   const { request, env } = context;
-  await ensureSchema(env);
 
   const isAuthenticated = await isAdminAuthenticated(request, env);
   const includePrivate = isAuthenticated ? 1 : 0;

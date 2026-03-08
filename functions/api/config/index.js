@@ -1,45 +1,8 @@
 // functions/api/config/index.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
 
-let indexesChecked = false;
-
 export async function onRequestGet(context) {
   const { request, env } = context;
-  
-  // 自动确保索引存在（每个 Worker 实例只执行一次）
-  if (!indexesChecked) {
-    try {
-      await env.NAV_DB.batch([
-        env.NAV_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sites_catelog_id ON sites(catelog_id)"),
-        env.NAV_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sites_sort_order ON sites(sort_order)")
-      ]);
-      
-      // 检查并添加 is_private 字段
-      try {
-          await env.NAV_DB.prepare("SELECT is_private FROM sites LIMIT 1").first();
-      } catch (e) {
-          await env.NAV_DB.prepare("ALTER TABLE sites ADD COLUMN is_private INTEGER DEFAULT 0").run();
-      }
-
-      // 检查并添加 catelog_name 字段 (防止直接访问后台时报错)
-      try {
-          await env.NAV_DB.prepare("SELECT catelog_name FROM sites LIMIT 1").first();
-      } catch (e) {
-          await env.NAV_DB.prepare("ALTER TABLE sites ADD COLUMN catelog_name TEXT").run();
-          // 仅在首次添加字段时补全数据
-          await env.NAV_DB.prepare(`
-            UPDATE sites 
-            SET catelog_name = (SELECT catelog FROM category WHERE category.id = sites.catelog_id) 
-            WHERE catelog_name IS NULL
-          `).run();
-      }
-
-      indexesChecked = true;
-    } catch (e) {
-      console.error('Failed to ensure indexes or columns:', e);
-      // 继续执行，不要因为索引创建失败而阻塞主逻辑
-    }
-  }
 
   const url = new URL(request.url);
   const catalog = url.searchParams.get('catalog');

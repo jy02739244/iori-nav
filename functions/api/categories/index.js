@@ -1,8 +1,6 @@
 // functions/api/categories/index.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
 
-let columnsChecked = false;
-
 export async function onRequestGet(context) {
   const { request, env } = context;
 
@@ -15,27 +13,6 @@ export async function onRequestGet(context) {
     // But the task is about "Multi-level Menu", which is SSR.
     return errorResponse('Unauthorized', 401);
   }
-  
-  if (!columnsChecked) {
-      try {
-          await env.NAV_DB.prepare("SELECT parent_id FROM category LIMIT 1").first();
-          try {
-             await env.NAV_DB.prepare("SELECT is_private FROM category LIMIT 1").first();
-          } catch (e) {
-             await env.NAV_DB.prepare("ALTER TABLE category ADD COLUMN is_private INTEGER DEFAULT 0").run();
-          }
-          columnsChecked = true;
-      } catch (e) {
-          try {
-              await env.NAV_DB.prepare("ALTER TABLE category ADD COLUMN parent_id INTEGER DEFAULT 0").run();
-              await env.NAV_DB.prepare("ALTER TABLE category ADD COLUMN is_private INTEGER DEFAULT 0").run();
-              columnsChecked = true;
-          } catch (e2) {
-              console.error("Failed to add columns", e2);
-          }
-      }
-  }
-
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get('page') || '1', 10);
   const pageSize = parseInt(url.searchParams.get('pageSize') || '10', 10);
