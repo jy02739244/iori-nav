@@ -93,6 +93,17 @@ export async function onRequestPost(context) {
       await env.NAV_DB.batch(batch);
     }
 
+    // 清除 settings 缓存和页面缓存，使新设置立即生效
+    try {
+      await Promise.all([
+        env.NAV_AUTH.delete('settings_cache'),
+        env.NAV_AUTH.delete('home_html_private'),
+        env.NAV_AUTH.delete('home_html_public'),
+      ]);
+    } catch (e) {
+      console.warn('Failed to clear caches:', e);
+    }
+
     return jsonResponse({
       code: 200,
       message: 'Settings saved'

@@ -6,6 +6,24 @@ import { getSettingsKeys, parseSettings } from './lib/settings-parser';
 import { renderHorizontalMenu, renderVerticalMenu } from './lib/menu-renderer';
 import { renderSiteCards, renderEmptyState } from './lib/card-renderer';
 
+function getThemeClasses(isCustomWallpaper) {
+  return isCustomWallpaper ? {
+    headerClass: 'bg-transparent border-none shadow-none transition-colors duration-300',
+    containerClass: 'rounded-2xl',
+    titleColorClass: 'text-gray-900 dark:text-gray-100',
+    subTextColorClass: 'text-gray-600 dark:text-gray-300',
+    searchInputClass: 'bg-white/90 backdrop-blur border border-gray-200 text-gray-800 placeholder-gray-400 focus:ring-primary-200 focus:border-primary-400 focus:bg-white dark:bg-gray-800/90 dark:border-gray-600 dark:text-gray-200 dark:focus:bg-gray-800',
+    searchIconClass: 'text-gray-400 dark:text-gray-500',
+  } : {
+    headerClass: 'bg-primary-700 text-white border-b border-primary-600 shadow-sm dark:bg-gray-900 dark:border-gray-800',
+    containerClass: 'rounded-2xl border border-primary-100/60 bg-white/80 backdrop-blur-sm shadow-sm dark:bg-gray-800/80 dark:border-gray-700',
+    titleColorClass: 'text-white',
+    subTextColorClass: 'text-primary-100/90 dark:text-gray-400',
+    searchInputClass: 'bg-white/15 text-white placeholder-primary-200 focus:ring-white/30 focus:bg-white/20 border-none dark:bg-gray-800/50 dark:text-gray-200 dark:placeholder-gray-500',
+    searchIconClass: 'text-primary-200 dark:text-gray-500',
+  };
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
 
@@ -49,9 +67,26 @@ export async function onRequest(context) {
   const sitesQuery = `SELECT id, name, url, logo, desc, catelog_id, catelog_name, sort_order, is_private, create_time, update_time
                       FROM sites WHERE (is_private = 0 OR ? = 1) ORDER BY sort_order ASC, create_time DESC`;
 
+  // Settings 缓存：优先从 KV 读取，减少数据库查询
+  const settingsCacheKey = 'settings_cache';
+  const fetchSettings = async () => {
+    try {
+      const cached = await env.NAV_AUTH.get(settingsCacheKey, { type: 'json' });
+      if (cached) return { results: cached, fromCache: true };
+    } catch (e) {
+      console.warn('Settings cache read failed:', e);
+    }
+    const result = await env.NAV_DB.prepare(`SELECT key, value FROM settings WHERE key IN (${settingsPlaceholders})`).bind(...settingsKeys).all();
+    // 异步写入缓存，1h TTL
+    if (result.results && env.NAV_AUTH) {
+      context.waitUntil(env.NAV_AUTH.put(settingsCacheKey, JSON.stringify(result.results), { expirationTtl: 3600 }));
+    }
+    return result;
+  };
+
   const [categoriesResult, settingsResult, sitesResult, templateResponse] = await Promise.all([
     env.NAV_DB.prepare(categoryQuery).all().catch(e => ({ results: [], error: e })),
-    env.NAV_DB.prepare(`SELECT key, value FROM settings WHERE key IN (${settingsPlaceholders})`).bind(...settingsKeys).all().catch(e => ({ results: [], error: e })),
+    fetchSettings().catch(e => ({ results: [], error: e })),
     env.NAV_DB.prepare(sitesQuery).bind(includePrivate).all().catch(e => ({ results: [], error: e })),
     env.ASSETS.fetch(new URL('/index.html', request.url))
   ]);
@@ -86,7 +121,7 @@ export async function onRequest(context) {
   sortCats(rootCategories);
 
   // === 4. 解析设置 ===
-  const S = parseSettings(settingsResult.results);
+  const S = parseSettings(settingsResult.results || settingsResult);
 
   // === 5. 处理站点结果 ===
   let allSites = sitesResult.results || [];
@@ -136,18 +171,8 @@ export async function onRequest(context) {
   const themeClass = isCustomWallpaper ? 'custom-wallpaper' : '';
 
   // === 8. 计算主题样式 ===
-  const headerClass = isCustomWallpaper
-    ? 'bg-transparent border-none shadow-none transition-colors duration-300'
-    : 'bg-primary-700 text-white border-b border-primary-600 shadow-sm dark:bg-gray-900 dark:border-gray-800';
-  const containerClass = isCustomWallpaper
-    ? 'rounded-2xl'
-    : 'rounded-2xl border border-primary-100/60 bg-white/80 backdrop-blur-sm shadow-sm dark:bg-gray-800/80 dark:border-gray-700';
-  const titleColorClass = isCustomWallpaper ? 'text-gray-900 dark:text-gray-100' : 'text-white';
-  const subTextColorClass = isCustomWallpaper ? 'text-gray-600 dark:text-gray-300' : 'text-primary-100/90 dark:text-gray-400';
-  const searchInputClass = isCustomWallpaper
-    ? 'bg-white/90 backdrop-blur border border-gray-200 text-gray-800 placeholder-gray-400 focus:ring-primary-200 focus:border-primary-400 focus:bg-white dark:bg-gray-800/90 dark:border-gray-600 dark:text-gray-200 dark:focus:bg-gray-800'
-    : 'bg-white/15 text-white placeholder-primary-200 focus:ring-white/30 focus:bg-white/20 border-none dark:bg-gray-800/50 dark:text-gray-200 dark:placeholder-gray-500';
-  const searchIconClass = isCustomWallpaper ? 'text-gray-400 dark:text-gray-500' : 'text-primary-200 dark:text-gray-500';
+  const themeClasses = getThemeClasses(isCustomWallpaper);
+  const { headerClass, containerClass, titleColorClass, subTextColorClass, searchInputClass, searchIconClass } = themeClasses;
 
   // === 9. 生成菜单 HTML ===
   const allLinkActive = !catalogExists;
@@ -205,8 +230,10 @@ export async function onRequest(context) {
     </div>` : '';
 
   // === 14. Header HTML ===
-  const horizontalTitleHtml = S.layout_hide_title ? '' : `<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3 ${titleColorClass}" ${titleStyle}>{{SITE_NAME}}</h1>`;
-  const horizontalSubtitleHtml = S.layout_hide_subtitle ? '' : `<p class="${subTextColorClass} opacity-90 text-sm md:text-base" ${subtitleStyle}>{{SITE_DESCRIPTION}}</p>`;
+  const safeSiteName = escapeHTML(siteName);
+  const safeSiteDesc = escapeHTML(siteDescription);
+  const horizontalTitleHtml = S.layout_hide_title ? '' : `<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3 ${titleColorClass}" ${titleStyle}>${safeSiteName}</h1>`;
+  const horizontalSubtitleHtml = S.layout_hide_subtitle ? '' : `<p class="${subTextColorClass} opacity-90 text-sm md:text-base" ${subtitleStyle}>${safeSiteDesc}</p>`;
 
   const verticalHeaderContent = `
     <div class="max-w-4xl mx-auto text-center relative z-10 ${themeClass} py-8">
@@ -400,41 +427,43 @@ export async function onRequest(context) {
   );
   html = html.replace('</body>', '</div></body>');
 
-  // 替换所有模板占位符
-  html = html
-    .replace('{{HEADER_CONTENT}}', headerContent)
-    .replace('{{HEADER_CLASS}}', headerClass)
-    .replace('{{CONTAINER_CLASS}}', containerClass)
-    .replace('{{FOOTER_CLASS}}', footerClass)
-    .replace('{{HITOKOTO_CLASS}}', hitokotoClass)
-    .replace('{{LEFT_TOP_ACTION}}', leftTopActionHtml)
-    .replace('{{RIGHT_TOP_ACTION}}', topRightActionsHtml)
-    .replace(/{{SITE_NAME}}/g, escapeHTML(siteName))
-    .replace(/{{SITE_DESCRIPTION}}/g, escapeHTML(siteDescription))
-    .replace('{{FOOTER_TEXT}}', escapeHTML(footerText))
-    .replace('{{CATALOG_EXISTS}}', catalogExists ? 'true' : 'false')
-    .replace('{{CATALOG_LINKS}}', catalogLinkMarkup)
-    .replace('{{SUBMISSION_CLASS}}', submissionClass)
-    .replace('{{DATALIST_OPTIONS}}', datalistOptions)
-    .replace('{{TOTAL_SITES}}', sites.length)
-    .replace('{{CATALOG_COUNT}}', categories.length)
-    .replace('{{HEADING_TEXT}}', headingText)
-    .replace('{{HEADING_DEFAULT}}', headingDefaultAttr)
-    .replace('{{HEADING_ACTIVE}}', headingActiveAttr)
-    .replace('{{STATS_VISIBLE}}', S.home_hide_stats ? 'hidden' : '')
-    .replace('{{STATS_STYLE}}', statsStyle)
-    .replace('{{HITOKOTO_VISIBLE}}', S.home_hide_hitokoto ? 'hidden' : '')
-    .replace('{{STATS_ROW_PY_CLASS}}', statsRowPyClass)
-    .replace('{{STATS_ROW_MB_CLASS}}', '')
-    .replace('{{STATS_ROW_HIDDEN}}', statsRowHiddenClass)
-    .replace('{{HITOKOTO_CONTENT}}', hitokotoContent)
-    .replace(/{{HITOKOTO_STYLE}}/g, hitokotoStyle)
-    .replace('{{SITES_GRID}}', sitesGridMarkup)
-    .replace('{{CURRENT_YEAR}}', new Date().getFullYear())
-    .replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass)
-    .replace('{{SIDEBAR_CLASS}}', sidebarClass)
-    .replace('{{MAIN_CLASS}}', mainClass)
-    .replace('{{SIDEBAR_TOGGLE_CLASS}}', sidebarToggleClass);
+  // 替换所有模板占位符（单次正则匹配 + 映射表）
+  const replacements = {
+    'HEADER_CONTENT': headerContent,
+    'HEADER_CLASS': headerClass,
+    'CONTAINER_CLASS': containerClass,
+    'FOOTER_CLASS': footerClass,
+    'HITOKOTO_CLASS': hitokotoClass,
+    'LEFT_TOP_ACTION': leftTopActionHtml,
+    'RIGHT_TOP_ACTION': topRightActionsHtml,
+    'SITE_NAME': escapeHTML(siteName),
+    'SITE_DESCRIPTION': escapeHTML(siteDescription),
+    'FOOTER_TEXT': escapeHTML(footerText),
+    'CATALOG_EXISTS': catalogExists ? 'true' : 'false',
+    'CATALOG_LINKS': catalogLinkMarkup,
+    'SUBMISSION_CLASS': submissionClass,
+    'DATALIST_OPTIONS': datalistOptions,
+    'TOTAL_SITES': String(sites.length),
+    'CATALOG_COUNT': String(categories.length),
+    'HEADING_TEXT': headingText,
+    'HEADING_DEFAULT': headingDefaultAttr,
+    'HEADING_ACTIVE': headingActiveAttr,
+    'STATS_VISIBLE': S.home_hide_stats ? 'hidden' : '',
+    'STATS_STYLE': statsStyle,
+    'HITOKOTO_VISIBLE': S.home_hide_hitokoto ? 'hidden' : '',
+    'STATS_ROW_PY_CLASS': statsRowPyClass,
+    'STATS_ROW_MB_CLASS': '',
+    'STATS_ROW_HIDDEN': statsRowHiddenClass,
+    'HITOKOTO_CONTENT': hitokotoContent,
+    'HITOKOTO_STYLE': hitokotoStyle,
+    'SITES_GRID': sitesGridMarkup,
+    'CURRENT_YEAR': String(new Date().getFullYear()),
+    'SIDEBAR_CLASS': sidebarClass,
+    'MAIN_CLASS': mainClass,
+    'SIDEBAR_TOGGLE_CLASS': sidebarToggleClass,
+  };
+  html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
+  html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
 
   // === 17. 返回响应 ===
   const response = new Response(html, {
@@ -447,7 +476,7 @@ export async function onRequest(context) {
 
   if (isHomePage) {
     const cacheKey = isAuthenticated ? 'home_html_private' : 'home_html_public';
-    context.waitUntil(env.NAV_AUTH.put(cacheKey, html));
+    context.waitUntil(env.NAV_AUTH.put(cacheKey, html, { expirationTtl: 2592000 }));
   }
 
   return response;

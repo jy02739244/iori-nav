@@ -79,13 +79,19 @@ document.addEventListener('DOMContentLoaded', function () {
   const backToTop = document.getElementById('backToTop');
   const appScroll = document.getElementById('app-scroll');
 
+  let scrollTicking = false;
   const onScroll = () => {
-    const top = appScroll ? appScroll.scrollTop : window.pageYOffset;
-    if (top > 300) {
-      backToTop?.classList.remove('opacity-0', 'invisible');
-    } else {
-      backToTop?.classList.add('opacity-0', 'invisible');
-    }
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(() => {
+      const top = appScroll ? appScroll.scrollTop : window.pageYOffset;
+      if (top > 300) {
+        backToTop?.classList.remove('opacity-0', 'invisible');
+      } else {
+        backToTop?.classList.add('opacity-0', 'invisible');
+      }
+      scrollTicking = false;
+    });
   };
 
   if (appScroll) {
@@ -121,14 +127,28 @@ document.addEventListener('DOMContentLoaded', function () {
     document.body.style.overflow = '';
   }
 
+  let cachedCategories = null;
+
   async function fetchCategoriesForSelect() {
     const selectElement = document.getElementById('addSiteCatelog');
     if (!selectElement) return;
+
+    if (cachedCategories) {
+      selectElement.innerHTML = '<option value="" disabled selected>请选择一个分类</option>';
+      cachedCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.catelog;
+        selectElement.appendChild(option);
+      });
+      return;
+    }
 
     try {
       const response = await fetch('/api/categories?pageSize=999');
       const data = await response.json();
       if (data.code === 200 && data.data) {
+        cachedCategories = data.data;
         selectElement.innerHTML = '<option value="" disabled selected>请选择一个分类</option>';
         data.data.forEach(category => {
           const option = document.createElement('option');
@@ -205,6 +225,22 @@ document.addEventListener('DOMContentLoaded', function () {
   // ========== 搜索功能 ==========
   const searchInputs = document.querySelectorAll('.search-input-target');
 
+  // 预缓存卡片搜索数据
+  let searchCardCache = null;
+  function getSearchCardCache() {
+    if (searchCardCache) return searchCardCache;
+    const cards = sitesGrid?.querySelectorAll('.site-card');
+    if (!cards) return [];
+    searchCardCache = Array.from(cards).map(card => ({
+      el: card,
+      text: [card.dataset.name, card.dataset.url, card.dataset.catalog, card.dataset.desc]
+        .map(s => (s || '').toLowerCase()).join('\0')
+    }));
+    return searchCardCache;
+  }
+
+  let searchDebounceTimer = null;
+
   // Initialize Search Engine UI based on saved preference
   const engineOptions = document.querySelectorAll('.search-engine-option');
 
@@ -262,36 +298,31 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   searchInputs.forEach(input => {
-    // Local Search Input Handler
+    // Local Search Input Handler with debounce
     input.addEventListener('input', function () {
-      // If external engine is selected, do not filter local sites (optional, but better UX)
-      // But keeping it might be confusing. Let's filter only if local.
       if (currentSearchEngine !== 'local') return;
 
-      const keyword = this.value.toLowerCase().trim();
-      // Sync other inputs
+      const value = this.value;
+      // Sync other inputs immediately
       searchInputs.forEach(otherInput => {
-        if (otherInput !== this) {
-          otherInput.value = this.value;
-        }
+        if (otherInput !== this) otherInput.value = value;
       });
 
-      const cards = sitesGrid?.querySelectorAll('.site-card');
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        const keyword = value.toLowerCase().trim();
+        const cached = getSearchCardCache();
 
-      cards?.forEach(card => {
-        const name = (card.dataset.name || '').toLowerCase();
-        const url = (card.dataset.url || '').toLowerCase();
-        const catalog = (card.dataset.catalog || '').toLowerCase();
-        const desc = (card.dataset.desc || '').toLowerCase();
+        cached.forEach(({ el, text }) => {
+          if (keyword === '' || text.includes(keyword)) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        });
 
-        if (name.includes(keyword) || url.includes(keyword) || catalog.includes(keyword) || desc.includes(keyword)) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
-        }
-      });
-
-      updateHeading(keyword);
+        updateHeading(keyword);
+      }, 200);
     });
 
     // External Search Enter Handler
@@ -590,6 +621,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function renderSites(sites) {
     const sitesGrid = document.getElementById('sitesGrid');
     if (!sitesGrid) return;
+
+    // 重新渲染时清除搜索缓存
+    searchCardCache = null;
 
     // 使用全局配置获取布局设置，避免依赖 DOM 推断
     const config = window.IORI_LAYOUT_CONFIG || {};

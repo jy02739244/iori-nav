@@ -17,7 +17,9 @@ async function runBaseSchema(db) {
 async function runIncrementalMigrations(env) {
   await env.NAV_DB.batch([
     env.NAV_DB.prepare('CREATE INDEX IF NOT EXISTS idx_sites_catelog_id ON sites(catelog_id)'),
-    env.NAV_DB.prepare('CREATE INDEX IF NOT EXISTS idx_sites_sort_order ON sites(sort_order)')
+    env.NAV_DB.prepare('CREATE INDEX IF NOT EXISTS idx_sites_sort_order ON sites(sort_order)'),
+    env.NAV_DB.prepare('CREATE INDEX IF NOT EXISTS idx_sites_private_sort ON sites(is_private, sort_order)'),
+    env.NAV_DB.prepare('CREATE INDEX IF NOT EXISTS idx_sites_catelog_name ON sites(catelog_name)')
   ]);
 
   const sitesColumns = await env.NAV_DB.prepare('PRAGMA table_info(sites)').all();

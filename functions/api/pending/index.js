@@ -10,7 +10,7 @@ export async function onRequestGet(context) {
 
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get('page') || '1', 10);
-  const pageSize = parseInt(url.searchParams.get('pageSize') || '10', 10);
+  const pageSize = Math.min(parseInt(url.searchParams.get('pageSize') || '10', 10), 200);
   const offset = (page - 1) * pageSize;
 
   try {

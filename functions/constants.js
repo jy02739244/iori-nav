@@ -1,6 +1,6 @@
 
 // 数据库 Schema 版本 - 修改此值会触发迁移
-export const SCHEMA_VERSION = 'v3';
+export const SCHEMA_VERSION = 'v4';
 
 // 数据库表结构定义
 export const DB_SCHEMA = `

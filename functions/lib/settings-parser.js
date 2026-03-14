@@ -58,32 +58,34 @@ export function getSettingsKeys() {
     return Object.keys(SETTINGS_SCHEMA);
 }
 
+// 类型转换映射
+const TYPE_CONVERTERS = {
+    bool: v => v === 'true',
+    boolOrOne: v => v === 'true' || v === '1',
+    string: v => v,
+};
+
 /**
  * 将 DB 查询结果解析为结构化设置对象
  * @param {Array} dbResults - 数据库查询结果 [{ key, value }, ...]
  * @returns {object} 键值对对象，布尔值已转换
  */
 export function parseSettings(dbResults) {
-    const settings = {};
-
-    // 先填充默认值
-    for (const [key, schema] of Object.entries(SETTINGS_SCHEMA)) {
-        settings[key] = schema.default;
-    }
-
-    // 用数据库值覆盖
+    // 将 DB 结果构建为 Map 以便 O(1) 查找
+    const dbMap = new Map();
     if (dbResults && Array.isArray(dbResults)) {
         for (const row of dbResults) {
-            const schema = SETTINGS_SCHEMA[row.key];
-            if (!schema) continue;
+            dbMap.set(row.key, row.value);
+        }
+    }
 
-            if (schema.type === 'bool') {
-                settings[row.key] = row.value === 'true';
-            } else if (schema.type === 'boolOrOne') {
-                settings[row.key] = row.value === 'true' || row.value === '1';
-            } else {
-                settings[row.key] = row.value;
-            }
+    const settings = {};
+    for (const [key, schema] of Object.entries(SETTINGS_SCHEMA)) {
+        const dbValue = dbMap.get(key);
+        if (dbValue !== undefined) {
+            settings[key] = TYPE_CONVERTERS[schema.type](dbValue);
+        } else {
+            settings[key] = schema.default;
         }
     }
 

@@ -1,5 +1,6 @@
 // functions/api/config/index.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
+import { escapeLikePattern } from '../../lib/utils';
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -8,7 +9,7 @@ export async function onRequestGet(context) {
   const catalog = url.searchParams.get('catalog');
   const catalogId = url.searchParams.get('catalogId');
   const page = parseInt(url.searchParams.get('page') || '1', 10);
-  const pageSize = parseInt(url.searchParams.get('pageSize') || '10', 10);
+  const pageSize = Math.min(parseInt(url.searchParams.get('pageSize') || '10', 10), 200);
   const keyword = url.searchParams.get('keyword');
   const offset = (page - 1) * pageSize;
 
@@ -30,8 +31,9 @@ export async function onRequestGet(context) {
     }
 
     if (keyword) {
-      queryBase += ` AND (name LIKE ? OR url LIKE ? OR catelog_name LIKE ? OR s.desc LIKE ?)`;
-      queryBindParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+      const escaped = escapeLikePattern(keyword);
+      queryBase += ` AND (name LIKE ? ESCAPE '\\' OR url LIKE ? ESCAPE '\\' OR catelog_name LIKE ? ESCAPE '\\' OR s.desc LIKE ? ESCAPE '\\')`;
+      queryBindParams.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
     }
 
     const query = `SELECT * ${queryBase} ORDER BY sort_order ASC, create_time DESC LIMIT ? OFFSET ?`;

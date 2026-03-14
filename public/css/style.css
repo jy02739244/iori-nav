@@ -107,12 +107,12 @@ html.dark body.custom-wallpaper .sidebar {
 
 /* 3. 卡片基础与悬停样式 */
 .site-card {
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
               box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
               background-color 0.3s ease,
               border-color 0.3s ease,
               color 0.3s ease;
-  will-change: transform;
+  will-change: auto;
   container-type: inline-size; /* 开启容器查询，允许子元素监听卡片宽度 */
   container-name: card;
   border-radius: var(--card-radius) !important;
@@ -123,6 +123,14 @@ html.dark body.custom-wallpaper .sidebar {
   backface-visibility: hidden;
   transform: translateZ(0);
   contain: content; /* 关键：隔离卡片内部渲染，防止大量图片加载或颜色改变引发全局重绘 */
+}
+
+.site-card:hover {
+  will-change: transform;
+  transform: scale(1.05) translateY(-4px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  z-index: 30;
+  border: 2px solid #416d9d !important;
 }
 
 .site-card-content {
@@ -144,13 +152,6 @@ html.dark body.custom-wallpaper .sidebar {
     margin-bottom: 0;
     /* 强制两行高度: line-height (relaxed=1.625) * 2 lines * font-size (sm=0.875rem) ≈ 2.85rem */
     height: 2.85rem;
-}
-
-.site-card:hover {
-  transform: scale(1.15) translateY(-10px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-  z-index: 30;
-  border: 2px solid #416d9d !important;
 }
 
 /* 夜间模式卡片 - 仅在开启毛玻璃时应用半透明 */
@@ -291,19 +292,11 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
 .site-card:not(.style-2) .site-title { transform-origin: left center; }
 .site-card:not(.style-2):hover .site-title { transform: scale(1.2); transition-delay: 0.1s; }
 
-/* 风格二 (垂直布局) */
+/* 风格二 (垂直布局) — 小屏 (max-width:400px) 样式已合并到文件底部统一断点中 */
 .site-card.style-2 .flex.items-start {
     flex-direction: column;
     align-items: center;
     text-align: center;
-}
-
-@media (max-width: 400px) {
-    .site-card .flex.items-start {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
 }
 
 .site-card.style-2 .site-icon {
@@ -314,26 +307,10 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
     transition: transform 0.3s ease;
 }
 
-@media (max-width: 400px) {
-    .site-card .site-icon {
-        margin-right: 0;
-        margin-bottom: 0.5rem;
-        width: 3rem;
-        height: 3rem;
-        transition: transform 0.3s ease;
-    }
-}
-
-.site-card.style-2:hover .site-icon { transform: scale(1.1); }
+.site-card.style-2:hover .site-icon { transform: scale(1.05); }
 
 .site-card.style-2 .site-icon img, .site-card.style-2 .site-icon div {
     margin: 0 auto;
-}
-
-@media (max-width: 400px) {
-    .site-card .site-icon img, .site-card .site-icon div {
-        margin: 0 auto;
-    }
 }
 
 .site-card.style-2 .site-title {
@@ -344,16 +321,6 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
     transform-origin: center !important;
 }
 
-@media (max-width: 400px) {
-    .site-card .site-title {
-        text-align: center;
-        margin-bottom: 0.25rem;
-        display: block;
-        width: 100%;
-        transform-origin: center !important;
-    }
-}
-
 .site-card.style-2 .flex-1 {
     width: 100%;
     display: flex;
@@ -361,37 +328,14 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
     align-items: center;
 }
 
-@media (max-width: 400px) {
-    .site-card .flex-1 {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-}
-
 .site-card.style-2 .inline-flex {
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
 }
 
-@media (max-width: 400px) {
-    .site-card .inline-flex {
-        margin-top: 0.25rem;
-        margin-bottom: 0.5rem;
-    }
-}
-
 .site-card.style-2 p {
     text-align: center;
     margin-top: 0.5rem;
-}
-
-@media (max-width: 400px) {
-    .site-card p {
-        text-align: center;
-        margin-top: 0.5rem;
-    }
 }
 
 .site-card.style-2 .mt-3.flex {
@@ -401,23 +345,8 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
     border-top: 1px solid rgba(0,0,0,0.05);
 }
 
-@media (max-width: 400px) {
-    .site-card .mt-3.flex {
-        margin-top: auto;
-        justify-content: space-between;
-        padding-top: 0.5rem;
-        border-top: 1px solid rgba(0,0,0,0.05);
-    }
-}
-
 .dark .site-card.style-2 .mt-3.flex {
     border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-@media (max-width: 400px) {
-    .dark .site-card .mt-3.flex {
-        border-top: 1px solid rgba(255,255,255,0.1);
-    }
 }
 
 /* 复制提示 */
@@ -692,11 +621,6 @@ html:not(.dark) body.custom-wallpaper .sidebar {
 body.menu-open .site-card:hover {
   transform: none !important;
   z-index: 1 !important;
-}
-
-/* Force Card Hover Scale */
-.site-card:hover {
-  transform: scale(1.1) translateY(-10px);
 }
 
 /* ========================================= */

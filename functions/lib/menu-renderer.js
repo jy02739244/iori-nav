@@ -22,33 +22,19 @@ function _renderHorizontalItems(cats, currentCatalogName, level) {
         const encodedName = encodeURIComponent(cat.catelog);
         const linkUrl = `?catalog=${encodedName}`;
 
-        let html = '';
-        if (level === 0) {
-            const activeClass = isActive ? 'active' : 'inactive';
-            const navItemActiveClass = isActive ? 'nav-item-active' : '';
-            html += `<div class="menu-item-wrapper relative inline-block text-left">`;
-            html += `<a href="${linkUrl}" class="nav-btn ${activeClass} ${navItemActiveClass}" data-id="${cat.id}">
-                  ${safeName}
-                  ${hasChildren ? '<svg class="w-3 h-3 ml-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>' : ''}
-               </a>`;
-            if (hasChildren) {
-                html += `<div class="dropdown-menu">${_renderHorizontalItems(cat.children, currentCatalogName, level + 1)}</div>`;
-            }
-            html += `</div>`;
-        } else {
-            const activeClass = isActive ? 'active' : '';
-            const navItemActiveClass = isActive ? 'nav-item-active' : '';
-            html += `<div class="menu-item-wrapper relative block w-full">`;
-            html += `<a href="${linkUrl}" class="dropdown-item ${activeClass} ${navItemActiveClass}" data-id="${cat.id}">
-                  ${safeName}
-                  ${hasChildren ? '<svg class="dropdown-arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>' : ''}
-               </a>`;
-            if (hasChildren) {
-                html += `<div class="dropdown-menu">${_renderHorizontalItems(cat.children, currentCatalogName, level + 1)}</div>`;
-            }
-            html += `</div>`;
-        }
-        return html;
+        const isRoot = level === 0;
+        const activeClass = isActive ? 'active' : (isRoot ? 'inactive' : '');
+        const navItemActiveClass = isActive ? 'nav-item-active' : '';
+        const wrapperClass = isRoot ? 'menu-item-wrapper relative inline-block text-left' : 'menu-item-wrapper relative block w-full';
+        const linkClass = isRoot ? `nav-btn ${activeClass} ${navItemActiveClass}` : `dropdown-item ${activeClass} ${navItemActiveClass}`;
+        const arrowSvg = hasChildren
+            ? (isRoot
+                ? '<svg class="w-3 h-3 ml-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>'
+                : '<svg class="dropdown-arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>')
+            : '';
+        const childrenHtml = hasChildren ? `<div class="dropdown-menu">${_renderHorizontalItems(cat.children, currentCatalogName, level + 1)}</div>` : '';
+
+        return `<div class="${wrapperClass}"><a href="${linkUrl}" class="${linkClass}" data-id="${cat.id}">${safeName}${arrowSvg}</a>${childrenHtml}</div>`;
     }).join('');
 }
 
