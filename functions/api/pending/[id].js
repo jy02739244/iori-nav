@@ -1,5 +1,6 @@
 // functions/api/pending/[id].js
 import { isAdminAuthenticated, errorResponse, jsonResponse } from '../../_middleware';
+import { buildFaviconUrl } from '../../lib/utils';
 
 export async function onRequestPut(context) {
   const { request, env, params } = context;
@@ -18,15 +19,8 @@ export async function onRequestPut(context) {
 
     const config = results[0];
     let { logo, url } = config;
-    let sanitizedLogo = logo;
-    const iconAPI=env.ICON_API ||'https://faviconsnap.com/api/favicon?url=';
-    if(!logo && url){
-      if(url.startsWith('https://') || url.startsWith('http://')){
-        const domain = url.replace(/^https?:\/\//, '').split('/')[0];
-        sanitizedLogo = iconAPI+domain;
-      }
-      
-    }
+    const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
+    const sanitizedLogo = buildFaviconUrl(url, logo, iconAPI);
     await env.NAV_DB.prepare(`
       INSERT INTO sites (name, url, logo, desc, catelog_id, sort_order)
       VALUES (?, ?, ?, ?, ?, 9999)

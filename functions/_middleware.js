@@ -164,6 +164,49 @@ export async function clearLoginFailures(env, ip) {
   }
 }
 
+/**
+ * 校验 CSRF token（Synchronizer Token Pattern）
+ * 旧 session（KV 中无 csrf_ 记录）自动放行，保持向后兼容
+ */
+export async function validateCsrfToken(request, env) {
+  const sessionToken = getSessionToken(request);
+  if (!sessionToken) return { valid: false };
+
+  const storedToken = await env.NAV_AUTH.get(`csrf_${sessionToken}`);
+  // 旧 session 兼容：KV 无记录则放行
+  if (!storedToken) return { valid: true };
+
+  const headerToken = request.headers.get('X-CSRF-Token');
+  if (!headerToken) return { valid: false };
+
+  return { valid: timingSafeEqual(headerToken, storedToken) };
+}
+
+/**
+ * 校验请求来源（Origin / Referer）
+ * 用于公开提交接口等不依赖 session CSRF token 的场景
+ */
+export function validateOrigin(request) {
+  const url = new URL(request.url);
+  const origin = request.headers.get('Origin');
+  if (origin) {
+    try {
+      return new URL(origin).host === url.host;
+    } catch {
+      return false;
+    }
+  }
+  const referer = request.headers.get('Referer');
+  if (referer) {
+    try {
+      return new URL(referer).host === url.host;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 // 导出中间件(可选,用于添加全局逻辑)
 export async function onRequest(context) {
   // 在每个请求开始时检查并初始化数据库
@@ -171,7 +214,25 @@ export async function onRequest(context) {
     await ensureSchemaReady(context.env);
   }
 
-  // 在这里可以添加全局中间件逻辑
-  // 例如: 日志记录、CORS 头等
+  const { request, env } = context;
+  const method = request.method.toUpperCase();
+  const url = new URL(request.url);
+
+  // CSRF 校验：仅对状态变更方法 + /api/* 路径生效
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method) && url.pathname.startsWith('/api/')) {
+    if (url.pathname === '/api/config/submit') {
+      // 公开提交接口：使用 Origin 校验
+      if (!validateOrigin(request)) {
+        return errorResponse('Forbidden: invalid origin', 403);
+      }
+    } else {
+      // 管理 API：使用 CSRF token 校验
+      const { valid } = await validateCsrfToken(request, env);
+      if (!valid) {
+        return errorResponse('Forbidden: invalid CSRF token', 403);
+      }
+    }
+  }
+
   return context.next();
 }

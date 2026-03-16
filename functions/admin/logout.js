@@ -12,6 +12,7 @@ export async function onRequest(context) {
   const token = getSessionToken(request);
   if (token) {
     await env.NAV_AUTH.delete(`session_${token}`);
+    await env.NAV_AUTH.delete(`csrf_${token}`);
   }
 
   return new Response(null, {

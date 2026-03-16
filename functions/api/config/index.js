@@ -1,6 +1,6 @@
 // functions/api/config/index.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
-import { escapeLikePattern } from '../../lib/utils';
+import { escapeLikePattern, buildFaviconUrl } from '../../lib/utils';
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -43,14 +43,8 @@ export async function onRequestGet(context) {
     const fullBindParams = [...queryBindParams, pageSize, offset];
     const { results } = await env.NAV_DB.prepare(query).bind(...fullBindParams).all();
     
-    // 优化：如果 pageSize 很大（通常是“获取全部”场景），则跳过 COUNT 查询
-    let total = 0;
-    if (pageSize >= 1000) {
-        total = results.length + offset; 
-    } else {
-        const countResult = await env.NAV_DB.prepare(countQuery).bind(...queryBindParams).first();
-        total = countResult ? countResult.total : 0;
-    }
+    const countResult = await env.NAV_DB.prepare(countQuery).bind(...queryBindParams).first();
+    const total = countResult ? countResult.total : 0;
 
     return jsonResponse({
       code: 200,
@@ -74,8 +68,8 @@ export async function onRequestPost(context) {
   try {
     const config = await request.json();
     const { name, url, logo, desc, catelogId, sort_order, is_private } = config;
-    const iconAPI=env.ICON_API ||'https://faviconsnap.com/api/favicon?url=';
-    
+    const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
+
     const sanitizedName = (name || '').trim();
     const sanitizedUrl = (url || '').trim();
     let sanitizedLogo = (logo || '').trim() || null;
@@ -93,13 +87,7 @@ export async function onRequestPost(context) {
         return errorResponse('该 URL 已存在，请勿重复添加', 409);
     }
 
-    if(!logo && url){
-      if(url.startsWith('https://') || url.startsWith('http://')){
-        const domain = url.replace(/^https?:\/\//, '').split('/')[0];
-        sanitizedLogo = iconAPI+domain;
-    }
-      
-    }
+    sanitizedLogo = buildFaviconUrl(sanitizedUrl, sanitizedLogo, iconAPI);
     // Find the category ID from the category name
     const categoryResult = await env.NAV_DB.prepare('SELECT catelog, is_private FROM category WHERE id = ?').bind(catelogId).first();
 

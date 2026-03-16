@@ -1,5 +1,6 @@
 // functions/api/update-description.js
 import { isAdminAuthenticated, errorResponse, jsonResponse } from '../_middleware';
+import { buildFaviconUrl } from '../lib/utils';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -16,16 +17,8 @@ export async function onRequestPost(context) {
     if (!id || typeof description !== 'string') {
       return errorResponse('Bookmark ID and description are required', 400);
     }
-    const iconAPI=env.ICON_API ||'https://faviconsnap.com/api/favicon?url=';
-    let sanitizedLogo = (logo || '').trim() || null;
-    if(!logo && url){
-      if(url.startsWith('https://') || url.startsWith('http://')){
-        const domain = url.replace(/^https?:\/\//, '').split('/')[0];
-        sanitizedLogo = iconAPI+domain;
-      }
-      
-    }
-    console.log('Sanitized Logo URL:', sanitizedLogo);
+    const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
+    const sanitizedLogo = buildFaviconUrl(url, (logo || '').trim() || null, iconAPI);
 
     // 3. 更新数据库
     const result = await env.NAV_DB.prepare(

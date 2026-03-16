@@ -48,6 +48,20 @@ export function escapeLikePattern(str) {
 }
 
 /**
+ * 为给定 URL 生成 favicon 图标地址
+ * @param {string} siteUrl - 站点 URL
+ * @param {string} currentLogo - 现有 logo（非空则直接返回）
+ * @param {string} iconAPI - favicon API 前缀
+ * @returns {string|null}
+ */
+export function buildFaviconUrl(siteUrl, currentLogo, iconAPI) {
+    if (currentLogo && !currentLogo.startsWith('data:image')) return currentLogo;
+    if (!siteUrl || !(siteUrl.startsWith('https://') || siteUrl.startsWith('http://'))) return currentLogo || null;
+    const domain = siteUrl.replace(/^https?:\/\//, '').split('/')[0];
+    return `${iconAPI}${domain}`;
+}
+
+/**
  * 构建 style 属性字符串（字体名通过 FONT_MAP 白名单校验）
  * @returns {string} 如 'style="font-size: 16px; color: red;"' 或空字符串
  */

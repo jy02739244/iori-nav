@@ -18,6 +18,14 @@ export async function onRequestPost(context) {
 
     const parentId = body.parent_id ? parseInt(body.parent_id, 10) : 0;
 
+    // 检查父分类存在性
+    if (parentId !== 0) {
+      const parentExists = await env.NAV_DB.prepare('SELECT id FROM category WHERE id = ?').bind(parentId).first();
+      if (!parentExists) {
+        return errorResponse('父分类不存在', 400);
+      }
+    }
+
     // 检查在同一个父分类下，分类名称是否已存在
     const existing = await env.NAV_DB.prepare(
       'SELECT catelog FROM category WHERE catelog = ? AND parent_id = ?'

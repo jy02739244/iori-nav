@@ -1,5 +1,6 @@
 // functions/api/config/[id].js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
+import { buildFaviconUrl } from '../../lib/utils';
 
 
 export async function onRequestGet(context) {
@@ -44,14 +45,8 @@ export async function onRequestPut(context) {
     if (!sanitizedName || !sanitizedUrl || !catelog_id) {
       return errorResponse('Name, URL and Catelog are required', 400);
     }
-    const iconAPI=env.ICON_API ||'https://faviconsnap.com/api/favicon?url=';
-    if(!logo && url){
-      if(url.startsWith('https://') || url.startsWith('http://')){
-        const domain = url.replace(/^https?:\/\//, '').split('/')[0];
-        sanitizedLogo = iconAPI+domain;
-      }
-      
-    }
+    const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
+    sanitizedLogo = buildFaviconUrl(sanitizedUrl, sanitizedLogo, iconAPI);
 
     // Fetch category name
     const categoryResult = await env.NAV_DB.prepare('SELECT catelog, is_private FROM category WHERE id = ?').bind(catelog_id).first();

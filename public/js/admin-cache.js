@@ -1,3 +1,30 @@
+// CSRF token auto-attach: monkey-patch fetch for POST/PUT/DELETE/PATCH
+(function() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (!meta) return;
+    const csrfToken = meta.getAttribute('content');
+    if (!csrfToken) return;
+
+    const originalFetch = window.fetch;
+    window.fetch = function(input, init) {
+        init = init || {};
+        const method = (init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
+        if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+            if (init.headers instanceof Headers) {
+                if (!init.headers.has('X-CSRF-Token')) {
+                    init.headers.set('X-CSRF-Token', csrfToken);
+                }
+            } else {
+                init.headers = init.headers || {};
+                if (!init.headers['X-CSRF-Token']) {
+                    init.headers['X-CSRF-Token'] = csrfToken;
+                }
+            }
+        }
+        return originalFetch.call(this, input, init);
+    };
+})();
+
 // Cache Management Logic
 // Separated from admin.js
 

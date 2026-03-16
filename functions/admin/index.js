@@ -1,25 +1,12 @@
 // functions/admin/index.js
 
-async function validateAdminSession(request, env) {
-  const cookie = request.headers.get('Cookie');
-  if (!cookie) return { authenticated: false };
-
-  const match = cookie.match(/admin_session=([^;]+)/);
-  if (!match) return { authenticated: false };
-
-  const token = match[1];
-  const session = await env.NAV_AUTH.get(`session_${token}`);
-
-  return session ? { authenticated: true, token } : { authenticated: false };
-}
+import { isAdminAuthenticated, getSessionToken } from '../_middleware';
 
 // GET: 显示管理页面或重定向到登录
 export async function onRequestGet(context) {
   const { request, env } = context;
 
-  const session = await validateAdminSession(request, env);
-
-  if (!session.authenticated) {
+  if (!(await isAdminAuthenticated(request, env))) {
     return new Response(null, {
       status: 302,
       headers: {
@@ -27,6 +14,8 @@ export async function onRequestGet(context) {
       },
     });
   }
+
+  const sessionToken = getSessionToken(request);
 
   // 尝试从静态资源读取 HTML 文件
   try {
@@ -36,6 +25,15 @@ export async function onRequestGet(context) {
     const response = await env.ASSETS.fetch(url);
 
     if (response.ok) {
+      // 从 KV 读取 CSRF token 并注入到 HTML
+      const csrfToken = await env.NAV_AUTH.get(`csrf_${sessionToken}`);
+      if (csrfToken) {
+        let html = await response.text();
+        html = html.replace('</head>', `<meta name="csrf-token" content="${csrfToken}">\n</head>`);
+        const headers = new Headers(response.headers);
+        headers.set('Cache-Control', 'no-store');
+        return new Response(html, { headers });
+      }
       return response;
     } else {
       console.error('Failed to load admin HTML:', response.status);

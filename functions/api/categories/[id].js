@@ -54,6 +54,32 @@ export async function onRequestPut(context) {
 
     const parentId = body.parent_id !== undefined ? parseInt(body.parent_id, 10) : 0;
 
+    // 检查 parent_id 不能指向自身
+    if (parentId !== 0 && String(parentId) === String(categoryId)) {
+      return errorResponse('分类不能设为自身的子分类', 400);
+    }
+
+    // 检查 parent_id 存在性及循环引用
+    if (parentId !== 0) {
+      const parentExists = await env.NAV_DB.prepare('SELECT id FROM category WHERE id = ?').bind(parentId).first();
+      if (!parentExists) {
+        return errorResponse('父分类不存在', 400);
+      }
+      // 沿 parent 链向上查找，检测循环（限制最大深度防止异常数据）
+      let currentParent = parentId;
+      const visited = new Set([parseInt(categoryId, 10)]);
+      let depth = 0;
+      while (currentParent !== 0 && depth++ < 20) {
+        if (visited.has(currentParent)) {
+          return errorResponse('不允许创建循环引用的分类层级', 400);
+        }
+        visited.add(currentParent);
+        const row = await env.NAV_DB.prepare('SELECT parent_id FROM category WHERE id = ?').bind(currentParent).first();
+        if (!row) break;
+        currentParent = row.parent_id || 0;
+      }
+    }
+
     // 检查在同一个父分类下，分类名称是否已存在（排除自身）
     const existingCategory = await env.NAV_DB.prepare('SELECT id FROM category WHERE catelog = ? AND parent_id = ? AND id != ?')
       .bind(catelog, parentId, categoryId)
@@ -66,21 +92,22 @@ export async function onRequestPut(context) {
     sort_order = normalizeSortOrder(sort_order);
     const isPrivate = body.is_private ? 1 : 0;
 
-    await env.NAV_DB.prepare('UPDATE category SET catelog = ?, sort_order = ?, parent_id = ?, is_private = ? WHERE id = ?')
-      .bind(catelog, sort_order, parentId, isPrivate, categoryId)
-      .run();
-      
-    // Sync update sites table redundant column
-    await env.NAV_DB.prepare('UPDATE sites SET catelog_name = ? WHERE catelog_id = ?')
-      .bind(catelog, categoryId)
-      .run();
+    const batchStmts = [
+      env.NAV_DB.prepare('UPDATE category SET catelog = ?, sort_order = ?, parent_id = ?, is_private = ? WHERE id = ?')
+        .bind(catelog, sort_order, parentId, isPrivate, categoryId),
+      env.NAV_DB.prepare('UPDATE sites SET catelog_name = ? WHERE catelog_id = ?')
+        .bind(catelog, categoryId),
+    ];
 
     // If category is set to private, force all sites in this category to be private
     if (isPrivate === 1) {
-        await env.NAV_DB.prepare('UPDATE sites SET is_private = 1 WHERE catelog_id = ?')
+      batchStmts.push(
+        env.NAV_DB.prepare('UPDATE sites SET is_private = 1 WHERE catelog_id = ?')
           .bind(categoryId)
-          .run();
+      );
     }
+
+    await env.NAV_DB.batch(batchStmts);
 
     return jsonResponse({
       code: 200,

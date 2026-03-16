@@ -3,6 +3,11 @@
 import { jsonResponse, errorResponse } from '../_middleware';
 
 const API_360_BASE = 'http://cdn.apc.360.cn/index.php';
+const FETCH_TIMEOUT_MS = 8000;
+
+function fetchWithTimeout(url) {
+  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+}
 
 export async function onRequestGet(context) {
   const { request } = context;
@@ -19,7 +24,7 @@ export async function onRequestGet(context) {
     // 360 壁纸：分类列表
     if (source === '360' && action === 'categories') {
       const apiUrl = `${API_360_BASE}?c=WallPaper&a=getAllCategoriesV2&from=360chrome`;
-      const res = await fetch(apiUrl);
+      const res = await fetchWithTimeout(apiUrl);
       if (!res.ok) return errorResponse('Failed to fetch 360 categories', 502);
       const json = await res.json();
       return jsonResponse({ code: 200, data: json });
@@ -30,7 +35,7 @@ export async function onRequestGet(context) {
       const start = url.searchParams.get('start') || '0';
       const count = url.searchParams.get('count') || '8';
       const apiUrl = `${API_360_BASE}?c=WallPaper&a=getAppsByCategory&from=360chrome&cid=${cid}&start=${start}&count=${count}`;
-      const res = await fetch(apiUrl);
+      const res = await fetchWithTimeout(apiUrl);
       if (!res.ok) return errorResponse('Failed to fetch 360 wallpapers', 502);
       const json = await res.json();
       return jsonResponse({ code: 200, data: json });
@@ -42,7 +47,7 @@ export async function onRequestGet(context) {
 
     if (source === '360') {
       const apiUrl = `${API_360_BASE}?c=WallPaper&a=getAppsByCategory&from=360chrome&cid=${cid}&start=0&count=8`;
-      const res = await fetch(apiUrl);
+      const res = await fetchWithTimeout(apiUrl);
       if (res.ok) {
         const json = await res.json();
         if (json.errno === "0" && json.data && json.data.length > 0) {
@@ -61,7 +66,7 @@ export async function onRequestGet(context) {
       } else {
         bingUrl = `https://peapix.com/bing/feed?n=7&country=${country}`;
       }
-      const res = await fetch(bingUrl);
+      const res = await fetchWithTimeout(bingUrl);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {

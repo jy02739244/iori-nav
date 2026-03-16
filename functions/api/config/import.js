@@ -9,6 +9,12 @@ export async function onRequestPost(context) {
   }
 
   try {
+    // 限制请求体大小（最大 5MB）
+    const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
+    if (contentLength > 5 * 1024 * 1024) {
+      return errorResponse('请求体过大，最大允许 5MB', 413);
+    }
+
     const jsonData = await request.json();
     let categoriesToImport = [];
     let sitesToImport = [];

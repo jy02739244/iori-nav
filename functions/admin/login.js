@@ -157,6 +157,10 @@ export async function onRequestPost(context) {
       await clearLoginFailures(env, ip);
       const token = await createAdminSession(env, ttl);
 
+      // 生成 CSRF token 并存入 KV，与 session 使用相同 TTL
+      const csrfToken = crypto.randomUUID();
+      await env.NAV_AUTH.put(`csrf_${token}`, csrfToken, { expirationTtl: ttl });
+
       return new Response(null, {
         status: 302,
         headers: {
