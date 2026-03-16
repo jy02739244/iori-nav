@@ -1,0 +1,77 @@
+name: 自动部署到 Cloudflare Pages
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'functions/**'
+      - 'public/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ vars.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      PROJECT_NAME: ${{ vars.PROJECT_NAME || 'iori-nav' }}
+      NAV_D1_NAME: ${{ vars.NAV_D1_NAME }}
+      NAV_D1_ID: ${{ vars.NAV_D1_ID }}
+      NAV_KV_ID: ${{ vars.NAV_KV_ID }}
+      ADMIN_USER: ${{ vars.ADMIN_USER || 'admin' }}
+      ADMIN_PASS: ${{ vars.ADMIN_PASS || 'admin123' }}
+      CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+    
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 nodejs 环境与 CF cli
+        run: |
+          uses: actions/setup-node@v4
+          with:
+            node-version: 20
+          npm install wrangler --save-dev
+
+      - name: 部署并初始化
+        id: deploy
+        run: |
+          mkdir -p public
+          
+          # 生成配置文件
+          cat > wrangler.toml <<EOF
+          name = "$PROJECT_NAME"
+          compatibility_date = "2025-12-01"
+          pages_build_output_dir = "public"
+          [[d1_databases]]
+          binding = "NAV_DB"
+          database_name = "$NAV_D1_NAME"
+          database_id = "$NAV_D1_ID"
+          [[kv_namespaces]]
+          binding = "NAV_AUTH"
+          id = "$NAV_KV_ID"
+          EOF
+
+          # 执行数据库初始化
+          [ -f "schema.sql" ] && npx wrangler d1 execute ${NAV_D1_NAME} --remote --file=./schema.sql -y
+
+          # 部署并提取 URL
+          DEPLOY_OUTPUT=$(npx wrangler pages deploy public --project-name ${PROJECT_NAME})
+          PAGES_URL=$(echo "$DEPLOY_OUTPUT" | sed 's/\x1b\[[0-9;]*m//g' | grep -oE "https://[^ ]+\.pages\.dev" | head -n 1)
+          echo "PAGES_URL=$PAGES_URL" >> $GITHUB_ENV
+
+          # 写入 KV 账号密码
+          npx wrangler kv:key put --binding=NAV_AUTH "admin_username" "${ADMIN_USER}" --preview false
+          npx wrangler kv:key put --binding=NAV_AUTH "admin_password" "${ADMIN_PASS}" --preview false
+
+          # 绑定域名
+          [ -n "${CUSTOM_DOMAIN}" ] && npx wrangler pages domains create ${PROJECT_NAME} --domain ${CUSTOM_DOMAIN} || true
+
+      - name: 输出结果
+        run: |
+          echo "=========================================="
+          echo "🎉 部署完成！"
+          echo "🔗 默认 Pages 地址: ${PAGES_URL}"
+          [ -n "${CUSTOM_DOMAIN}" ] && echo "🌐 自定义域名地址: https://${CUSTOM_DOMAIN}"
+          echo "👤 管理员用户名: ${ADMIN_USER}"
+          echo "🔑 管理员密码: ${ADMIN_PASS}"
+          echo "=========================================="
