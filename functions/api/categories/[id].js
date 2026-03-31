@@ -1,5 +1,5 @@
 // functions/api/categories/[id].js
-import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 
 export async function onRequestPut(context) {
   const { request, env, params } = context;
@@ -38,6 +38,8 @@ export async function onRequestPut(context) {
       await env.NAV_DB.prepare('DELETE FROM category WHERE id = ?')
         .bind(categoryId)
         .run();
+
+      await markHomeCacheDirty(env, 'all');
       
       return jsonResponse({
         code: 200,
@@ -108,6 +110,8 @@ export async function onRequestPut(context) {
     }
 
     await env.NAV_DB.batch(batchStmts);
+
+    await markHomeCacheDirty(env, 'all');
 
     return jsonResponse({
       code: 200,

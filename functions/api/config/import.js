@@ -1,5 +1,5 @@
 // functions/api/config/import.js
-import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -52,6 +52,7 @@ export async function onRequestPost(context) {
     // 在导入过程中的 SELECT ... WHERE IN (...) 查询中，
     // 将分块大小设为 50 以确保绝对安全且不影响效率。
     const BATCH_SIZE = 50;
+    let didMutate = false;
 
     // --- Category Processing ---
     const oldCatIdToNewCatIdMap = new Map(); // Maps JSON ID -> DB ID
@@ -132,6 +133,7 @@ export async function onRequestPost(context) {
                                        .bind(catName, sortOrder, dbParentId, isPrivate)
                                        .run();
                 let newId = result.meta.last_row_id;
+                didMutate = true;
                 
                 const newCatObj = { id: newId, catelog: catName, parent_id: dbParentId, is_private: isPrivate };
                 if (!existingDbCategories) {
@@ -155,6 +157,7 @@ export async function onRequestPost(context) {
             // Legacy import doesn't have is_private info, defaults to 0
             const insertStmts = newCategoryNames.map(name => db.prepare('INSERT INTO category (catelog, is_private) VALUES (?, 0)').bind(name));
             await db.batch(insertStmts);
+            didMutate = true;
             
             for (let i = 0; i < newCategoryNames.length; i += BATCH_SIZE) {
                 const chunk = newCategoryNames.slice(i, i + BATCH_SIZE);
@@ -275,6 +278,11 @@ export async function onRequestPost(context) {
             const chunk = batchStmts.slice(i, i + BATCH_SIZE);
             await db.batch(chunk);
         }
+        didMutate = true;
+    }
+
+    if (didMutate) {
+        await markHomeCacheDirty(env, 'all');
     }
 
     let msg = `导入完成。`;

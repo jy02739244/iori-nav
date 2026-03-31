@@ -343,7 +343,6 @@ function deleteCategory(id) {
     }).then(res => res.json()).then(data => {
         if (data.code === 200) {
             window.showMessage('删除成功', 'success');
-            if (typeof window.markCacheStale === 'function') window.markCacheStale('all');
             // Refresh categories and also bookmarks configs because dropdowns/counts might change
             fetchCategories();
             if (typeof fetchConfigs === 'function') fetchConfigs();
@@ -405,30 +404,43 @@ function setupCategoryDragAndDrop() {
 
 function saveCategorySortOrder() {
     const cards = document.querySelectorAll('#categoryGrid .site-card');
-    const updates = [];
+    const items = [];
 
     cards.forEach((card, index) => {
-        const id = card.dataset.id;
+        const id = Number(card.dataset.id);
         const newSortOrder = index + 1;
         const category = window.categoriesData.find(c => c.id == id);
         if (!category) return;
 
-        updates.push(fetch(`/api/categories/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...category,
-                sort_order: newSortOrder
-            })
-        }));
+        items.push({
+            id,
+            sort_order: newSortOrder
+        });
     });
 
-    if (updates.length > 0) {
+    if (items.length > 0) {
         window.showMessage('正在保存分类排序...', 'info');
-        Promise.all(updates)
-            .then(() => {
+        fetch('/api/categories/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code !== 200) {
+                    window.showMessage(data.message || '分类排序失败', 'error');
+                    return;
+                }
+
                 window.showMessage('分类排序已保存', 'success');
-                if (typeof window.markCacheStale === 'function') window.markCacheStale('all');
+
+                items.forEach(item => {
+                    const category = window.categoriesData.find(c => c.id == item.id);
+                    if (category) {
+                        category.sort_order = item.sort_order;
+                    }
+                });
+
                 // Refresh to sync state
                 fetchCategories();
                 // Also refresh main config as order might affect things? Probably not but safe.
@@ -501,7 +513,6 @@ if (editCategoryForm) {
             .then(data => {
                 if (data.code === 200) {
                     window.showMessage('分类更新成功', 'success');
-                    if (typeof window.markCacheStale === 'function') window.markCacheStale('all');
                     editCategoryModal.style.display = 'none';
                     document.body.classList.remove('modal-open');
                     fetchCategories(categoryCurrentPage);
@@ -574,7 +585,6 @@ if (addCategoryForm) {
             .then(data => {
                 if (data.code === 201 || data.code === 200) {
                     window.showMessage('分类创建成功', 'success');
-                    if (typeof window.markCacheStale === 'function') window.markCacheStale(isPrivate ? 'private' : 'all');
                     addCategoryModal.style.display = 'none';
                     document.body.classList.remove('modal-open');
                     addCategoryForm.reset();

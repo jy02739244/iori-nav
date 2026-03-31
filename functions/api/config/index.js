@@ -1,5 +1,5 @@
 // functions/api/config/index.js
-import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { escapeLikePattern, buildFaviconUrl } from '../../lib/utils';
 
 export async function onRequestGet(context) {
@@ -105,6 +105,8 @@ export async function onRequestPost(context) {
       INSERT INTO sites (name, url, logo, desc, catelog_id, catelog_name, sort_order, is_private)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(sanitizedName, sanitizedUrl, sanitizedLogo, sanitizedDesc, catelogId, categoryResult.catelog, sortOrderValue, finalIsPrivate).run();
+
+    await markHomeCacheDirty(env, finalIsPrivate ? 'private' : 'all');
 
     return jsonResponse({
       code: 201,

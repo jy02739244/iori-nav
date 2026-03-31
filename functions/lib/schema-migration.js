@@ -1,4 +1,4 @@
-import { DB_SCHEMA, SCHEMA_VERSION } from '../constants';
+import { DB_SCHEMA, SCHEMA_VERSION, PREVIOUS_SCHEMA_VERSION } from '../constants';
 
 let schemaReady = false;
 let schemaReadyPromise = null;
@@ -107,6 +107,14 @@ export async function ensureSchemaReady(env) {
 
       if (kv) {
         await kv.put(`schema_migrated_${SCHEMA_VERSION}`, 'true');
+
+        if (PREVIOUS_SCHEMA_VERSION && PREVIOUS_SCHEMA_VERSION !== SCHEMA_VERSION) {
+          try {
+            await kv.delete(`schema_migrated_${PREVIOUS_SCHEMA_VERSION}`);
+          } catch (cleanupError) {
+            console.warn('Previous schema marker cleanup failed:', cleanupError);
+          }
+        }
       }
 
       schemaReady = true;

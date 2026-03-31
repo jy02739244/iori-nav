@@ -1,5 +1,5 @@
 // functions/api/config/[id].js
-import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { buildFaviconUrl } from '../../lib/utils';
 
 
@@ -32,6 +32,11 @@ export async function onRequestPut(context) {
   }
   
   try {
+    const existing = await env.NAV_DB.prepare('SELECT id, is_private FROM sites WHERE id = ?').bind(id).first();
+    if (!existing) {
+      return errorResponse('config not found', 404);
+    }
+
     const config = await request.json();
     const { name, url, logo, desc, catelog_id, sort_order, is_private } = config;
 
@@ -64,6 +69,9 @@ export async function onRequestPut(context) {
       WHERE id = ?
     `).bind(sanitizedName, sanitizedUrl, sanitizedLogo, sanitizedDesc, catelog_id, catelogName, sortOrderValue, finalIsPrivate, id).run();
 
+    const dirtyScope = (existing.is_private === 1 && finalIsPrivate === 1) ? 'private' : 'all';
+    await markHomeCacheDirty(env, dirtyScope);
+
     return jsonResponse({
       code: 200,
       message: 'Config updated successfully',
@@ -83,7 +91,14 @@ export async function onRequestDelete(context) {
   }
 
   try {
+    const existing = await env.NAV_DB.prepare('SELECT id, is_private FROM sites WHERE id = ?').bind(id).first();
+    if (!existing) {
+      return errorResponse('config not found', 404);
+    }
+
     const del = await env.NAV_DB.prepare('DELETE FROM sites WHERE id = ?').bind(id).run();
+
+    await markHomeCacheDirty(env, existing.is_private ? 'private' : 'all');
 
     return jsonResponse({
       code: 200,

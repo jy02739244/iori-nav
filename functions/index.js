@@ -1,6 +1,6 @@
 // functions/index.js
-import { isAdminAuthenticated, clearHomeCache } from './_middleware';
-import { FONT_MAP, HOME_CACHE_VERSION } from './constants';
+import { isAdminAuthenticated, getHomeCacheKey, isHomeCacheDirty, clearHomeCacheDirty, markHomeCacheDirty, getHomeCacheDirtyValue } from './_middleware';
+import { FONT_MAP, HOME_CACHE_TTL } from './constants';
 import { escapeHTML, sanitizeUrl, normalizeSortOrder, getStyleStr } from './lib/utils';
 import { getSettingsKeys, parseSettings } from './lib/settings-parser';
 import { renderHorizontalMenu, renderVerticalMenu } from './lib/menu-renderer';
@@ -33,30 +33,46 @@ export async function onRequest(context) {
   // === 1. 缓存检查 ===
   const url = new URL(request.url);
   const isHomePage = url.pathname === '/' && !url.search;
-  const homeCacheKey = isAuthenticated ? `home_html_private_${HOME_CACHE_VERSION}` : `home_html_public_${HOME_CACHE_VERSION}`;
+  const cacheScope = isAuthenticated ? 'private' : 'public';
+  const homeCacheKey = getHomeCacheKey(cacheScope);
   const cookies = request.headers.get('Cookie') || '';
   const hasLegacyStaleCookie = cookies.includes('iori_cache_stale=1');
   const hasPublicStaleCookie = hasLegacyStaleCookie || cookies.includes('iori_cache_public_stale=1');
   const hasPrivateStaleCookie = hasLegacyStaleCookie || cookies.includes('iori_cache_private_stale=1');
   let shouldClearCookie = false;
+  let cacheDirty = false;
+  let cacheDirtyValue = null;
 
   if (isHomePage) {
     if (isAuthenticated && (hasPublicStaleCookie || hasPrivateStaleCookie)) {
       if (hasPublicStaleCookie && hasPrivateStaleCookie) {
-        await clearHomeCache(env, 'all');
+        await markHomeCacheDirty(env, 'all');
       } else if (hasPublicStaleCookie) {
-        await clearHomeCache(env, 'public');
+        await markHomeCacheDirty(env, 'public');
       } else {
-        await clearHomeCache(env, 'private');
+        await markHomeCacheDirty(env, 'private');
       }
       shouldClearCookie = true;
-    } else {
+    }
+
+    cacheDirtyValue = await getHomeCacheDirtyValue(env, cacheScope);
+    cacheDirty = !!cacheDirtyValue;
+
+    if (!cacheDirty) {
       try {
         const cachedHtml = await env.NAV_AUTH.get(homeCacheKey);
         if (cachedHtml) {
-          return new Response(cachedHtml, {
+          const response = new Response(cachedHtml, {
             headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Cache': 'HIT' }
           });
+
+          if (shouldClearCookie) {
+            response.headers.append('Set-Cookie', 'iori_cache_stale=; Path=/; Max-Age=0; SameSite=Lax');
+            response.headers.append('Set-Cookie', 'iori_cache_public_stale=; Path=/; Max-Age=0; SameSite=Lax');
+            response.headers.append('Set-Cookie', 'iori_cache_private_stale=; Path=/; Max-Age=0; SameSite=Lax');
+          }
+
+          return response;
         }
       } catch (e) {
         console.warn('Failed to read home cache:', e);
@@ -470,7 +486,16 @@ export async function onRequest(context) {
   }
 
   if (isHomePage) {
-    context.waitUntil(env.NAV_AUTH.put(homeCacheKey, html, { expirationTtl: 2592000 }));
+    context.waitUntil((async () => {
+      try {
+        await env.NAV_AUTH.put(homeCacheKey, html, { expirationTtl: HOME_CACHE_TTL });
+        if (cacheDirty) {
+          await clearHomeCacheDirty(env, cacheScope, cacheDirtyValue);
+        }
+      } catch (e) {
+        console.warn('Failed to update home cache:', e);
+      }
+    })());
   }
 
   return response;

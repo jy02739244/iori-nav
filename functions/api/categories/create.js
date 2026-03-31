@@ -1,5 +1,5 @@
 // functions/api/categories/create.js
-import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder } from '../../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -44,6 +44,8 @@ export async function onRequestPost(context) {
       INSERT INTO category (catelog, sort_order, parent_id, is_private)
       VALUES (?, ?, ?, ?)
     `).bind(categoryName, sortOrderValue, parentId, isPrivate).run();
+
+    await markHomeCacheDirty(env, isPrivate ? 'private' : 'all');
 
     return jsonResponse({
       code: 201,

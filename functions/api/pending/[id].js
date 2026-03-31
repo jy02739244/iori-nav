@@ -1,5 +1,5 @@
 // functions/api/pending/[id].js
-import { isAdminAuthenticated, errorResponse, jsonResponse } from '../../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty } from '../../_middleware';
 import { buildFaviconUrl } from '../../lib/utils';
 
 export async function onRequestPut(context) {
@@ -21,12 +21,18 @@ export async function onRequestPut(context) {
     let { logo, url } = config;
     const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
     const sanitizedLogo = buildFaviconUrl(url, logo, iconAPI);
+    const category = await env.NAV_DB.prepare('SELECT catelog, is_private FROM category WHERE id = ?').bind(config.catelog_id).first();
+    const catelogName = category?.catelog || config.catelog_name || 'Unknown';
+    const finalIsPrivate = category?.is_private ? 1 : 0;
+
     await env.NAV_DB.prepare(`
-      INSERT INTO sites (name, url, logo, desc, catelog_id, sort_order)
-      VALUES (?, ?, ?, ?, ?, 9999)
-    `).bind(config.name, config.url, sanitizedLogo, config.desc, config.catelog_id).run();
+      INSERT INTO sites (name, url, logo, desc, catelog_id, catelog_name, sort_order, is_private)
+      VALUES (?, ?, ?, ?, ?, ?, 9999, ?)
+    `).bind(config.name, config.url, sanitizedLogo, config.desc, config.catelog_id, catelogName, finalIsPrivate).run();
     
     await env.NAV_DB.prepare('DELETE FROM pending_sites WHERE id = ?').bind(id).run();
+
+    await markHomeCacheDirty(env, finalIsPrivate ? 'private' : 'all');
 
     return jsonResponse({
       code: 200,

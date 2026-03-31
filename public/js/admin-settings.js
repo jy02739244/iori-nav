@@ -1365,10 +1365,6 @@ const initSettings = () => {
       fetchConfigs(currentPage);
     }
 
-    if (completedCount > 0 && typeof window.markCacheStale === 'function') {
-      window.markCacheStale('all');
-    }
-
     // 根据结果显示最终消息
     let message = '';
     let messageType = 'success';

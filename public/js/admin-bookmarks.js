@@ -74,9 +74,6 @@ async function checkAndUpdateCategoryPrivacy(catelogId, isPrivate) {
             if (data.code === 200) {
                 // 更新本地数据
                 category.is_private = false;
-                if (typeof window.markCacheStale === 'function') {
-                    window.markCacheStale('all');
-                }
                 return true;
             } else {
                 window.showMessage('自动更新分类隐私失败: ' + data.message, 'error');
@@ -137,9 +134,6 @@ if (addBookmarkForm) {
       
       if (data.code === 201) {
         window.showMessage('添加成功', 'success');
-        if (typeof window.markCacheStale === 'function') {
-          window.markCacheStale(isPrivate ? 'private' : 'all');
-        }
         setTimeout(() => {
           addBookmarkModal.style.display = 'none';
           document.body.classList.remove('modal-open');
@@ -212,9 +206,6 @@ if (editBookmarkForm) {
       
       if (result.code === 200) {
         window.showMessage('修改成功', 'success');
-        if (typeof window.markCacheStale === 'function') {
-          window.markCacheStale('all');
-        }
         setTimeout(() => {
           if (typeof window.fetchConfigs === 'function') window.fetchConfigs();
           if (typeof window.fetchCategories === 'function') window.fetchCategories();

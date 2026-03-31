@@ -1,5 +1,5 @@
 // functions/api/update-description.js
-import { isAdminAuthenticated, errorResponse, jsonResponse } from '../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty } from '../_middleware';
 import { buildFaviconUrl } from '../lib/utils';
 
 export async function onRequestPost(context) {
@@ -17,6 +17,15 @@ export async function onRequestPost(context) {
     if (!id || typeof description !== 'string') {
       return errorResponse('Bookmark ID and description are required', 400);
     }
+
+    const site = await env.NAV_DB.prepare(
+      'SELECT id, is_private FROM sites WHERE id = ?'
+    ).bind(id).first();
+
+    if (!site) {
+      return errorResponse('Bookmark not found', 404);
+    }
+
     const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
     const sanitizedLogo = buildFaviconUrl(url, (logo || '').trim() || null, iconAPI);
 
@@ -28,6 +37,8 @@ export async function onRequestPost(context) {
     if (result.changes === 0) {
         return errorResponse('Bookmark not found or no changes made', 404);
     }
+
+    await markHomeCacheDirty(env, site.is_private ? 'private' : 'all');
 
     // 4. 返回成功响应
     return jsonResponse({

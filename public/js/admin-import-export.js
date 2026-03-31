@@ -289,7 +289,6 @@ function performImport(dataToImport, override = false) {
     .then(data => {
       if (data.code === 201 || data.code === 200) {
         showMessage(data.message, 'success');
-        if (typeof window.markCacheStale === 'function') window.markCacheStale('all');
         if (typeof fetchConfigs === 'function') fetchConfigs();
         if (typeof fetchCategories === 'function') fetchCategories();
       } else {

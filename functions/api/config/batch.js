@@ -1,7 +1,8 @@
-import { isAdminAuthenticated, errorResponse, jsonResponse } from '../../_middleware';
+import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty } from '../../_middleware';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const REORDER_CHUNK_SIZE = 100;
   
   if (!(await isAdminAuthenticated(request, env))) {
     return errorResponse('Unauthorized', 401);
@@ -10,7 +11,9 @@ export async function onRequestPost(context) {
   try {
     const { action, ids, payload } = await request.json();
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    const requiresIds = action !== 'reorder';
+
+    if (requiresIds && (!ids || !Array.isArray(ids) || ids.length === 0)) {
       return errorResponse('未提供 ID', 400);
     }
 
@@ -19,8 +22,10 @@ export async function onRequestPost(context) {
     // 将分块大小设为 50 以确保变量总数绝对不会超过 100。
     const CHUNK_SIZE = 50;
     const chunks = [];
-    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-      chunks.push(ids.slice(i, i + CHUNK_SIZE));
+    if (requiresIds) {
+      for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+        chunks.push(ids.slice(i, i + CHUNK_SIZE));
+      }
     }
 
     const statements = [];
@@ -34,6 +39,7 @@ export async function onRequestPost(context) {
       });
 
       await env.NAV_DB.batch(statements);
+      await markHomeCacheDirty(env, 'all');
       
       return jsonResponse({
         code: 200,
@@ -66,6 +72,7 @@ export async function onRequestPost(context) {
       });
 
       await env.NAV_DB.batch(statements);
+      await markHomeCacheDirty(env, 'all');
 
       return jsonResponse({
         code: 200,
@@ -88,10 +95,44 @@ export async function onRequestPost(context) {
       });
 
       await env.NAV_DB.batch(statements);
+      await markHomeCacheDirty(env, 'all');
 
       return jsonResponse({
         code: 200,
         message: `成功更新 ${ids.length} 条项目的隐私属性`
+      });
+    } else if (action === 'reorder') {
+      const items = payload?.items;
+
+      if (!Array.isArray(items) || items.length === 0) {
+        return errorResponse('排序数据不能为空', 400);
+      }
+
+      const reorderStatements = [];
+
+      for (const item of items) {
+        const id = Number(item.id);
+        const sortOrder = Number(item.sort_order);
+
+        if (!Number.isFinite(id) || !Number.isFinite(sortOrder)) {
+          return errorResponse('排序数据格式无效', 400);
+        }
+
+        reorderStatements.push(
+          env.NAV_DB.prepare('UPDATE sites SET sort_order = ?, update_time = CURRENT_TIMESTAMP WHERE id = ?')
+            .bind(sortOrder, id)
+        );
+      }
+
+      for (let i = 0; i < reorderStatements.length; i += REORDER_CHUNK_SIZE) {
+        await env.NAV_DB.batch(reorderStatements.slice(i, i + REORDER_CHUNK_SIZE));
+      }
+
+      await markHomeCacheDirty(env, 'all');
+
+      return jsonResponse({
+        code: 200,
+        message: `成功更新 ${items.length} 条项目的排序`
       });
     } else {
       return errorResponse('无效的操作', 400);

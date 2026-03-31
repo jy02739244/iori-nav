@@ -25,38 +25,6 @@
     };
 })();
 
-// Cache Management Logic
-// Separated from admin.js
-
-function setCacheCookie(name, value) {
-    document.cookie = `${name}=${value}; path=/; max-age=31536000; SameSite=Lax`;
-}
-
-function clearCacheCookie(name) {
-    document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
-}
-
-window.markCacheStale = function(scope = 'all') {
-    if (scope === 'public' || scope === 'all') {
-        setCacheCookie('iori_cache_public_stale', '1');
-    }
-    if (scope === 'private' || scope === 'all') {
-        setCacheCookie('iori_cache_private_stale', '1');
-    }
-}
-
-window.resetCacheStale = function(scope = 'all') {
-    if (scope === 'public' || scope === 'all') {
-        clearCacheCookie('iori_cache_public_stale');
-    }
-    if (scope === 'private' || scope === 'all') {
-        clearCacheCookie('iori_cache_private_stale');
-    }
-    if (scope === 'all') {
-        clearCacheCookie('iori_cache_stale');
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     // Refresh Cache Button Logic
     const refreshCacheBtn = document.getElementById('refreshCacheBtn');
@@ -97,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(data => {
                         if (data.code === 200) {
                             window.showMessage('缓存刷新成功', 'success');
-                            window.resetCacheStale(); // Explicitly call reset
                             closeRefreshModal();
                         } else {
                             window.showMessage('缓存刷新失败: ' + data.message, 'error');

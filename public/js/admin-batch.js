@@ -385,12 +385,11 @@ if (confirmBatchPrivacyBtn) {
                      });
                  });
                  
-                 try {
-                     await Promise.all(updates);
-                     if (typeof window.markCacheStale === 'function') window.markCacheStale('all');
-                     // 刷新分类数据
-                     if (typeof window.loadGlobalCategories === 'function') window.loadGlobalCategories();
-                 } catch (e) {
+                  try {
+                      await Promise.all(updates);
+                      // 刷新分类数据
+                      if (typeof window.loadGlobalCategories === 'function') window.loadGlobalCategories();
+                  } catch (e) {
                      window.showMessage('自动公开分类失败', 'error');
                      return;
                  }
@@ -419,7 +418,6 @@ function performBatchAction(action, payload) {
       .then(data => {
           if (data.code === 200) {
               window.showMessage(data.message, 'success');
-              if (typeof window.markCacheStale === 'function') window.markCacheStale('all');
               // 刷新表格
               fetchBatchData();
               // 刷新主界面数据（因为主界面数据也变了）
