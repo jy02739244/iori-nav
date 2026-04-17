@@ -37,6 +37,7 @@ export function renderSiteCards(sites, settings) {
       safeCatalog: escapeHTML(site.catelog_name || '未分类'),
       safeDesc: escapeHTML(site.desc || '暂无描述'),
       normalizedUrl,
+      safeUrl: escapeHTML(normalizedUrl),
       safeDisplayUrl: normalizedUrl || '未提供链接',
       logoUrl: sanitizeUrl(site.logo),
       cardInitial: escapeHTML((rawName.trim().charAt(0) || '站').toUpperCase()),
@@ -44,17 +45,18 @@ export function renderSiteCards(sites, settings) {
     };
   });
 
-  return processed.map(({ site, safeName, safeCatalog, safeDesc, normalizedUrl, safeDisplayUrl, logoUrl, cardInitial, hasValidUrl }) => {
+  return processed.map(({ site, safeName, safeCatalog, safeDesc, normalizedUrl, safeUrl, safeDisplayUrl, logoUrl, cardInitial, hasValidUrl }, index) => {
+    // 首屏（约前 8 张）logo 用 eager + fetchpriority=high 改善 LCP；其余 lazy
+    const isAboveFold = index < 8;
+    const imgLoadingAttrs = isAboveFold ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"';
 
     const descHtml = hideDesc ? '' : `<p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2" title="${safeDesc}">${safeDesc}</p>`;
 
     const linksHtml = hideLinks ? '' : `
       <div class="mt-3 flex items-center justify-between">
         <span class="text-xs text-primary-600 dark:text-primary-400 truncate flex-1 min-w-0 mr-2" title="${safeDisplayUrl}">${escapeHTML(safeDisplayUrl)}</span>
-        <button class="copy-btn relative flex items-center px-2 py-1 ${hasValidUrl ? 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:hover:bg-accent-900/50' : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'} rounded-full text-xs font-medium transition-colors" data-url="${escapeHTML(normalizedUrl)}" ${hasValidUrl ? '' : 'disabled'}>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ${hideCopyText ? '' : 'mr-1'}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-          </svg>
+        <button class="copy-btn relative flex items-center px-2 py-1 ${hasValidUrl ? 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:hover:bg-accent-900/50' : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'} rounded-full text-xs font-medium transition-colors" data-url="${safeUrl}" ${hasValidUrl ? '' : 'disabled'}>
+          <svg class="h-3 w-3 ${hideCopyText ? '' : 'mr-1'}"><use href="#icon-copy"/></svg>
           ${hideCopyText ? '' : '<span class="copy-text">复制</span>'}
           <span class="copy-success hidden absolute -top-8 right-0 bg-accent-500 text-white text-xs px-2 py-1 rounded shadow-md">已复制!</span>
         </button>
@@ -66,13 +68,13 @@ export function renderSiteCards(sites, settings) {
       </span>`;
 
     return `
-      <div class="${baseCardClass} ${frostedClass} ${cardStyleClass} card-anim-enter" data-id="${site.id}" data-name="${escapeHTML(site.name)}" data-url="${escapeHTML(normalizedUrl)}" data-catalog="${escapeHTML(site.catelog_name || site.catelog || '未分类')}" data-desc="${safeDesc}">
+      <div class="${baseCardClass} ${frostedClass} ${cardStyleClass} card-anim-enter" data-id="${site.id}">
         <div class="site-card-content">
-          <a href="${escapeHTML(normalizedUrl || '#')}" ${hasValidUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} class="block">
+          <a href="${safeUrl || '#'}" ${hasValidUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} class="block">
             <div class="flex items-start">
               <div class="site-icon flex-shrink-0 mr-4 transition-all duration-300">
                 ${logoUrl
-        ? `<img src="${escapeHTML(logoUrl)}" alt="${safeName}" class="w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700" decoding="async" loading="lazy">`
+        ? `<img src="${escapeHTML(logoUrl)}" alt="${safeName}" width="40" height="40" class="w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700" ${imgLoadingAttrs}>`
         : `<div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-lg shadow-inner">${cardInitial}</div>`
       }
               </div>

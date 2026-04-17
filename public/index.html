@@ -4,6 +4,18 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{SITE_NAME}} - 网址导航</title>
+  <meta name="description" content="{{SITE_DESCRIPTION}}">
+  <link rel="canonical" href="{{CANONICAL_URL}}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{SITE_NAME}}">
+  <meta property="og:title" content="{{SITE_NAME}} - 网址导航">
+  <meta property="og:description" content="{{SITE_DESCRIPTION}}">
+  <meta property="og:url" content="{{CANONICAL_URL}}">
+  <meta property="og:image" content="{{OG_IMAGE_URL}}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{SITE_NAME}} - 网址导航">
+  <meta name="twitter:description" content="{{SITE_DESCRIPTION}}">
+  <meta name="twitter:image" content="{{OG_IMAGE_URL}}">
   <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
   <link rel="stylesheet" href="/css/style.css?v=ff593a1b">
   <script>
@@ -15,6 +27,12 @@
   <link rel="stylesheet" href="/css/tailwind.min.css?v=433b4379">
 </head>
 <body class="bg-secondary-50 font-sans text-gray-800">
+  <!-- SVG sprite: 高频复用图标在此定义一次，卡片等处通过 <use href="#icon-xxx"/> 引用 -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+    </symbol>
+  </svg>
   <input type="checkbox" id="sidebar-toggle" class="hidden">
   
   <!-- 左上角操作区 (移动端导航按钮 或 GitHub 图标) -->
@@ -186,6 +204,6 @@
     </div>
   </div>
   
-  <script src="/js/main.js?v=df0ae43c"></script>
+  <script src="/js/main.js?v=cac4981b"></script>
 </body>
 </html>

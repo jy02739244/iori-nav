@@ -61,6 +61,9 @@ export async function clearHomeCache(env, scope = 'all') {
   try {
     const keys = [];
 
+    // TODO(2026-04-27): 旧版裸 key 'home_html_public' / 'home_html_private'
+    // 自 aa166bd (2026-03-27) 起已不再写入，30 天 TTL 于 2026-04-26 自然过期。
+    // 届时可删除下方两处裸 key，仅保留 getHomeCacheKey() 版本化 key。
     if (scope === 'all' || scope === 'public') {
       keys.push('home_html_public', getHomeCacheKey('public'));
     }

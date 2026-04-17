@@ -24,8 +24,19 @@ document.addEventListener('DOMContentLoaded', function () {
   // 为初始 SSR 渲染的卡片设置动画延迟（已从服务端移至前端）
   const initialCards = document.querySelectorAll('.site-card.card-anim-enter');
   const sitesGrid = document.getElementById('sitesGrid');
+
+  // 毛玻璃开关在整个页面生命周期内不变：IORI_LAYOUT_CONFIG 为主，CSS 变量做回退。
+  // 只在启动时读一次，避免 renderSites 每次切分类都触发 getComputedStyle
+  const isFrostedEnabled = (() => {
+    const config = window.IORI_LAYOUT_CONFIG || {};
+    if (config.enableFrostedGlass !== undefined) return config.enableFrostedGlass;
+    const frostedBlurVal = getComputedStyle(document.documentElement)
+      .getPropertyValue('--frosted-glass-blur').trim();
+    return frostedBlurVal !== '';
+  })();
+
   initialCards.forEach((card, index) => {
-    const delay = Math.min(index, 20) * 30;
+    const delay = Math.min(index, 12) * 20;
     if (delay > 0) card.style.animationDelay = `${delay}ms`;
     card.addEventListener('animationend', () => {
       card.classList.remove('card-anim-enter');
@@ -225,17 +236,21 @@ document.addEventListener('DOMContentLoaded', function () {
   // ========== 搜索功能 ==========
   const searchInputs = document.querySelectorAll('.search-input-target');
 
-  // 预缓存卡片搜索数据
+  // 预缓存卡片搜索数据：从 IORI_SITES 按 data-id 查表，避免把数据再塞进 card 的 data-* 属性
   let searchCardCache = null;
   function getSearchCardCache() {
     if (searchCardCache) return searchCardCache;
     const cards = sitesGrid?.querySelectorAll('.site-card');
     if (!cards) return [];
-    searchCardCache = Array.from(cards).map(card => ({
-      el: card,
-      text: [card.dataset.name, card.dataset.url, card.dataset.catalog, card.dataset.desc]
-        .map(s => (s || '').toLowerCase()).join('\0')
-    }));
+    const sitesById = new Map();
+    (window.IORI_SITES || []).forEach(s => sitesById.set(String(s.id), s));
+    searchCardCache = Array.from(cards).map(card => {
+      const id = card.getAttribute('data-id');
+      const s = sitesById.get(String(id)) || {};
+      const text = [s.name, s.url, s.catelog_name || '未分类', s.desc]
+        .map(v => (v || '').toLowerCase()).join('\0');
+      return { el: card, text };
+    });
     return searchCardCache;
   }
 
@@ -638,13 +653,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const hideCategory = config.hideCategory === true;
     const cardStyle = config.cardStyle || 'style1';
 
-    // 优先从配置获取毛玻璃开关状态，CSS 变量作为回退
-    const computedStyle = getComputedStyle(document.documentElement);
-    const frostedBlurVal = computedStyle.getPropertyValue('--frosted-glass-blur').trim();
-    const isFrostedEnabled = config.enableFrostedGlass !== undefined
-      ? config.enableFrostedGlass
-      : (frostedBlurVal !== '');
-
     sitesGrid.innerHTML = '';
 
     if (sites.length === 0) {
@@ -659,8 +667,10 @@ document.addEventListener('DOMContentLoaded', function () {
       const safeCatalog = escapeHTML(site.catelog_name || site.catelog || '未分类');
       const cardInitial = (safeName.charAt(0) || '站').toUpperCase();
 
+      const isAboveFold = index < 8;
+      const imgLoadingAttrs = isAboveFold ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"';
       const logoHtml = site.logo
-        ? `<img src="${escapeHTML(site.logo)}" alt="${safeName}" class="w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700" decoding="async" loading="lazy">`
+        ? `<img src="${escapeHTML(site.logo)}" alt="${safeName}" width="40" height="40" class="w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700" ${imgLoadingAttrs}>`
         : `<div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-lg shadow-inner">${cardInitial}</div>`;
 
       const descHtml = hideDesc ? '' : `<p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2" title="${safeDesc}">${safeDesc}</p>`;
@@ -670,9 +680,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <div class="mt-3 flex items-center justify-between">
             <span class="text-xs text-primary-600 dark:text-primary-400 truncate flex-1 min-w-0 mr-2" title="${safeUrl}">${safeUrl || '未提供链接'}</span>
             <button class="copy-btn relative flex items-center px-2 py-1 ${hasValidUrl ? 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:hover:bg-accent-900/50' : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'} rounded-full text-xs font-medium transition-colors" data-url="${safeUrl}" ${hasValidUrl ? '' : 'disabled'}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ${isFiveCols || isSixCols ? '' : 'mr-1'}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-              </svg>
+              <svg class="h-3 w-3 ${isFiveCols || isSixCols ? '' : 'mr-1'}"><use href="#icon-copy"/></svg>
               ${isFiveCols || isSixCols ? '' : '<span class="copy-text">复制</span>'}
               <span class="copy-success hidden absolute -top-8 right-0 bg-accent-500 text-white text-xs px-2 py-1 rounded shadow-md">已复制!</span>
             </button>
@@ -691,7 +699,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const card = document.createElement('div');
       card.className = `${baseCardClass} ${frostedClass} ${cardStyleClass} card-anim-enter`;
-      const delay = Math.min(index, 20) * 30;
+      const delay = Math.min(index, 12) * 20;
       if (delay > 0) {
         card.style.animationDelay = `${delay}ms`;
       }
@@ -703,10 +711,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (delay > 0) card.style.removeProperty('animation-delay');
       }, { once: true });
 
-      card.setAttribute('data-name', safeName);
-      card.setAttribute('data-url', safeUrl);
-      card.setAttribute('data-catalog', safeCatalog);
-      card.setAttribute('data-desc', safeDesc);
+      card.setAttribute('data-id', site.id);
 
       card.innerHTML = `
         <div class="site-card-content">
@@ -854,6 +859,12 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       if (lastId) {
+        // 若与 SSR 当前渲染的分类一致，无需重绘（避免进入首屏一闪的客户端重建）
+        // 同时跳过 updateHeading / updateNavigationState — SSR 已按该分类产出正确状态
+        if (String(lastId) === String(config.ssrCatalogId)) {
+          return;
+        }
+
         if (lastId === 'all') {
           // Explicitly restore "All Categories" state
           const allSites = window.IORI_SITES || [];

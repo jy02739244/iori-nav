@@ -6,6 +6,15 @@ import { getSettingsKeys, parseSettings } from './lib/settings-parser';
 import { renderHorizontalMenu, renderVerticalMenu } from './lib/menu-renderer';
 import { renderSiteCards, renderEmptyState } from './lib/card-renderer';
 
+// 模板内容在 Worker 运行时实例生命周期内不变（部署会替换实例），缓存避免每次 MISS 重复 ASSETS.fetch
+let cachedTemplateHtml = null;
+async function getTemplateHtml(env, requestUrl) {
+  if (cachedTemplateHtml !== null) return cachedTemplateHtml;
+  const res = await env.ASSETS.fetch(new URL('/index.html', requestUrl));
+  cachedTemplateHtml = await res.text();
+  return cachedTemplateHtml;
+}
+
 function getThemeClasses(isCustomWallpaper) {
   return isCustomWallpaper ? {
     headerClass: 'bg-transparent border-none shadow-none transition-colors duration-300',
@@ -55,39 +64,43 @@ export async function onRequest(context) {
       shouldClearCookie = true;
     }
 
-    cacheDirtyValue = await getHomeCacheDirtyValue(env, cacheScope);
+    // 并行读取 dirty 标记与缓存 HTML。dirty=true 是低频场景（后台刚保存），
+    // 多读一次 HTML 可接受，换取 99%+ 请求上少一次 KV 串行往返
+    let cachedHtml = null;
+    try {
+      [cacheDirtyValue, cachedHtml] = await Promise.all([
+        getHomeCacheDirtyValue(env, cacheScope),
+        env.NAV_AUTH.get(homeCacheKey),
+      ]);
+    } catch (e) {
+      console.warn('Failed to read home cache:', e);
+    }
     cacheDirty = !!cacheDirtyValue;
 
-    if (!cacheDirty) {
-      try {
-        const cachedHtml = await env.NAV_AUTH.get(homeCacheKey);
-        if (cachedHtml) {
-          const response = new Response(cachedHtml, {
-            headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Cache': 'HIT' }
-          });
+    if (!cacheDirty && cachedHtml) {
+      const response = new Response(cachedHtml, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Cache': 'HIT' }
+      });
 
-          if (shouldClearCookie) {
-            response.headers.append('Set-Cookie', 'iori_cache_stale=; Path=/; Max-Age=0; SameSite=Lax');
-            response.headers.append('Set-Cookie', 'iori_cache_public_stale=; Path=/; Max-Age=0; SameSite=Lax');
-            response.headers.append('Set-Cookie', 'iori_cache_private_stale=; Path=/; Max-Age=0; SameSite=Lax');
-          }
-
-          return response;
-        }
-      } catch (e) {
-        console.warn('Failed to read home cache:', e);
+      if (shouldClearCookie) {
+        response.headers.append('Set-Cookie', 'iori_cache_stale=; Path=/; Max-Age=0; SameSite=Lax');
+        response.headers.append('Set-Cookie', 'iori_cache_public_stale=; Path=/; Max-Age=0; SameSite=Lax');
+        response.headers.append('Set-Cookie', 'iori_cache_private_stale=; Path=/; Max-Age=0; SameSite=Lax');
       }
+
+      return response;
     }
   }
 
   // === 2. 并行执行数据库查询 + 模板获取 ===
   const categoryQuery = isAuthenticated
-    ? 'SELECT * FROM category ORDER BY sort_order ASC, id ASC'
-    : 'SELECT * FROM category WHERE is_private = 0 ORDER BY sort_order ASC, id ASC';
+    ? 'SELECT id, catelog, sort_order, parent_id, is_private FROM category ORDER BY sort_order ASC, id ASC'
+    : 'SELECT id, catelog, sort_order, parent_id FROM category WHERE is_private = 0 ORDER BY sort_order ASC, id ASC';
 
   const settingsKeys = getSettingsKeys();
   const settingsPlaceholders = settingsKeys.map(() => '?').join(',');
-  const sitesQuery = `SELECT id, name, url, logo, desc, catelog_id, catelog_name, sort_order, is_private, create_time, update_time
+  // sort_order 仅用于 ORDER BY，不参与 SELECT（SQLite 允许）；前端不使用该字段
+  const sitesQuery = `SELECT id, name, url, logo, desc, catelog_id, catelog_name
                       FROM sites WHERE (is_private = 0 OR ? = 1) ORDER BY sort_order ASC, create_time DESC`;
 
   // Settings 缓存：优先从 KV 读取，减少数据库查询
@@ -100,18 +113,19 @@ export async function onRequest(context) {
       console.warn('Settings cache read failed:', e);
     }
     const result = await env.NAV_DB.prepare(`SELECT key, value FROM settings WHERE key IN (${settingsPlaceholders})`).bind(...settingsKeys).all();
-    // 异步写入缓存，1h TTL
+    // 异步写入缓存，24h TTL；POST settings 时会主动清除（见 api/settings.js），
+    // 较长 TTL 减少 D1 兜底查询次数
     if (result.results && env.NAV_AUTH) {
-      context.waitUntil(env.NAV_AUTH.put(settingsCacheKey, JSON.stringify(result.results), { expirationTtl: 3600 }));
+      context.waitUntil(env.NAV_AUTH.put(settingsCacheKey, JSON.stringify(result.results), { expirationTtl: 86400 }));
     }
     return result;
   };
 
-  const [categoriesResult, settingsResult, sitesResult, templateResponse] = await Promise.all([
+  const [categoriesResult, settingsResult, sitesResult, templateHtml] = await Promise.all([
     env.NAV_DB.prepare(categoryQuery).all().catch(e => ({ results: [], error: e })),
     fetchSettings().catch(e => ({ results: [], error: e })),
     env.NAV_DB.prepare(sitesQuery).bind(includePrivate).all().catch(e => ({ results: [], error: e })),
-    env.ASSETS.fetch(new URL('/index.html', request.url))
+    getTemplateHtml(env, request.url)
   ]);
 
   // === 3. 处理分类结果 — 构建分类树 ===
@@ -333,7 +347,7 @@ export async function onRequest(context) {
   const hitokotoClass = (isCustomWallpaper ? 'text-black dark:text-gray-200' : 'text-gray-500 dark:text-gray-400') + ' ml-auto';
 
   // === 16. 模板注入 ===
-  let html = await templateResponse.text();
+  let html = templateHtml;
 
   // --- 收集所有 </head> 注入内容（合并为一次替换） ---
   let headInjections = '';
@@ -412,19 +426,20 @@ export async function onRequest(context) {
   }
   if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
 
-  // 全局站点数据（精简字段，减小 HTML 体积）
-  const searchData = allSites.map(s => ({ id: s.id, name: s.name, url: s.url, logo: s.logo, desc: s.desc, catelog_id: s.catelog_id, catelog_name: s.catelog_name }));
-  const safeJson = JSON.stringify(searchData).replace(/</g, '\\u003c');
-  headInjections += `<script>window.IORI_SITES = ${safeJson};</script>`;
-
-  // 布局配置
-  headInjections += `<script>
-    window.IORI_LAYOUT_CONFIG = {
-      hideDesc: ${S.layout_hide_desc}, hideLinks: ${S.layout_hide_links}, hideCategory: ${S.layout_hide_category},
-      gridCols: "${S.layout_grid_cols}", cardStyle: "${S.layout_card_style}",
-      enableFrostedGlass: ${S.layout_enable_frosted_glass}, rememberLastCategory: ${S.home_remember_last_category}
-    };
-  </script>`;
+  // 全局站点数据与布局配置：SQL 已精简字段，直接序列化无需再拷贝
+  // 两者都挪到 </body> 前注入（见下方 replace），避免阻塞 <head> 解析
+  const safeSitesJson = JSON.stringify(allSites).replace(/</g, '\\u003c');
+  const safeLayoutConfigJson = JSON.stringify({
+    hideDesc: S.layout_hide_desc,
+    hideLinks: S.layout_hide_links,
+    hideCategory: S.layout_hide_category,
+    gridCols: S.layout_grid_cols,
+    cardStyle: S.layout_card_style,
+    enableFrostedGlass: S.layout_enable_frosted_glass,
+    rememberLastCategory: S.home_remember_last_category,
+    // 当前 SSR 已渲染的分类（用于前端 Auto-restore 判断是否可跳过重绘）
+    ssrCatalogId: catalogExists ? categoryIdMap.get(requestedCatalogName) : 'all',
+  }).replace(/</g, '\\u003c');
 
   // --- 一次性替换 </head> ---
   html = html.replace('</head>', headInjections + '</head>');
@@ -436,7 +451,22 @@ export async function onRequest(context) {
   );
   html = html.replace('</body>', '</div></body>');
 
+  // 将 IORI_SITES / IORI_LAYOUT_CONFIG 数据注入到 main.js 之前，使其在 body 底部而非 <head>，加快 FCP
+  // - 字面量匹配：避免未来模板给 <script> 加 defer/type 等属性时正则静默失配
+  // - 函数形式 replacement：规避用户数据中可能含 $&、$1 等被当作 back-reference
+  const mainJsMarker = '<script src="/js/main.js';
+  if (!html.includes(mainJsMarker)) {
+    console.error('IORI_SITES injection skipped: main.js marker not found in template');
+  } else {
+    html = html.replace(
+      mainJsMarker,
+      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
+    );
+  }
+
   // 替换所有模板占位符（单次正则匹配 + 映射表）
+  const canonicalUrl = `${url.origin}/`;
+  const ogImageUrl = `${url.origin}/favicon.svg`;
   const replacements = {
     'HEADER_CONTENT': headerContent,
     'HEADER_CLASS': headerClass,
@@ -447,6 +477,8 @@ export async function onRequest(context) {
     'RIGHT_TOP_ACTION': topRightActionsHtml,
     'SITE_NAME': escapeHTML(siteName),
     'SITE_DESCRIPTION': escapeHTML(siteDescription),
+    'CANONICAL_URL': escapeHTML(canonicalUrl),
+    'OG_IMAGE_URL': escapeHTML(ogImageUrl),
     'FOOTER_TEXT': escapeHTML(footerText),
     'CATALOG_EXISTS': catalogExists ? 'true' : 'false',
     'CATALOG_LINKS': catalogLinkMarkup,
@@ -473,6 +505,9 @@ export async function onRequest(context) {
   };
   html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
   html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
+
+  // 压缩标签间空白，减小 HTML 体积（项目无 <pre>/<textarea>，安全）
+  html = html.replace(/>\s+</g, '><');
 
   // === 17. 返回响应 ===
   const response = new Response(html, {
