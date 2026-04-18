@@ -24,7 +24,7 @@ export const SCHEMA_VERSION = 'v4';
 export const PREVIOUS_SCHEMA_VERSION = 'v3';
 
 // 首页 HTML 缓存版本 - 修改此值会强制刷新首页缓存
-export const HOME_CACHE_VERSION = 'v7';
+export const HOME_CACHE_VERSION = 'v8';
 
 // 首页 HTML 缓存与 dirty 标记 TTL（30 天）
 export const HOME_CACHE_TTL = 2592000;

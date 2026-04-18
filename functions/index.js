@@ -5,6 +5,7 @@ import { escapeHTML, sanitizeUrl, normalizeSortOrder, getStyleStr } from './lib/
 import { getSettingsKeys, parseSettings } from './lib/settings-parser';
 import { renderHorizontalMenu, renderVerticalMenu } from './lib/menu-renderer';
 import { renderSiteCards, renderEmptyState } from './lib/card-renderer';
+import { ensureSchemaReady } from './lib/schema-migration';
 
 // 模板内容在 Worker 运行时实例生命周期内不变（部署会替换实例），缓存避免每次 MISS 重复 ASSETS.fetch
 let cachedTemplateHtml = null;
@@ -64,13 +65,14 @@ export async function onRequest(context) {
       shouldClearCookie = true;
     }
 
-    // 并行读取 dirty 标记与缓存 HTML。dirty=true 是低频场景（后台刚保存），
-    // 多读一次 HTML 可接受，换取 99%+ 请求上少一次 KV 串行往返
+    // 并行读取 dirty 标记、缓存 HTML 与 schema 就绪状态。schema 检查从中间件移到此处，
+    // 命中 schemaReady 短路时与 KV 读同步完成；冷启动首请求也只消耗一次 KV 往返（max of 三者）
     let cachedHtml = null;
     try {
       [cacheDirtyValue, cachedHtml] = await Promise.all([
         getHomeCacheDirtyValue(env, cacheScope),
         env.NAV_AUTH.get(homeCacheKey),
+        ensureSchemaReady(env),
       ]);
     } catch (e) {
       console.warn('Failed to read home cache:', e);
@@ -412,6 +414,21 @@ export async function onRequest(context) {
   if (safeCustomFontUrl) fontLinksHtml += `<link rel="stylesheet" href="${safeCustomFontUrl}">`;
   // 字体域名预连接（减少 DNS + TLS 延迟）
   if (needsFontPreconnect) headInjections += `<link rel="preconnect" href="https://fonts.loli.net" crossorigin>`;
+  if (safeCustomFontUrl) {
+    try {
+      const customFontOrigin = new URL(safeCustomFontUrl).origin;
+      if (customFontOrigin !== 'https://fonts.loli.net') {
+        headInjections += `<link rel="preconnect" href="${escapeHTML(customFontOrigin)}" crossorigin>`;
+      }
+    } catch { /* sanitizeUrl 已校验，这里不会触达 */ }
+  }
+  // Logo 图标服务域名预连接（首屏 logo 多数来自 ICON_API 域，提前握手减少 LCP）
+  if (env.ICON_API) {
+    try {
+      const iconOrigin = new URL(env.ICON_API).origin;
+      headInjections += `<link rel="preconnect" href="${escapeHTML(iconOrigin)}" crossorigin>`;
+    } catch { /* ICON_API 格式异常时静默跳过 */ }
+  }
   if (fontLinksHtml) headInjections += fontLinksHtml;
 
   // 卡片自定义字体 CSS

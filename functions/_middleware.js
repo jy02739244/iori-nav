@@ -296,14 +296,18 @@ export function validateOrigin(request) {
 
 // 导出中间件(可选,用于添加全局逻辑)
 export async function onRequest(context) {
-  // 在每个请求开始时检查并初始化数据库
-  if (context.env.NAV_DB) {
-    await ensureSchemaReady(context.env);
-  }
-
   const { request, env } = context;
   const method = request.method.toUpperCase();
   const url = new URL(request.url);
+
+  // Schema 迁移：首页 GET 留给 index.js 里与 KV/DB 读并行执行，避免在 HIT 路径上多一次串行 KV；
+  // 其余路径（所有写操作、管理 API、admin 页面等）保留串行 await 以保证 DDL 就绪。
+  if (env.NAV_DB) {
+    const isHomePageGet = method === 'GET' && url.pathname === '/' && !url.search;
+    if (!isHomePageGet) {
+      await ensureSchemaReady(env);
+    }
+  }
 
   // CSRF 校验：仅对状态变更方法 + /api/* 路径生效
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method) && url.pathname.startsWith('/api/')) {
