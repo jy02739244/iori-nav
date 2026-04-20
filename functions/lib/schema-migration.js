@@ -22,11 +22,13 @@ async function runIncrementalMigrations(env) {
     env.NAV_DB.prepare('CREATE INDEX IF NOT EXISTS idx_sites_catelog_name ON sites(catelog_name)')
   ]);
 
-  const sitesColumns = await env.NAV_DB.prepare('PRAGMA table_info(sites)').all();
+  const [sitesColumns, categoryColumns, pendingColumns] = await Promise.all([
+    env.NAV_DB.prepare('PRAGMA table_info(sites)').all(),
+    env.NAV_DB.prepare('PRAGMA table_info(category)').all(),
+    env.NAV_DB.prepare('PRAGMA table_info(pending_sites)').all(),
+  ]);
   const sitesCols = new Set((sitesColumns.results || []).map(column => column.name));
-  const categoryColumns = await env.NAV_DB.prepare('PRAGMA table_info(category)').all();
   const categoryCols = new Set((categoryColumns.results || []).map(column => column.name));
-  const pendingColumns = await env.NAV_DB.prepare('PRAGMA table_info(pending_sites)').all();
   const pendingCols = new Set((pendingColumns.results || []).map(column => column.name));
 
   const alterStatements = [];

@@ -226,7 +226,6 @@ export async function onRequest(context) {
   }
 
   // === 12. 计算文本和统计信息 ===
-  const datalistOptions = categories.map(cat => `<option value="${escapeHTML(cat.catelog)}">`).join('');
   const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
   const headingText = escapeHTML(headingPlainText);
   const headingDefaultAttr = escapeHTML(headingPlainText);
@@ -500,9 +499,6 @@ export async function onRequest(context) {
     'CATALOG_EXISTS': catalogExists ? 'true' : 'false',
     'CATALOG_LINKS': catalogLinkMarkup,
     'SUBMISSION_CLASS': submissionClass,
-    'DATALIST_OPTIONS': datalistOptions,
-    'TOTAL_SITES': String(sites.length),
-    'CATALOG_COUNT': String(categories.length),
     'HEADING_TEXT': headingText,
     'HEADING_DEFAULT': headingDefaultAttr,
     'HEADING_ACTIVE': headingActiveAttr,
@@ -510,7 +506,6 @@ export async function onRequest(context) {
     'STATS_STYLE': statsStyle,
     'HITOKOTO_VISIBLE': S.home_hide_hitokoto ? 'hidden' : '',
     'STATS_ROW_PY_CLASS': statsRowPyClass,
-    'STATS_ROW_MB_CLASS': '',
     'STATS_ROW_HIDDEN': statsRowHiddenClass,
     'HITOKOTO_CONTENT': hitokotoContent,
     'HITOKOTO_STYLE': hitokotoStyle,

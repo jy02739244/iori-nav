@@ -993,14 +993,6 @@ const initSettings = () => {
   }
 
   async function saveSettings() {
-    // Save to localStorage (backup/legacy)
-    localStorage.setItem('ai_settings', JSON.stringify({
-      provider: currentSettings.provider,
-      apiKey: currentSettings.apiKey,
-      baseUrl: currentSettings.baseUrl,
-      model: currentSettings.model
-    }));
-
     // Save to Server
     try {
       saveBtn.disabled = true;

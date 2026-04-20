@@ -1,6 +1,12 @@
 // functions/lib/wallpaper-fetcher.js
 // 从外部 API 获取随机壁纸 URL
 
+const FETCH_TIMEOUT_MS = 8000;
+
+function fetchWithTimeout(url) {
+    return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+}
+
 /**
  * 获取随机壁纸 URL
  * @param {object} options
@@ -25,7 +31,7 @@ export async function fetchRandomWallpaper({ wallpaperSource, wallpaperCid360, b
 
 async function fetch360Wallpaper(cid, currentIndex) {
     const apiUrl = `http://cdn.apc.360.cn/index.php?c=WallPaper&a=getAppsByCategory&from=360chrome&cid=${cid}&start=0&count=8`;
-    const res = await fetch(apiUrl);
+    const res = await fetchWithTimeout(apiUrl);
     if (!res.ok) return null;
 
     const json = await res.json();
@@ -44,9 +50,9 @@ async function fetch360Wallpaper(cid, currentIndex) {
 async function fetchBingWallpaper(bingCountry, currentIndex) {
     const bingUrl = bingCountry === 'spotlight'
         ? 'https://peapix.com/spotlight/feed?n=7'
-        : `https://peapix.com/bing/feed?n=7&country=${bingCountry}`;
+        : `https://peapix.com/bing/feed?n=7&country=${encodeURIComponent(bingCountry)}`;
 
-    const res = await fetch(bingUrl);
+    const res = await fetchWithTimeout(bingUrl);
     if (!res.ok) return null;
 
     const data = await res.json();

@@ -32,10 +32,9 @@ function renderLoginPage(message = '') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>管理员登录</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; padding: 0; font-family: 'Noto Sans SC', sans-serif; }
+    html, body { height: 100%; margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
     body { display: flex; justify-content: center; align-items: center; background-color: #f8f9fa; padding: 1rem; }
     .login-container {
       background-color: white; padding: 2rem; border-radius: 8px;

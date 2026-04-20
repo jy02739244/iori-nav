@@ -394,7 +394,6 @@ window.fetchConfigs = function(page = currentPage, keyword = currentSearchKeywor
       `;
   }
 
-  let url = `/api/config?page=${page}&pageSize=${pageSize}`;
   const params = new URLSearchParams();
   params.append('page', page);
   params.append('pageSize', pageSize);
@@ -407,7 +406,7 @@ window.fetchConfigs = function(page = currentPage, keyword = currentSearchKeywor
     params.append('catalogId', catalogId);
   }
 
-  url = `/api/config?${params.toString()}`;
+  const url = `/api/config?${params.toString()}`;
 
   fetch(url)
     .then(res => res.json())

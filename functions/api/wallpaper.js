@@ -64,7 +64,7 @@ export async function onRequestGet(context) {
       if (country === 'spotlight') {
         bingUrl = 'https://peapix.com/spotlight/feed?n=7';
       } else {
-        bingUrl = `https://peapix.com/bing/feed?n=7&country=${country}`;
+        bingUrl = `https://peapix.com/bing/feed?n=7&country=${encodeURIComponent(country)}`;
       }
       const res = await fetchWithTimeout(bingUrl);
       if (res.ok) {
