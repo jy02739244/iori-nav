@@ -81,7 +81,11 @@ export async function onRequest(context) {
 
     if (!cacheDirty && cachedHtml) {
       const response = new Response(cachedHtml, {
-        headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Cache': 'HIT' }
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': isAuthenticated ? 'private, no-store, max-age=0' : 'public, max-age=0, must-revalidate',
+          'X-Cache': 'HIT',
+        }
       });
 
       if (shouldClearCookie) {
@@ -523,7 +527,10 @@ export async function onRequest(context) {
 
   // === 17. 返回响应 ===
   const response = new Response(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': isAuthenticated ? 'private, no-store, max-age=0' : 'public, max-age=0, must-revalidate',
+    }
   });
 
   if (shouldClearCookie) {
