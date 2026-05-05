@@ -482,6 +482,8 @@ const initSettings = () => {
   function renderWallpaperCard(thumb, full, title) {
     if (!onlineWallpapersDiv) return;
     const div = document.createElement('div');
+    const safeThumb = window.escapeHTML(window.normalizeUrl(thumb));
+    const safeTitle = window.escapeHTML(title);
 
     // Use custom classes + standard Tailwind aspect ratio
     div.className = 'wp-card-wrapper aspect-video';
@@ -489,7 +491,7 @@ const initSettings = () => {
 
     div.innerHTML = `
       <div class="wp-card-image-container">
-        <img src="${thumb}" class="wp-card-image" alt="${title}">
+        <img src="${safeThumb}" class="wp-card-image" alt="${safeTitle}">
       </div>
       <div class="wp-card-overlay">
         <span class="wp-card-btn">应用</span>

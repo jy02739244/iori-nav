@@ -80,16 +80,19 @@ window.showModalMessage = function(modalId, text, type = 'info') {
   }, 3000);
 }
 
+const HTML_ESCAPE_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
 window.escapeHTML = function (value) {
   if (value === null || value === undefined) {
     return '';
   }
-  return String(value)
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
-    .replace(/'/g, "'");
+  return String(value).replace(/[&<>"']/g, char => HTML_ESCAPE_MAP[char]);
 };
 
 window.normalizeUrl = function (value) {
@@ -422,11 +425,11 @@ window.fetchConfigs = function(page = currentPage, keyword = currentSearchKeywor
       } else {
         window.showMessage(data.message, 'error');
         // 错误时清空或显示错误信息
-        if (configGrid) configGrid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">${data.message}</div>`;
+        if (configGrid) configGrid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">${window.escapeHTML(data.message)}</div>`;
       }
     }).catch(err => {
       window.showMessage('网络错误', 'error');
-      if (configGrid) configGrid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">网络错误: ${err.message}</div>`;
+      if (configGrid) configGrid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">网络错误: ${window.escapeHTML(err.message)}</div>`;
     })
 }
 
@@ -504,12 +507,14 @@ function renderPendingConfigs(configs) {
   }
   configs.forEach(config => {
     const tr = document.createElement('tr');
+    const safeUrl = window.escapeHTML(config.url);
+    const safeDesc = window.escapeHTML(config.desc);
     tr.innerHTML = `
       <td class="p-3 border-b">${config.id}</td>
       <td class="p-3 border-b">${window.escapeHTML(config.name)}</td>
-      <td class="p-3 border-b truncate max-w-[200px]" title="${config.url}">${window.escapeHTML(config.url)}</td>
+      <td class="p-3 border-b truncate max-w-[200px]" title="${safeUrl}">${safeUrl}</td>
       <td class="p-3 border-b">${config.logo ? `<img src="${window.escapeHTML(window.normalizeUrl(config.logo))}" class="w-8 h-8 rounded">` : '无'}</td>
-      <td class="p-3 border-b max-w-[200px] truncate" title="${config.desc}">${window.escapeHTML(config.desc)}</td>
+      <td class="p-3 border-b max-w-[200px] truncate" title="${safeDesc}">${safeDesc}</td>
       <td class="p-3 border-b">${window.escapeHTML(config.catelog)}</td>
       <td class="p-3 border-b">
         <div class="flex gap-2">

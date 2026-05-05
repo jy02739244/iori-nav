@@ -183,7 +183,7 @@ function fetchBatchData() {
                 batchPrevPage.disabled = batchCurrentPage <= 1;
                 batchNextPage.disabled = batchCurrentPage >= Math.ceil(batchTotalItems / batchPageSize);
             } else {
-                batchTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">${data.message}</td></tr>`;
+                batchTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">${window.escapeHTML(data.message)}</td></tr>`;
             }
         }).catch(err => {
             batchTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">网络错误</td></tr>';
