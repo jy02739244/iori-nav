@@ -1,7 +1,7 @@
 // functions/lib/card-renderer.js
 // 渲染站点卡片网格 HTML
 
-import { escapeHTML, sanitizeUrl } from './utils';
+import { buildCardTemplateConfig, buildCardViewModel } from './card-model';
 
 /**
  * 渲染站点卡片网格 HTML
@@ -10,76 +10,43 @@ import { escapeHTML, sanitizeUrl } from './utils';
  * @returns {string} 站点卡片 HTML 字符串
  */
 export function renderSiteCards(sites, settings) {
-  const {
-    layout_hide_desc: hideDesc,
-    layout_hide_links: hideLinks,
-    layout_hide_category: hideCategory,
-    layout_enable_frosted_glass: enableFrostedGlass,
-    layout_card_style: cardStyle,
-    layout_grid_cols: gridCols,
-  } = settings;
+  const config = buildCardTemplateConfig(settings);
+  const processed = sites.map(site => buildCardViewModel(site));
 
-  const frostedClass = enableFrostedGlass ? 'frosted-glass-effect' : '';
-  const cardStyleClass = cardStyle === 'style2' ? 'style-2' : '';
-  const baseCardClass = enableFrostedGlass
-    ? 'site-card group h-full flex flex-col overflow-hidden transition-all'
-    : 'site-card group h-full flex flex-col bg-white border border-primary-100/60 shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700';
-  const numericGridCols = Number(gridCols) || 4;
-  const hideCopyText = numericGridCols >= 5;
-
-  // 批量预处理站点数据，减少循环内重复调用
-  const processed = sites.map(site => {
-    const rawName = site.name || '未命名';
-    const normalizedUrl = sanitizeUrl(site.url);
-    return {
-      site,
-      safeName: escapeHTML(rawName),
-      safeCatalog: escapeHTML(site.catelog_name || '未分类'),
-      safeDesc: escapeHTML(site.desc || '暂无描述'),
-      normalizedUrl,
-      safeUrl: escapeHTML(normalizedUrl),
-      safeDisplayUrl: normalizedUrl || '未提供链接',
-      logoUrl: sanitizeUrl(site.logo),
-      cardInitial: escapeHTML((rawName.trim().charAt(0) || '站').toUpperCase()),
-      hasValidUrl: Boolean(normalizedUrl),
-    };
-  });
-
-  return processed.map(({ site, safeName, safeCatalog, safeDesc, normalizedUrl, safeUrl, safeDisplayUrl, logoUrl, cardInitial, hasValidUrl }, index) => {
-    // 首屏（约前 8 张）logo 用 eager + fetchpriority=high 改善 LCP；其余 lazy
-    const isAboveFold = index < 8;
+  return processed.map((card, index) => {
+    const isAboveFold = index < config.aboveFoldImageCount;
     const imgLoadingAttrs = isAboveFold ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"';
 
-    const descHtml = hideDesc ? '' : `<p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2" title="${safeDesc}">${safeDesc}</p>`;
+    const descHtml = config.hideDesc ? '' : `<p class="${config.descClass}" title="${card.descHtml}">${card.descHtml}</p>`;
 
-    const linksHtml = hideLinks ? '' : `
-      <div class="mt-3 flex items-center justify-between">
-        <span class="text-xs text-primary-600 dark:text-primary-400 truncate flex-1 min-w-0 mr-2" title="${safeDisplayUrl}">${escapeHTML(safeDisplayUrl)}</span>
-        <button class="copy-btn relative flex items-center px-2 py-1 ${hasValidUrl ? 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:hover:bg-accent-900/50' : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'} rounded-full text-xs font-medium transition-colors" data-url="${safeUrl}" ${hasValidUrl ? '' : 'disabled'}>
-          <svg class="h-3 w-3 ${hideCopyText ? '' : 'mr-1'}"><use href="#icon-copy"/></svg>
-          ${hideCopyText ? '' : '<span class="copy-text">复制</span>'}
+    const linksHtml = config.hideLinks ? '' : `
+      <div class="${config.linkRowClass}">
+        <span class="${config.urlTextClass}" title="${card.displayUrlHtml}">${card.displayUrlHtml}</span>
+        <button class="${config.copyButtonBaseClass} ${card.hasValidUrl ? config.copyButtonEnabledClass : config.copyButtonDisabledClass}" data-url="${card.urlHtml}" ${card.hasValidUrl ? '' : 'disabled'}>
+          <svg class="h-3 w-3 ${config.hideCopyText ? '' : 'mr-1'}"><use href="#icon-copy"/></svg>
+          ${config.hideCopyText ? '' : '<span class="copy-text">复制</span>'}
           <span class="copy-success hidden absolute -top-8 right-0 bg-accent-500 text-white text-xs px-2 py-1 rounded shadow-md">已复制!</span>
         </button>
       </div>`;
 
-    const categoryHtml = hideCategory ? '' : `
-      <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-secondary-100 text-primary-700 dark:bg-secondary-800 dark:text-primary-300">
-        ${safeCatalog}
+    const categoryHtml = config.hideCategory ? '' : `
+      <span class="${config.categoryClass}">
+        ${card.catalogHtml}
       </span>`;
 
     return `
-      <div class="${baseCardClass} ${frostedClass} ${cardStyleClass} card-anim-enter" data-id="${site.id}">
+      <div class="${config.baseCardClass} ${config.frostedClass} ${config.cardStyleClass} card-anim-enter" data-id="${card.id}">
         <div class="site-card-content">
-          <a href="${safeUrl || '#'}" ${hasValidUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} class="block">
+          <a href="${card.urlHtml || '#'}" ${card.hasValidUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} class="block">
             <div class="flex items-start">
-              <div class="site-icon flex-shrink-0 mr-4 transition-all duration-300">
-                ${logoUrl
-        ? `<img src="${escapeHTML(logoUrl)}" alt="${safeName}" width="40" height="40" class="w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700" ${imgLoadingAttrs}>`
-        : `<div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-lg shadow-inner">${cardInitial}</div>`
+              <div class="${config.siteIconClass}">
+                ${card.logoUrlHtml
+        ? `<img src="${card.logoUrlHtml}" alt="${card.nameHtml}" width="40" height="40" class="${config.logoClass}" ${imgLoadingAttrs}>`
+        : `<div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-lg shadow-inner">${card.cardInitialHtml}</div>`
       }
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="site-title text-base font-medium text-gray-900 dark:text-gray-100 truncate transition-all duration-300 origin-left" title="${safeName}">${safeName}</h3>
+                <h3 class="${config.titleClass}" title="${card.nameHtml}">${card.nameHtml}</h3>
                 ${categoryHtml}
               </div>
             </div>

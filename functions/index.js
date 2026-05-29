@@ -5,6 +5,7 @@ import { escapeHTML, sanitizeUrl, normalizeSortOrder, getStyleStr } from './lib/
 import { getSettingsKeys, parseSettings } from './lib/settings-parser';
 import { renderHorizontalMenu, renderVerticalMenu } from './lib/menu-renderer';
 import { renderSiteCards, renderEmptyState } from './lib/card-renderer';
+import { buildCardHydrationState } from './lib/card-model';
 import { ensureSchemaReady } from './lib/schema-migration';
 
 // 模板内容在 Worker 运行时实例生命周期内不变（部署会替换实例），缓存避免每次 MISS 重复 ASSETS.fetch
@@ -453,9 +454,10 @@ export async function onRequest(context) {
   }
   if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
 
-  // 全局站点数据与布局配置：SQL 已精简字段，直接序列化无需再拷贝
-  // 两者都挪到 </body> 前注入（见下方 replace），避免阻塞 <head> 解析
-  const safeSitesJson = JSON.stringify(allSites).replace(/</g, '\\u003c');
+  // 全局站点卡片视图模型与布局配置：直接序列化后注入到 main.js 之前
+  const cardHydrationState = buildCardHydrationState(allSites, S);
+  const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
+  const safeCardConfigJson = JSON.stringify(cardHydrationState.config).replace(/</g, '\\u003c');
   const safeLayoutConfigJson = JSON.stringify({
     hideDesc: S.layout_hide_desc,
     hideLinks: S.layout_hide_links,
@@ -483,11 +485,11 @@ export async function onRequest(context) {
   // - 函数形式 replacement：规避用户数据中可能含 $&、$1 等被当作 back-reference
   const mainJsMarker = '<script src="/js/main.js';
   if (!html.includes(mainJsMarker)) {
-    console.error('IORI_SITES injection skipped: main.js marker not found in template');
+    console.error('Card hydration injection skipped: main.js marker not found in template');
   } else {
     html = html.replace(
       mainJsMarker,
-      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
+      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIG=${safeCardConfigJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
     );
   }
 

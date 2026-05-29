@@ -24,16 +24,29 @@ document.addEventListener('DOMContentLoaded', function () {
   // 为初始 SSR 渲染的卡片设置动画延迟（已从服务端移至前端）
   const initialCards = document.querySelectorAll('.site-card.card-anim-enter');
   const sitesGrid = document.getElementById('sitesGrid');
-
-  // 毛玻璃开关在整个页面生命周期内不变：IORI_LAYOUT_CONFIG 为主，CSS 变量做回退。
-  // 只在启动时读一次，避免 renderSites 每次切分类都触发 getComputedStyle
-  const isFrostedEnabled = (() => {
-    const config = window.IORI_LAYOUT_CONFIG || {};
-    if (config.enableFrostedGlass !== undefined) return config.enableFrostedGlass;
-    const frostedBlurVal = getComputedStyle(document.documentElement)
-      .getPropertyValue('--frosted-glass-blur').trim();
-    return frostedBlurVal !== '';
-  })();
+  const cardConfig = window.IORI_CARD_CONFIG || {
+    hideDesc: false,
+    hideLinks: false,
+    hideCategory: false,
+    hideCopyText: false,
+    enableFrostedGlass: false,
+    cardStyle: 'style1',
+    gridCols: '4',
+    aboveFoldImageCount: 8,
+    baseCardClass: 'site-card group h-full flex flex-col bg-white border border-primary-100/60 shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700',
+    frostedClass: '',
+    cardStyleClass: '',
+    titleClass: 'site-title text-base font-medium text-gray-900 dark:text-gray-100 truncate transition-all duration-300 origin-left',
+    descClass: 'mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2',
+    categoryClass: 'inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-secondary-100 text-primary-700 dark:bg-secondary-800 dark:text-primary-300',
+    linkRowClass: 'mt-3 flex items-center justify-between',
+    urlTextClass: 'text-xs text-primary-600 dark:text-primary-400 truncate flex-1 min-w-0 mr-2',
+    copyButtonBaseClass: 'copy-btn relative flex items-center px-2 py-1 rounded-full text-xs font-medium transition-colors',
+    copyButtonEnabledClass: 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:hover:bg-accent-900/50',
+    copyButtonDisabledClass: 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500',
+    logoClass: 'w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700',
+    siteIconClass: 'site-icon flex-shrink-0 mr-4 transition-all duration-300',
+  };
 
   initialCards.forEach((card, index) => {
     const delay = Math.min(index, 12) * 20;
@@ -292,8 +305,8 @@ document.addEventListener('DOMContentLoaded', function () {
     searchCardCache = Array.from(cards).map(card => {
       const id = card.getAttribute('data-id');
       const s = sitesById.get(String(id)) || {};
-      const text = [s.name, s.url, s.catelog_name || '未分类', s.desc]
-        .map(v => (v || '').toLowerCase()).join('\0');
+      const text = (s.searchText || [s.nameHtml, s.urlHtml, s.catalogHtml, s.descHtml]
+        .map(v => String(v || '').toLowerCase()).join('\0'));
       return { el: card, text };
     });
     return searchCardCache;
@@ -688,15 +701,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // 重新渲染时清除搜索缓存
     searchCardCache = null;
 
-    // 使用全局配置获取布局设置，避免依赖 DOM 推断
-    const config = window.IORI_LAYOUT_CONFIG || {};
-    const isFiveCols = config.gridCols === '5';
-    const isSixCols = config.gridCols === '6';
-    const hideDesc = config.hideDesc === true;
-    const hideLinks = config.hideLinks === true;
-    const hideCategory = config.hideCategory === true;
-    const cardStyle = config.cardStyle || 'style1';
-
     sitesGrid.innerHTML = '';
 
     if (sites.length === 0) {
@@ -705,48 +709,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     sites.forEach((site, index) => {
-      const rawName = site.name || '未命名';
-      const safeName = escapeHTML(rawName);
-      const normalizedUrl = sanitizeHttpUrl(site.url);
-      const safeUrl = escapeHTML(normalizedUrl);
-      const safeDesc = escapeHTML(site.desc || '暂无描述');
-      const safeCatalog = escapeHTML(site.catelog_name || site.catelog || '未分类');
-      const safeDisplayUrl = escapeHTML(normalizedUrl || '未提供链接');
-      const logoUrl = sanitizeHttpUrl(site.logo);
-      const cardInitial = escapeHTML((rawName.trim().charAt(0) || '站').toUpperCase());
-
-      const isAboveFold = index < 8;
+      const isAboveFold = index < (cardConfig.aboveFoldImageCount || 8);
       const imgLoadingAttrs = isAboveFold ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"';
-      const logoHtml = logoUrl
-        ? `<img src="${escapeHTML(logoUrl)}" alt="${safeName}" width="40" height="40" class="w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700" ${imgLoadingAttrs}>`
-        : `<div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-lg shadow-inner">${cardInitial}</div>`;
+      const logoHtml = site.logoUrlHtml
+        ? `<img src="${site.logoUrlHtml}" alt="${site.nameHtml}" width="40" height="40" class="${cardConfig.logoClass}" ${imgLoadingAttrs}>`
+        : `<div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-lg shadow-inner">${site.cardInitialHtml}</div>`;
 
-      const descHtml = hideDesc ? '' : `<p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2" title="${safeDesc}">${safeDesc}</p>`;
+      const descHtml = cardConfig.hideDesc ? '' : `<p class="${cardConfig.descClass}" title="${site.descHtml}">${site.descHtml}</p>`;
 
-      const hasValidUrl = !!normalizedUrl;
-      const linksHtml = hideLinks ? '' : `
-          <div class="mt-3 flex items-center justify-between">
-            <span class="text-xs text-primary-600 dark:text-primary-400 truncate flex-1 min-w-0 mr-2" title="${safeDisplayUrl}">${safeDisplayUrl}</span>
-            <button class="copy-btn relative flex items-center px-2 py-1 ${hasValidUrl ? 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:hover:bg-accent-900/50' : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'} rounded-full text-xs font-medium transition-colors" data-url="${safeUrl}" ${hasValidUrl ? '' : 'disabled'}>
-              <svg class="h-3 w-3 ${isFiveCols || isSixCols ? '' : 'mr-1'}"><use href="#icon-copy"/></svg>
-              ${isFiveCols || isSixCols ? '' : '<span class="copy-text">复制</span>'}
+      const linksHtml = cardConfig.hideLinks ? '' : `
+          <div class="${cardConfig.linkRowClass}">
+            <span class="${cardConfig.urlTextClass}" title="${site.displayUrlHtml}">${site.displayUrlHtml}</span>
+            <button class="${cardConfig.copyButtonBaseClass} ${site.hasValidUrl ? cardConfig.copyButtonEnabledClass : cardConfig.copyButtonDisabledClass}" data-url="${site.urlHtml}" ${site.hasValidUrl ? '' : 'disabled'}>
+              <svg class="h-3 w-3 ${cardConfig.hideCopyText ? '' : 'mr-1'}"><use href="#icon-copy"/></svg>
+              ${cardConfig.hideCopyText ? '' : '<span class="copy-text">复制</span>'}
               <span class="copy-success hidden absolute -top-8 right-0 bg-accent-500 text-white text-xs px-2 py-1 rounded shadow-md">已复制!</span>
             </button>
           </div>`;
 
-      const categoryHtml = hideCategory ? '' : `
-                <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-secondary-100 text-primary-700 dark:bg-secondary-800 dark:text-primary-300">
-                  ${safeCatalog}
+      const categoryHtml = cardConfig.hideCategory ? '' : `
+                <span class="${cardConfig.categoryClass}">
+                  ${site.catalogHtml}
                 </span>`;
 
-      const frostedClass = isFrostedEnabled ? 'frosted-glass-effect' : '';
-      const cardStyleClass = cardStyle === 'style2' ? 'style-2' : '';
-      const baseCardClass = isFrostedEnabled
-        ? 'site-card group overflow-hidden transition-all'
-        : 'site-card group bg-white border border-primary-100/60 shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700';
-
       const card = document.createElement('div');
-      card.className = `${baseCardClass} ${frostedClass} ${cardStyleClass} card-anim-enter`;
+      card.className = `${cardConfig.baseCardClass} ${cardConfig.frostedClass} ${cardConfig.cardStyleClass} card-anim-enter`;
       const delay = Math.min(index, 12) * 20;
       if (delay > 0) {
         card.style.animationDelay = `${delay}ms`;
@@ -763,13 +750,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
       card.innerHTML = `
         <div class="site-card-content">
-          <a href="${safeUrl || '#'}" ${hasValidUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} class="block">
+          <a href="${site.urlHtml || '#'}" ${site.hasValidUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} class="block">
             <div class="flex items-start">
-              <div class="site-icon flex-shrink-0 mr-4 transition-all duration-300">
+              <div class="${cardConfig.siteIconClass}">
                 ${logoHtml}
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="site-title text-base font-medium text-gray-900 truncate transition-all duration-300 origin-left" title="${safeName}">${safeName}</h3>
+                <h3 class="${cardConfig.titleClass}" title="${site.nameHtml}">${site.nameHtml}</h3>
                 ${categoryHtml}
               </div>
             </div>
@@ -873,25 +860,6 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
       });
-    }
-  }
-
-  // 辅助函数
-  const _ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-  function escapeHTML(str) {
-    if (!str) return '';
-    return String(str).replace(/[&<>"']/g, c => _ESC[c]);
-  }
-
-  function sanitizeHttpUrl(url) {
-    if (!url) return '';
-    const trimmed = String(url).trim();
-    if (!/^https?:\/\//i.test(trimmed)) return '';
-    try {
-      const parsed = new URL(trimmed);
-      return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : '';
-    } catch {
-      return '';
     }
   }
 

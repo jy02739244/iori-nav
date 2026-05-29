@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { buildCardHydrationState } from '../functions/lib/card-model.js';
 import { renderSiteCards } from '../functions/lib/card-renderer.js';
 import { renderHorizontalMenu, renderVerticalMenu } from '../functions/lib/menu-renderer.js';
 import { parseSettings } from '../functions/lib/settings-parser.js';
@@ -42,6 +43,37 @@ test('renderSiteCards reflects layout options used by SSR cards', () => {
   assert.match(html, /style-2/);
   assert.doesNotMatch(html, /Hidden/);
   assert.doesNotMatch(html, /copy-btn/);
+});
+
+test('card hydration state shares sanitization and render config', () => {
+  const settings = parseSettings([
+    { key: 'layout_enable_frosted_glass', value: 'true' },
+    { key: 'layout_card_style', value: 'style2' },
+    { key: 'layout_grid_cols', value: '5' },
+  ]);
+
+  const { config, cards } = buildCardHydrationState([
+    {
+      id: 7,
+      name: '<script>alert(1)</script>',
+      url: 'https://example.com',
+      logo: 'data:text/html,<svg>',
+      desc: '"quoted" & <b>bold</b>',
+      catelog_id: 3,
+      catelog_name: '<Work>',
+    },
+  ], settings);
+
+  assert.equal(config.enableFrostedGlass, true);
+  assert.equal(config.cardStyleClass, 'style-2');
+  assert.equal(config.hideCopyText, true);
+  assert.equal(cards[0].nameHtml, '&lt;script&gt;alert(1)&lt;/script&gt;');
+  assert.equal(cards[0].catalogHtml, '&lt;Work&gt;');
+  assert.equal(cards[0].descHtml, '&quot;quoted&quot; &amp; &lt;b&gt;bold&lt;/b&gt;');
+  assert.equal(cards[0].urlHtml, 'https://example.com/');
+  assert.equal(cards[0].logoUrlHtml, '');
+  assert.equal(cards[0].hasValidUrl, true);
+  assert.match(cards[0].searchText, /example\.com/);
 });
 
 test('menu renderers escape names and encode category URLs', () => {
