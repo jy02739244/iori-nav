@@ -47,13 +47,28 @@ export const SETTINGS_SCHEMA = {
     layout_card_style: { default: 'style1', type: 'string' },
     layout_card_animation: { default: 'radial', type: 'string' },
     layout_card_border_radius: { default: '12', type: 'string' },
+    mobile_layout_hide_desc: { default: true, type: 'bool' },
+    mobile_layout_hide_links: { default: true, type: 'bool' },
+    mobile_layout_hide_category: { default: false, type: 'bool' },
+    mobile_layout_enable_frosted_glass: { default: false, type: 'bool' },
+    mobile_layout_frosted_glass_intensity: { default: '15', type: 'string' },
+    mobile_layout_grid_cols: { default: '3', type: 'string' },
+    mobile_layout_card_style: { default: 'style2', type: 'string' },
+    mobile_layout_card_animation: { default: 'radial', type: 'string' },
+    mobile_layout_card_border_radius: { default: '12', type: 'string' },
+    mobile_card_title_font: { default: '', type: 'string' },
+    mobile_card_title_size: { default: '13', type: 'string' },
+    mobile_card_title_color: { default: '', type: 'string' },
+    mobile_card_desc_font: { default: '', type: 'string' },
+    mobile_card_desc_size: { default: '11', type: 'string' },
+    mobile_card_desc_color: { default: '', type: 'string' },
     wallpaper_source: { default: 'bing', type: 'string' },
     wallpaper_cid_360: { default: '36', type: 'string' },
     card_title_font: { default: '', type: 'string' },
-    card_title_size: { default: '', type: 'string' },
+    card_title_size: { default: '16', type: 'string' },
     card_title_color: { default: '', type: 'string' },
     card_desc_font: { default: '', type: 'string' },
-    card_desc_size: { default: '', type: 'string' },
+    card_desc_size: { default: '14', type: 'string' },
     card_desc_color: { default: '', type: 'string' },
 };
 
@@ -64,6 +79,8 @@ const STYLE_SIZE_KEYS = new Set([
     'home_hitokoto_size',
     'card_title_size',
     'card_desc_size',
+    'mobile_card_title_size',
+    'mobile_card_desc_size',
 ]);
 
 const STYLE_COLOR_KEYS = new Set([
@@ -73,6 +90,8 @@ const STYLE_COLOR_KEYS = new Set([
     'home_hitokoto_color',
     'card_title_color',
     'card_desc_color',
+    'mobile_card_title_color',
+    'mobile_card_desc_color',
 ]);
 
 const FONT_KEYS = new Set([
@@ -82,6 +101,8 @@ const FONT_KEYS = new Set([
     'home_hitokoto_font',
     'card_title_font',
     'card_desc_font',
+    'mobile_card_title_font',
+    'mobile_card_desc_font',
 ]);
 
 const URL_KEYS = new Set([
@@ -175,6 +196,10 @@ export function normalizeSettingValueForStorage(key, value) {
         return { ok: false, message: 'Invalid layout_grid_cols' };
     }
 
+    if (key === 'mobile_layout_grid_cols' && !['1', '2', '3'].includes(text)) {
+        return { ok: false, message: 'Invalid mobile_layout_grid_cols' };
+    }
+
     if (key === 'layout_menu_layout' && !['horizontal', 'vertical'].includes(text)) {
         return { ok: false, message: 'Invalid layout_menu_layout' };
     }
@@ -195,8 +220,16 @@ export function normalizeSettingValueForStorage(key, value) {
         return { ok: false, message: 'Invalid layout_card_style' };
     }
 
+    if (key === 'mobile_layout_card_style' && !['style1', 'style2'].includes(text)) {
+        return { ok: false, message: 'Invalid mobile_layout_card_style' };
+    }
+
     if (key === 'layout_card_animation' && !['radial', 'slideUp', 'fadeIn', 'slideLeft', 'slideRight', 'convergeIn', 'flipIn', 'random'].includes(text)) {
         return { ok: false, message: 'Invalid layout_card_animation' };
+    }
+
+    if (key === 'mobile_layout_card_animation' && !['radial', 'slideUp', 'fadeIn', 'slideLeft', 'slideRight', 'convergeIn', 'flipIn', 'random'].includes(text)) {
+        return { ok: false, message: 'Invalid mobile_layout_card_animation' };
     }
 
     if (key === 'wallpaper_source' && !['bing', '360'].includes(text)) {
@@ -212,12 +245,22 @@ export function normalizeSettingValueForStorage(key, value) {
         return normalized === null ? { ok: false, message: `Invalid ${key}` } : { ok: true, value: normalized };
     }
 
+    if (key === 'mobile_layout_frosted_glass_intensity') {
+        const normalized = normalizeIntegerRange(text, 0, 50, '15');
+        return normalized === null ? { ok: false, message: `Invalid ${key}` } : { ok: true, value: normalized };
+    }
+
     if (key === 'layout_bg_blur_intensity') {
         const normalized = normalizeIntegerRange(text, 0, 50, '0');
         return normalized === null ? { ok: false, message: `Invalid ${key}` } : { ok: true, value: normalized };
     }
 
     if (key === 'layout_card_border_radius') {
+        const normalized = normalizeIntegerRange(text, 0, 30, '12');
+        return normalized === null ? { ok: false, message: `Invalid ${key}` } : { ok: true, value: normalized };
+    }
+
+    if (key === 'mobile_layout_card_border_radius') {
         const normalized = normalizeIntegerRange(text, 0, 30, '12');
         return normalized === null ? { ok: false, message: `Invalid ${key}` } : { ok: true, value: normalized };
     }
@@ -280,6 +323,28 @@ export function parseSettings(dbResults) {
         );
     }
     settings.layout_menu_layout = settings.home_category_position === 'left' ? 'vertical' : 'horizontal';
+
+    const mobileFallbackKeys = [
+        ['mobile_layout_hide_category', 'layout_hide_category'],
+        ['mobile_layout_enable_frosted_glass', 'layout_enable_frosted_glass'],
+        ['mobile_layout_frosted_glass_intensity', 'layout_frosted_glass_intensity'],
+        ['mobile_layout_card_animation', 'layout_card_animation'],
+        ['mobile_layout_card_border_radius', 'layout_card_border_radius'],
+        ['mobile_card_title_font', 'card_title_font'],
+        ['mobile_card_title_color', 'card_title_color'],
+        ['mobile_card_desc_font', 'card_desc_font'],
+        ['mobile_card_desc_color', 'card_desc_color'],
+    ];
+    for (const [mobileKey, desktopKey] of mobileFallbackKeys) {
+        if (!dbMap.has(mobileKey)) {
+            settings[mobileKey] = settings[desktopKey];
+        }
+    }
+
+    settings.card_title_size = settings.card_title_size || SETTINGS_SCHEMA.card_title_size.default;
+    settings.card_desc_size = settings.card_desc_size || SETTINGS_SCHEMA.card_desc_size.default;
+    settings.mobile_card_title_size = settings.mobile_card_title_size || SETTINGS_SCHEMA.mobile_card_title_size.default;
+    settings.mobile_card_desc_size = settings.mobile_card_desc_size || SETTINGS_SCHEMA.mobile_card_desc_size.default;
 
     return settings;
 }

@@ -81,6 +81,19 @@
     return value || defaultValue;
   }
 
+  function getPreviewNumberOrDefault(value, defaultValue) {
+    const text = String(value ?? '').trim();
+    if (text === '') return defaultValue;
+    const number = Number(text);
+    return Number.isFinite(number) ? number : defaultValue;
+  }
+
+  function shouldHideCopyTextForPreview(device, gridCols) {
+    return device === 'mobile'
+      ? Number(gridCols) >= 3
+      : (Number(gridCols) || 4) >= 5;
+  }
+
   function normalizePreviewUrl(value) {
     const text = String(value ?? '').trim();
     if (!text) return '';
@@ -292,7 +305,40 @@
   function readPreviewSettings() {
     const refs = getRefs();
     const current = getCurrentSettings();
+    const isMobilePreview = document.getElementById('homeLivePreview')?.dataset.device === 'mobile';
+    const cardSettings = isMobilePreview ? {
+      gridCols: getRadioValue(refs.mobileGridColsRadios, current.mobile_layout_grid_cols || '3'),
+      cardStyle: current.mobile_layout_card_style || 'style2',
+      hideCardDesc: !!refs.mobileHideDescSwitch?.checked,
+      hideCardLinks: !!refs.mobileHideLinksSwitch?.checked,
+      hideCardCategory: !!refs.mobileHideCategorySwitch?.checked,
+      frosted: !!refs.mobileFrostedGlassSwitch?.checked,
+      frostedIntensity: getPreviewInputValueOrDefault(refs.mobileFrostedGlassIntensityRange, current.mobile_layout_frosted_glass_intensity, '15'),
+      cardRadius: getPreviewInputValueOrDefault(refs.mobileCardRadiusInput, current.mobile_layout_card_border_radius, '12'),
+      cardTitleFont: getPreviewInputValue(refs.mobileCardTitleFontInput, current.mobile_card_title_font || ''),
+      cardTitleSize: getPreviewInputValue(refs.mobileCardTitleSizeInput, current.mobile_card_title_size || ''),
+      cardTitleColor: getPreviewInputValue(refs.mobileCardTitleColorInput, current.mobile_card_title_color || ''),
+      cardDescFont: getPreviewInputValue(refs.mobileCardDescFontInput, current.mobile_card_desc_font || ''),
+      cardDescSize: getPreviewInputValue(refs.mobileCardDescSizeInput, current.mobile_card_desc_size || ''),
+      cardDescColor: getPreviewInputValue(refs.mobileCardDescColorInput, current.mobile_card_desc_color || ''),
+    } : {
+      gridCols: getRadioValue(refs.gridColsRadios, current.layout_grid_cols || '4'),
+      cardStyle: current.layout_card_style || 'style1',
+      hideCardDesc: !!refs.hideDescSwitch?.checked,
+      hideCardLinks: !!refs.hideLinksSwitch?.checked,
+      hideCardCategory: !!refs.hideCategorySwitch?.checked,
+      frosted: !!refs.frostedGlassSwitch?.checked,
+      frostedIntensity: getPreviewInputValueOrDefault(refs.frostedGlassIntensityRange, current.layout_frosted_glass_intensity, '15'),
+      cardRadius: getPreviewInputValueOrDefault(refs.cardRadiusInput, current.layout_card_border_radius, '12'),
+      cardTitleFont: getPreviewInputValue(refs.cardTitleFontInput, current.card_title_font || ''),
+      cardTitleSize: getPreviewInputValue(refs.cardTitleSizeInput, current.card_title_size || ''),
+      cardTitleColor: getPreviewInputValue(refs.cardTitleColorInput, current.card_title_color || ''),
+      cardDescFont: getPreviewInputValue(refs.cardDescFontInput, current.card_desc_font || ''),
+      cardDescSize: getPreviewInputValue(refs.cardDescSizeInput, current.card_desc_size || ''),
+      cardDescColor: getPreviewInputValue(refs.cardDescColorInput, current.card_desc_color || ''),
+    };
     return {
+      previewDevice: isMobilePreview ? 'mobile' : 'desktop',
       siteName: getPreviewInputValueOrDefault(refs.homeSiteNameInput, current.home_site_name, '灰色轨迹'),
       siteDescription: getPreviewInputValueOrDefault(refs.homeSiteDescriptionInput, current.home_site_description, '一个优雅、快速、易于部署的书签收藏与分享平台'),
       footerText: getPreviewInputValueOrDefault(refs.homeFooterTextInput, current.home_footer_text, '曾梦想仗剑走天涯'),
@@ -308,14 +354,7 @@
       ),
       categoryFlow: getRadioValue(refs.categoryFlowRadios, current.home_category_flow || 'single_line'),
       defaultCategory: getPreviewInputValue(refs.homeDefaultCategorySelect, current.home_default_category || ''),
-      gridCols: getRadioValue(refs.gridColsRadios, current.layout_grid_cols || '4'),
-      cardStyle: current.layout_card_style || 'style1',
-      hideCardDesc: !!refs.hideDescSwitch?.checked,
-      hideCardLinks: !!refs.hideLinksSwitch?.checked,
-      hideCardCategory: !!refs.hideCategorySwitch?.checked,
-      frosted: !!refs.frostedGlassSwitch?.checked,
-      frostedIntensity: getPreviewInputValueOrDefault(refs.frostedGlassIntensityRange, current.layout_frosted_glass_intensity, '15'),
-      cardRadius: getPreviewInputValueOrDefault(refs.cardRadiusInput, current.layout_card_border_radius, '12'),
+      ...cardSettings,
       wallpaper: normalizePreviewUrl(getPreviewInputValue(refs.customWallpaperInput, current.layout_custom_wallpaper || '')),
       bgBlur: !!refs.bgBlurSwitch?.checked,
       bgBlurIntensity: getPreviewInputValueOrDefault(refs.bgBlurIntensityRange, current.layout_bg_blur_intensity, '0'),
@@ -331,12 +370,6 @@
       hitokotoFont: getPreviewInputValue(refs.homeHitokotoFontInput, current.home_hitokoto_font || ''),
       hitokotoSize: getPreviewInputValue(refs.homeHitokotoSizeInput, current.home_hitokoto_size || ''),
       hitokotoColor: getPreviewInputValue(refs.homeHitokotoColorInput, current.home_hitokoto_color || ''),
-      cardTitleFont: getPreviewInputValue(refs.cardTitleFontInput, current.card_title_font || ''),
-      cardTitleSize: getPreviewInputValue(refs.cardTitleSizeInput, current.card_title_size || ''),
-      cardTitleColor: getPreviewInputValue(refs.cardTitleColorInput, current.card_title_color || ''),
-      cardDescFont: getPreviewInputValue(refs.cardDescFontInput, current.card_desc_font || ''),
-      cardDescSize: getPreviewInputValue(refs.cardDescSizeInput, current.card_desc_size || ''),
-      cardDescColor: getPreviewInputValue(refs.cardDescColorInput, current.card_desc_color || ''),
     };
   }
 
@@ -392,6 +425,8 @@
       refs.homeHitokotoFontInput,
       refs.cardTitleFontInput,
       refs.cardDescFontInput,
+      refs.mobileCardTitleFontInput,
+      refs.mobileCardDescFontInput,
     ];
 
     selects.forEach(select => {
@@ -574,7 +609,7 @@
       return;
     }
 
-    const hideCopyText = (Number(settings.gridCols) || 4) >= 5;
+    const hideCopyText = shouldHideCopyTextForPreview(settings.previewDevice, settings.gridCols);
 
     grid.innerHTML = cards.map(card => {
       const initial = escapeHTML(card.name.slice(0, 1).toUpperCase() || '站');
@@ -603,7 +638,7 @@
         ? 'bg-accent-100 text-accent-700 hover:bg-accent-200'
         : 'bg-gray-200 text-gray-400 cursor-not-allowed';
       const categoryHtml = settings.hideCardCategory ? '' : `
-                <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-secondary-100 text-primary-700">
+                <span class="preview-category site-category inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-secondary-100 text-primary-700">
                   ${escapeHTML(card.category)}
                 </span>`;
       const descHtml = settings.hideCardDesc ? '' : `<p class="preview-desc mt-2 text-sm text-gray-600 leading-relaxed line-clamp-2" title="${escapeHTML(card.desc)}">${escapeHTML(card.desc)}</p>`;
@@ -712,12 +747,17 @@
     root.classList.toggle('category-below-search', settings.categoryPosition === 'below_search');
     root.classList.toggle('is-mobile-preview', isMobilePreview);
     if (!isMobilePreview) root.classList.remove('mobile-menu-open');
-    root.style.setProperty('--preview-grid-cols', String(Math.min(Number(settings.gridCols) || 4, 7)));
-    root.style.setProperty('--preview-card-radius', `${Number(settings.cardRadius) || 12}px`);
-    root.style.setProperty('--card-radius', `${Number(settings.cardRadius) || 12}px`);
+    const fallbackGridCols = isMobilePreview ? 3 : 4;
+    const maxGridCols = isMobilePreview ? 3 : 7;
+    const previewGridCols = Math.min(Math.max(Number(settings.gridCols) || fallbackGridCols, 1), maxGridCols);
+    root.style.setProperty('--preview-grid-cols', String(previewGridCols));
+    const cardRadius = getPreviewNumberOrDefault(settings.cardRadius, 12);
+    const frostedBlur = getPreviewNumberOrDefault(settings.frostedIntensity, 15);
+    root.style.setProperty('--preview-card-radius', `${cardRadius}px`);
+    root.style.setProperty('--card-radius', `${cardRadius}px`);
     root.style.setProperty('--card-padding', '1rem');
-    root.style.setProperty('--frosted-glass-blur', `${Number(settings.frostedIntensity) || 15}px`);
-    root.style.setProperty('--preview-frosted-blur', `${Number(settings.frostedIntensity) || 15}px`);
+    root.style.setProperty('--frosted-glass-blur', `${frostedBlur}px`);
+    root.style.setProperty('--preview-frosted-blur', `${frostedBlur}px`);
     root.style.setProperty('--preview-bg-blur', settings.bgBlur ? `${Number(settings.bgBlurIntensity) || 0}px` : '0px');
     root.style.setProperty('--preview-bg-scale', settings.bgBlur ? '1.04' : '1');
 
@@ -795,7 +835,19 @@
     });
   }
 
-  function setupColorPicker(textInput, pickerInput) {
+  function isPreviewDevice(device) {
+    return document.getElementById('homeLivePreview')?.dataset.device === device;
+  }
+
+  function schedulePreviewRenderForDevice(device) {
+    if (isPreviewDevice(device)) scheduleFullPreviewRender();
+  }
+
+  function triggerPreviewAnimationForDevice(device) {
+    if (isPreviewDevice(device)) requestAnimationFrame(triggerPreviewAnimation);
+  }
+
+  function setupColorPicker(textInput, pickerInput, scheduleRender = scheduleFullPreviewRender) {
     if (!textInput || !pickerInput) return;
 
     if (/^#[0-9A-F]{6}$/i.test(textInput.value)) {
@@ -804,7 +856,7 @@
 
     pickerInput.addEventListener('input', () => {
       textInput.value = pickerInput.value;
-      scheduleFullPreviewRender();
+      scheduleRender();
     });
 
     textInput.addEventListener('input', () => {
@@ -812,7 +864,7 @@
       if (/^#[0-9A-F]{6}$/i.test(val)) {
         pickerInput.value = val;
       }
-      scheduleFullPreviewRender();
+      scheduleRender();
     });
   }
 
@@ -875,7 +927,7 @@
       }
     });
 
-    scheduleFullPreviewRender();
+    schedulePreviewRenderForDevice('desktop');
   }
 
   function updatePreviewWidth() {
@@ -901,7 +953,7 @@
     const preview2 = document.getElementById('cardStyle2PreviewContainer');
     if (preview1) preview1.style.maxWidth = width;
     if (preview2) preview2.style.maxWidth = width;
-    scheduleFullPreviewRender();
+    schedulePreviewRenderForDevice('desktop');
   }
 
   function getLegacyPreviewCard() {
@@ -921,7 +973,10 @@
 
   function resolvePreviewAnimation() {
     const refs = getRefs();
-    const selected = refs.cardAnimationSelect?.value || getCurrentSettings().layout_card_animation || 'radial';
+    const isMobilePreview = document.getElementById('homeLivePreview')?.dataset.device === 'mobile';
+    const selected = isMobilePreview
+      ? refs.mobileCardAnimationSelect?.value || getCurrentSettings().mobile_layout_card_animation || 'radial'
+      : refs.cardAnimationSelect?.value || getCurrentSettings().layout_card_animation || 'radial';
     if (selected === 'random') {
       return CARD_ANIMATION_TYPES[Math.floor(Math.random() * CARD_ANIMATION_TYPES.length)];
     }
@@ -998,13 +1053,17 @@
     });
   }
 
-  function syncAnimationOptions() {
+  function syncAnimationOptions(device = 'all') {
     const refs = getRefs();
-    const selected = refs.cardAnimationSelect?.value || 'radial';
-    document.querySelectorAll('.card-animation-option').forEach(option => {
-      const isActive = option.dataset.animation === selected;
-      option.classList.toggle('active', isActive);
-      option.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    const devices = device === 'all' ? ['desktop', 'mobile'] : [device];
+    devices.forEach(targetDevice => {
+      const select = targetDevice === 'mobile' ? refs.mobileCardAnimationSelect : refs.cardAnimationSelect;
+      const selected = select?.value || 'radial';
+      document.querySelectorAll(`.card-animation-option[data-animation-device="${targetDevice}"]`).forEach(option => {
+        const isActive = option.dataset.animation === selected;
+        option.classList.toggle('active', isActive);
+        option.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
     });
   }
 
@@ -1032,8 +1091,29 @@
       preview2.classList.add('hidden');
     }
 
-    scheduleFullPreviewRender();
-    requestAnimationFrame(triggerPreviewAnimation);
+    schedulePreviewRenderForDevice('desktop');
+    triggerPreviewAnimationForDevice('desktop');
+  }
+
+  function selectMobileCardStyle(style) {
+    const currentSettings = getCurrentSettings();
+    currentSettings.mobile_layout_card_style = style;
+
+    const btn1 = document.getElementById('mobileBtnStyle1');
+    const btn2 = document.getElementById('mobileBtnStyle2');
+    if (!btn1 || !btn2) return;
+
+    btn1.className = 'card-style-btn card-segment-option';
+    btn2.className = 'card-style-btn card-segment-option';
+
+    if (style === 'style2') {
+      btn2.classList.add('active');
+    } else {
+      btn1.classList.add('active');
+    }
+
+    schedulePreviewRenderForDevice('mobile');
+    triggerPreviewAnimationForDevice('mobile');
   }
 
   function bindLivePreviewEvents() {
@@ -1061,6 +1141,11 @@
       refs.homeHitokotoSizeInput,
       refs.homeHitokotoColorInput,
       refs.homeDefaultCategorySelect,
+      refs.customWallpaperInput,
+      refs.bgBlurSwitch,
+      refs.bgBlurIntensityRange,
+    ];
+    const desktopCardInputs = [
       refs.hideDescSwitch,
       refs.hideLinksSwitch,
       refs.hideCategorySwitch,
@@ -1073,14 +1158,34 @@
       refs.cardDescFontInput,
       refs.cardDescSizeInput,
       refs.cardDescColorInput,
-      refs.customWallpaperInput,
-      refs.bgBlurSwitch,
-      refs.bgBlurIntensityRange,
+    ];
+    const mobileCardInputs = [
+      refs.mobileHideDescSwitch,
+      refs.mobileHideLinksSwitch,
+      refs.mobileHideCategorySwitch,
+      refs.mobileFrostedGlassSwitch,
+      refs.mobileFrostedGlassIntensityRange,
+      refs.mobileCardAnimationSelect,
+      refs.mobileCardRadiusInput,
+      refs.mobileCardTitleFontInput,
+      refs.mobileCardTitleSizeInput,
+      refs.mobileCardTitleColorInput,
+      refs.mobileCardDescFontInput,
+      refs.mobileCardDescSizeInput,
+      refs.mobileCardDescColorInput,
     ];
 
     liveInputs.forEach(input => {
       input?.addEventListener('input', scheduleFullPreviewRender);
       input?.addEventListener('change', scheduleFullPreviewRender);
+    });
+    desktopCardInputs.forEach(input => {
+      input?.addEventListener('input', () => schedulePreviewRenderForDevice('desktop'));
+      input?.addEventListener('change', () => schedulePreviewRenderForDevice('desktop'));
+    });
+    mobileCardInputs.forEach(input => {
+      input?.addEventListener('input', () => schedulePreviewRenderForDevice('mobile'));
+      input?.addEventListener('change', () => schedulePreviewRenderForDevice('mobile'));
     });
 
     refs.homeDefaultCategorySelect?.addEventListener('change', () => {
@@ -1091,12 +1196,17 @@
     [
       refs.categoryPositionRadios,
       refs.categoryFlowRadios,
-      refs.gridColsRadios,
     ].forEach(radios => {
       for (const radio of radios || []) {
         radio.addEventListener('change', scheduleFullPreviewRender);
       }
     });
+    for (const radio of refs.gridColsRadios || []) {
+      radio.addEventListener('change', () => schedulePreviewRenderForDevice('desktop'));
+    }
+    for (const radio of refs.mobileGridColsRadios || []) {
+      radio.addEventListener('change', () => schedulePreviewRenderForDevice('mobile'));
+    }
 
     document.querySelectorAll('.preview-device-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1176,23 +1286,38 @@
     for (const radio of refs.gridColsRadios || []) {
       radio.addEventListener('change', updatePreviewWidth);
     }
-
     document.getElementById('btnStyle1')?.addEventListener('click', () => selectCardStyle('style1'));
     document.getElementById('btnStyle2')?.addEventListener('click', () => selectCardStyle('style2'));
-    document.querySelectorAll('.card-animation-option').forEach(option => {
+    document.getElementById('mobileBtnStyle1')?.addEventListener('click', () => selectMobileCardStyle('style1'));
+    document.getElementById('mobileBtnStyle2')?.addEventListener('click', () => selectMobileCardStyle('style2'));
+    document.querySelectorAll('.card-animation-option[data-animation-device="desktop"]').forEach(option => {
       option.addEventListener('click', () => {
         if (!refs.cardAnimationSelect) return;
         refs.cardAnimationSelect.value = option.dataset.animation || 'radial';
         getCurrentSettings().layout_card_animation = refs.cardAnimationSelect.value;
-        syncAnimationOptions();
-        triggerPreviewAnimation();
+        syncAnimationOptions('desktop');
+        triggerPreviewAnimationForDevice('desktop');
+      });
+    });
+    document.querySelectorAll('.card-animation-option[data-animation-device="mobile"]').forEach(option => {
+      option.addEventListener('click', () => {
+        if (!refs.mobileCardAnimationSelect) return;
+        refs.mobileCardAnimationSelect.value = option.dataset.animation || 'radial';
+        getCurrentSettings().mobile_layout_card_animation = refs.mobileCardAnimationSelect.value;
+        syncAnimationOptions('mobile');
+        triggerPreviewAnimationForDevice('mobile');
       });
     });
 
     refs.cardAnimationSelect?.addEventListener('change', () => {
       getCurrentSettings().layout_card_animation = refs.cardAnimationSelect.value || 'radial';
-      syncAnimationOptions();
-      triggerPreviewAnimation();
+      syncAnimationOptions('desktop');
+      triggerPreviewAnimationForDevice('desktop');
+    });
+    refs.mobileCardAnimationSelect?.addEventListener('change', () => {
+      getCurrentSettings().mobile_layout_card_animation = refs.mobileCardAnimationSelect.value || 'radial';
+      syncAnimationOptions('mobile');
+      triggerPreviewAnimationForDevice('mobile');
     });
 
     refs.hideDescSwitch?.addEventListener('change', updatePreviewCards);
@@ -1204,6 +1329,10 @@
     refs.cardRadiusInput?.addEventListener('input', () => {
       if (refs.cardRadiusValue) refs.cardRadiusValue.textContent = refs.cardRadiusInput.value;
       updatePreviewCards();
+    });
+    refs.mobileCardRadiusInput?.addEventListener('input', () => {
+      if (refs.mobileCardRadiusValue) refs.mobileCardRadiusValue.textContent = refs.mobileCardRadiusInput.value;
+      schedulePreviewRenderForDevice('mobile');
     });
 
     [
@@ -1218,12 +1347,26 @@
       input?.addEventListener('change', updatePreviewCards);
     });
 
+    [
+      refs.mobileCardTitleFontInput,
+      refs.mobileCardTitleSizeInput,
+      refs.mobileCardTitleColorInput,
+      refs.mobileCardDescFontInput,
+      refs.mobileCardDescSizeInput,
+      refs.mobileCardDescColorInput,
+    ].forEach(input => {
+      input?.addEventListener('input', () => schedulePreviewRenderForDevice('mobile'));
+      input?.addEventListener('change', () => schedulePreviewRenderForDevice('mobile'));
+    });
+
     setupColorPicker(refs.homeTitleColorInput, refs.homeTitleColorPicker);
     setupColorPicker(refs.homeSubtitleColorInput, refs.homeSubtitleColorPicker);
     setupColorPicker(refs.homeStatsColorInput, refs.homeStatsColorPicker);
     setupColorPicker(refs.homeHitokotoColorInput, refs.homeHitokotoColorPicker);
-    setupColorPicker(refs.cardTitleColorInput, refs.cardTitleColorPicker);
-    setupColorPicker(refs.cardDescColorInput, refs.cardDescColorPicker);
+    setupColorPicker(refs.cardTitleColorInput, refs.cardTitleColorPicker, () => schedulePreviewRenderForDevice('desktop'));
+    setupColorPicker(refs.cardDescColorInput, refs.cardDescColorPicker, () => schedulePreviewRenderForDevice('desktop'));
+    setupColorPicker(refs.mobileCardTitleColorInput, refs.mobileCardTitleColorPicker, () => schedulePreviewRenderForDevice('mobile'));
+    setupColorPicker(refs.mobileCardDescColorInput, refs.mobileCardDescColorPicker, () => schedulePreviewRenderForDevice('mobile'));
     bindLivePreviewEvents();
   }
 
@@ -1242,10 +1385,12 @@
     updatePreviewCards,
     updatePreviewWidth,
     selectCardStyle,
+    selectMobileCardStyle,
     triggerPreviewAnimation,
     syncAnimationOptions,
     invalidatePreviewCards,
     renderFullPreview,
     scheduleFullPreviewRender,
+    shouldHideCopyTextForPreview,
   };
 })();

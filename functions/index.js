@@ -35,6 +35,12 @@ function getThemeClasses(isCustomWallpaper) {
   };
 }
 
+function normalizeCssPixelValue(value, fallback) {
+  const normalized = String(value ?? '').trim().replace(/[^0-9]/g, '');
+  if (normalized === '') return String(fallback);
+  return normalized;
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
 
@@ -221,14 +227,18 @@ export async function onRequest(context) {
     : renderEmptyState(categories.length, S.home_hide_admin);
 
   // === 11. 计算 Grid 列数 ===
-  let gridClass = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 justify-items-center';
-  if (S.layout_grid_cols === '5') {
-    gridClass = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6 justify-items-center';
-  } else if (S.layout_grid_cols === '6') {
-    gridClass = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 min-[1200px]:grid-cols-6 gap-3 sm:gap-6 justify-items-center';
-  } else if (S.layout_grid_cols === '7') {
-    gridClass = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-3 sm:gap-6 justify-items-center';
-  }
+  const getMobileGridClass = (cols) => {
+    if (cols === '1') return 'grid-cols-1';
+    if (cols === '3') return 'grid-cols-3';
+    return 'grid-cols-2';
+  };
+  const getDesktopGridClass = (cols) => {
+    if (cols === '5') return 'md:grid-cols-3 lg:grid-cols-5';
+    if (cols === '6') return 'md:grid-cols-3 lg:grid-cols-5 min-[1200px]:grid-cols-6';
+    if (cols === '7') return 'md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7';
+    return 'md:grid-cols-3 lg:grid-cols-4';
+  };
+  let gridClass = `grid ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} gap-3 sm:gap-6 justify-items-center`;
 
   // === 12. 计算文本和统计信息 ===
   const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
@@ -411,9 +421,11 @@ export async function onRequest(context) {
   </style>`;
 
   // CSS 变量
-  const cardRadius = parseInt(S.layout_card_border_radius) || 12;
-  const frostedBlur = String(S.layout_frosted_glass_intensity || '15').replace(/[^0-9]/g, '') || '15';
-  headInjections += `<style>:root { --card-padding: 1.25rem; --card-radius: ${cardRadius}px; --frosted-glass-blur: ${frostedBlur}px; }</style>`;
+  const cardRadius = normalizeCssPixelValue(S.layout_card_border_radius, 12);
+  const mobileCardRadius = normalizeCssPixelValue(S.mobile_layout_card_border_radius, cardRadius);
+  const frostedBlur = normalizeCssPixelValue(S.layout_frosted_glass_intensity, 15);
+  const mobileFrostedBlur = normalizeCssPixelValue(S.mobile_layout_frosted_glass_intensity, frostedBlur);
+  headInjections += `<style>:root { --card-padding: 1.25rem; --card-radius: ${cardRadius}px; --frosted-glass-blur: ${frostedBlur}px; }@media (max-width: 767px) { :root { --card-radius: ${mobileCardRadius}px; --frosted-glass-blur: ${mobileFrostedBlur}px; } }</style>`;
 
   // 自定义字体
   const usedFonts = new Set();
@@ -423,6 +435,8 @@ export async function onRequest(context) {
   if (!S.home_hide_hitokoto && S.home_hitokoto_font) usedFonts.add(S.home_hitokoto_font);
   if (S.card_title_font) usedFonts.add(S.card_title_font);
   if (S.card_desc_font) usedFonts.add(S.card_desc_font);
+  if (S.mobile_card_title_font) usedFonts.add(S.mobile_card_title_font);
+  if (S.mobile_card_desc_font) usedFonts.add(S.mobile_card_desc_font);
 
   let fontLinksHtml = '';
   let needsFontPreconnect = false;
@@ -455,13 +469,17 @@ export async function onRequest(context) {
 
   // 卡片自定义字体 CSS
   let customCardCss = '';
-  if (S.card_title_font || S.card_title_size || S.card_title_color) {
-    const s = getStyleStr(S.card_title_size, S.card_title_color, S.card_title_font).replace('style="', '').replace('"', '');
-    if (s) customCardCss += `.site-title { ${s} }`;
+  const desktopCardTitleStyle = getStyleStr(S.card_title_size, S.card_title_color, S.card_title_font).replace('style="', '').replace('"', '');
+  const mobileCardTitleStyle = getStyleStr(S.mobile_card_title_size, S.mobile_card_title_color, S.mobile_card_title_font).replace('style="', '').replace('"', '');
+  const desktopCardDescStyle = getStyleStr(S.card_desc_size, S.card_desc_color, S.card_desc_font).replace('style="', '').replace('"', '');
+  const mobileCardDescStyle = getStyleStr(S.mobile_card_desc_size, S.mobile_card_desc_color, S.mobile_card_desc_font).replace('style="', '').replace('"', '');
+  if (desktopCardTitleStyle || mobileCardTitleStyle) {
+    if (desktopCardTitleStyle) customCardCss += `@media (min-width: 768px) { .site-title { ${desktopCardTitleStyle} } }`;
+    if (mobileCardTitleStyle) customCardCss += `@media (max-width: 767px) { .site-title { ${mobileCardTitleStyle} } }`;
   }
-  if (S.card_desc_font || S.card_desc_size || S.card_desc_color) {
-    const s = getStyleStr(S.card_desc_size, S.card_desc_color, S.card_desc_font).replace('style="', '').replace('"', '');
-    if (s) customCardCss += `.site-card p { ${s} }`;
+  if (desktopCardDescStyle || mobileCardDescStyle) {
+    if (desktopCardDescStyle) customCardCss += `@media (min-width: 768px) { .site-card p { ${desktopCardDescStyle} } }`;
+    if (mobileCardDescStyle) customCardCss += `@media (max-width: 767px) { .site-card p { ${mobileCardDescStyle} } }`;
   }
   if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
 
@@ -469,6 +487,7 @@ export async function onRequest(context) {
   const cardHydrationState = buildCardHydrationState(allSites, S);
   const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
   const safeCardConfigJson = JSON.stringify(cardHydrationState.config).replace(/</g, '\\u003c');
+  const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
   const safeLayoutConfigJson = JSON.stringify({
     hideDesc: S.layout_hide_desc,
     hideLinks: S.layout_hide_links,
@@ -501,7 +520,7 @@ export async function onRequest(context) {
   } else {
     html = html.replace(
       mainJsMarker,
-      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIG=${safeCardConfigJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
+      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIG=${safeCardConfigJson};window.IORI_CARD_CONFIGS=${safeCardConfigsJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
     );
   }
 

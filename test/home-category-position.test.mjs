@@ -103,6 +103,30 @@ test('home footer text can be configured from settings', async () => {
   assert.equal(configuredHtml.includes(`© ${year} Unit Footer`), false);
 });
 
+test('home grid uses configured mobile card columns', async () => {
+  const oneColHtml = await renderHome([
+    { key: 'mobile_layout_grid_cols', value: '1' },
+  ]);
+  const threeColHtml = await renderHome([
+    { key: 'mobile_layout_grid_cols', value: '3' },
+  ]);
+
+  assert.match(oneColHtml, /id="sitesGrid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4/);
+  assert.match(threeColHtml, /id="sitesGrid" class="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4/);
+});
+
+test('home card radius and frosted blur preserve zero values', async () => {
+  const html = await renderHome([
+    { key: 'layout_card_border_radius', value: '0' },
+    { key: 'mobile_layout_card_border_radius', value: '0' },
+    { key: 'layout_frosted_glass_intensity', value: '0' },
+    { key: 'mobile_layout_frosted_glass_intensity', value: '0' },
+  ]);
+
+  assert.match(html, /--card-radius: 0px; --frosted-glass-blur: 0px;/);
+  assert.match(html, /@media \(max-width: 767px\) \{ :root \{ --card-radius: 0px; --frosted-glass-blur: 0px; \} \}/);
+});
+
 test('home category navigation can render at the top', async () => {
   const html = await renderHome([
     { key: 'home_category_position', value: 'top' },

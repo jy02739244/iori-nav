@@ -14,6 +14,10 @@
     'home_remember_last_category',
     'layout_enable_frosted_glass',
     'layout_enable_bg_blur',
+    'mobile_layout_hide_desc',
+    'mobile_layout_hide_links',
+    'mobile_layout_hide_category',
+    'mobile_layout_enable_frosted_glass',
   ];
 
   const TRUTHY_STRING_FIELDS = [
@@ -54,6 +58,17 @@
     'card_desc_font',
     'card_desc_size',
     'card_desc_color',
+    'mobile_layout_frosted_glass_intensity',
+    'mobile_layout_grid_cols',
+    'mobile_layout_card_style',
+    'mobile_layout_card_animation',
+    'mobile_layout_card_border_radius',
+    'mobile_card_title_font',
+    'mobile_card_title_size',
+    'mobile_card_title_color',
+    'mobile_card_desc_font',
+    'mobile_card_desc_size',
+    'mobile_card_desc_color',
   ];
 
   function createDefaultSettings() {
@@ -105,11 +120,26 @@
       layout_card_animation: 'radial',
       layout_card_border_radius: '12',
       card_title_font: '',
-      card_title_size: '',
+      card_title_size: '16',
       card_title_color: '',
       card_desc_font: '',
-      card_desc_size: '',
+      card_desc_size: '14',
       card_desc_color: '',
+      mobile_layout_hide_desc: true,
+      mobile_layout_hide_links: true,
+      mobile_layout_hide_category: false,
+      mobile_layout_enable_frosted_glass: false,
+      mobile_layout_frosted_glass_intensity: '15',
+      mobile_layout_grid_cols: '3',
+      mobile_layout_card_style: 'style2',
+      mobile_layout_card_animation: 'radial',
+      mobile_layout_card_border_radius: '12',
+      mobile_card_title_font: '',
+      mobile_card_title_size: '13',
+      mobile_card_title_color: '',
+      mobile_card_desc_font: '',
+      mobile_card_desc_size: '11',
+      mobile_card_desc_color: '',
     };
   }
 
@@ -184,6 +214,24 @@
       cardDescSizeInput: document.getElementById('cardDescSize'),
       cardDescColorInput: document.getElementById('cardDescColor'),
       cardDescColorPicker: document.getElementById('cardDescColorPicker'),
+      mobileHideDescSwitch: document.getElementById('mobileHideDescSwitch'),
+      mobileHideLinksSwitch: document.getElementById('mobileHideLinksSwitch'),
+      mobileHideCategorySwitch: document.getElementById('mobileHideCategorySwitch'),
+      mobileFrostedGlassSwitch: document.getElementById('mobileFrostedGlassSwitch'),
+      mobileFrostedGlassIntensityRange: document.getElementById('mobileFrostedGlassIntensity'),
+      mobileFrostedGlassIntensityValue: document.getElementById('mobileFrostedGlassIntensityValue'),
+      mobileGridColsRadios: document.getElementsByName('mobileGridCols'),
+      mobileCardAnimationSelect: document.getElementById('mobileCardAnimationSelect'),
+      mobileCardRadiusInput: document.getElementById('mobileCardRadius'),
+      mobileCardRadiusValue: document.getElementById('mobileCardRadiusValue'),
+      mobileCardTitleFontInput: document.getElementById('mobileCardTitleFont'),
+      mobileCardTitleSizeInput: document.getElementById('mobileCardTitleSize'),
+      mobileCardTitleColorInput: document.getElementById('mobileCardTitleColor'),
+      mobileCardTitleColorPicker: document.getElementById('mobileCardTitleColorPicker'),
+      mobileCardDescFontInput: document.getElementById('mobileCardDescFont'),
+      mobileCardDescSizeInput: document.getElementById('mobileCardDescSize'),
+      mobileCardDescColorInput: document.getElementById('mobileCardDescColor'),
+      mobileCardDescColorPicker: document.getElementById('mobileCardDescColorPicker'),
       bulkProgressView: document.getElementById('bulkGenerateProgress'),
     };
   }
@@ -266,6 +314,26 @@
       const categoryPosition = normalizeCategoryPosition(currentSettings.home_category_position, currentSettings.layout_menu_layout);
       currentSettings.home_category_position = categoryPosition;
       currentSettings.layout_menu_layout = categoryPosition === 'left' ? 'vertical' : 'horizontal';
+    }
+
+    [
+      ['mobile_layout_hide_category', 'layout_hide_category'],
+      ['mobile_layout_enable_frosted_glass', 'layout_enable_frosted_glass'],
+      ['mobile_layout_frosted_glass_intensity', 'layout_frosted_glass_intensity'],
+      ['mobile_layout_card_animation', 'layout_card_animation'],
+      ['mobile_layout_card_border_radius', 'layout_card_border_radius'],
+      ['mobile_card_title_font', 'card_title_font'],
+      ['mobile_card_title_color', 'card_title_color'],
+      ['mobile_card_desc_font', 'card_desc_font'],
+      ['mobile_card_desc_color', 'card_desc_color'],
+    ].forEach(([mobileKey, desktopKey]) => {
+      if (serverSettings[mobileKey] === undefined) {
+        currentSettings[mobileKey] = currentSettings[desktopKey];
+      }
+    });
+
+    if (serverSettings.mobile_layout_grid_cols === undefined) {
+      currentSettings.mobile_layout_grid_cols = '3';
     }
   }
 
@@ -392,6 +460,7 @@
 
     currentSettings.layout_enable_frosted_glass = !!refs.frostedGlassSwitch?.checked;
     currentSettings.layout_frosted_glass_intensity = refs.frostedGlassIntensityRange?.value || '15';
+    currentSettings.layout_card_style = document.getElementById('btnStyle2')?.classList.contains('active') ? 'style2' : 'style1';
     currentSettings.layout_card_animation = refs.cardAnimationSelect?.value || 'radial';
     currentSettings.layout_card_border_radius = refs.cardRadiusInput?.value || '12';
     currentSettings.card_title_font = refs.cardTitleFontInput?.value.trim() || '';
@@ -400,6 +469,27 @@
     currentSettings.card_desc_font = refs.cardDescFontInput?.value.trim() || '';
     currentSettings.card_desc_size = refs.cardDescSizeInput?.value.trim() || '';
     currentSettings.card_desc_color = refs.cardDescColorInput?.value.trim() || '';
+
+    currentSettings.mobile_layout_hide_desc = !!refs.mobileHideDescSwitch?.checked;
+    currentSettings.mobile_layout_hide_links = !!refs.mobileHideLinksSwitch?.checked;
+    currentSettings.mobile_layout_hide_category = !!refs.mobileHideCategorySwitch?.checked;
+    currentSettings.mobile_layout_enable_frosted_glass = !!refs.mobileFrostedGlassSwitch?.checked;
+    currentSettings.mobile_layout_frosted_glass_intensity = refs.mobileFrostedGlassIntensityRange?.value || '15';
+    for (const radio of refs.mobileGridColsRadios || []) {
+      if (radio.checked) {
+        currentSettings.mobile_layout_grid_cols = radio.value;
+        break;
+      }
+    }
+    currentSettings.mobile_layout_card_style = document.getElementById('mobileBtnStyle2')?.classList.contains('active') ? 'style2' : 'style1';
+    currentSettings.mobile_layout_card_animation = refs.mobileCardAnimationSelect?.value || 'radial';
+    currentSettings.mobile_layout_card_border_radius = refs.mobileCardRadiusInput?.value || '12';
+    currentSettings.mobile_card_title_font = refs.mobileCardTitleFontInput?.value.trim() || '';
+    currentSettings.mobile_card_title_size = refs.mobileCardTitleSizeInput?.value.trim() || '';
+    currentSettings.mobile_card_title_color = refs.mobileCardTitleColorInput?.value.trim() || '';
+    currentSettings.mobile_card_desc_font = refs.mobileCardDescFontInput?.value.trim() || '';
+    currentSettings.mobile_card_desc_size = refs.mobileCardDescSizeInput?.value.trim() || '';
+    currentSettings.mobile_card_desc_color = refs.mobileCardDescColorInput?.value.trim() || '';
   }
 
   async function saveSettings() {
@@ -526,6 +616,21 @@
     setValue(refs.cardDescFontInput, currentSettings.card_desc_font || '');
     setValue(refs.cardDescSizeInput, currentSettings.card_desc_size || '14');
     setColorInputs(refs.cardDescColorInput, refs.cardDescColorPicker, currentSettings.card_desc_color || '');
+    setChecked(refs.mobileHideDescSwitch, currentSettings.mobile_layout_hide_desc);
+    setChecked(refs.mobileHideLinksSwitch, currentSettings.mobile_layout_hide_links);
+    setChecked(refs.mobileHideCategorySwitch, currentSettings.mobile_layout_hide_category);
+    setChecked(refs.mobileFrostedGlassSwitch, currentSettings.mobile_layout_enable_frosted_glass);
+    setRangeValue(refs.mobileFrostedGlassIntensityRange, refs.mobileFrostedGlassIntensityValue, currentSettings.mobile_layout_frosted_glass_intensity || '15');
+    updateToggleContainer(refs.mobileFrostedGlassSwitch, 'mobileFrostedGlassIntensityContainer');
+    setRadioValue(refs.mobileGridColsRadios, currentSettings.mobile_layout_grid_cols || '3');
+    setValue(refs.mobileCardAnimationSelect, currentSettings.mobile_layout_card_animation || 'radial');
+    setRangeValue(refs.mobileCardRadiusInput, refs.mobileCardRadiusValue, currentSettings.mobile_layout_card_border_radius || '12');
+    setValue(refs.mobileCardTitleFontInput, currentSettings.mobile_card_title_font || '');
+    setValue(refs.mobileCardTitleSizeInput, currentSettings.mobile_card_title_size || '13');
+    setColorInputs(refs.mobileCardTitleColorInput, refs.mobileCardTitleColorPicker, currentSettings.mobile_card_title_color || '#111827');
+    setValue(refs.mobileCardDescFontInput, currentSettings.mobile_card_desc_font || '');
+    setValue(refs.mobileCardDescSizeInput, currentSettings.mobile_card_desc_size || '11');
+    setColorInputs(refs.mobileCardDescColorInput, refs.mobileCardDescColorPicker, currentSettings.mobile_card_desc_color || '');
 
     [
       currentSettings.home_title_font,
@@ -534,9 +639,12 @@
       currentSettings.home_hitokoto_font,
       currentSettings.card_title_font,
       currentSettings.card_desc_font,
+      currentSettings.mobile_card_title_font,
+      currentSettings.mobile_card_desc_font,
     ].forEach(font => ns.preview?.loadFont?.(font));
 
     ns.preview?.selectCardStyle?.(currentSettings.layout_card_style || 'style1');
+    ns.preview?.selectMobileCardStyle?.(currentSettings.mobile_layout_card_style || 'style2');
     ns.preview?.updatePreviewCards?.();
     ns.preview?.updatePreviewWidth?.();
   }
@@ -592,6 +700,40 @@
     });
   }
 
+  function initCardDeviceTabs() {
+    const buttons = document.querySelectorAll('[data-card-device-tab]');
+    const panels = document.querySelectorAll('[data-card-device-panel]');
+    if (!buttons.length || !panels.length) return;
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const target = button.dataset.cardDeviceTab || 'desktop';
+
+        buttons.forEach(item => {
+          const isActive = item === button;
+          item.classList.toggle('active', isActive);
+          item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        panels.forEach(panel => {
+          panel.classList.toggle('hidden', panel.dataset.cardDevicePanel !== target);
+        });
+
+        const previewRoot = document.getElementById('homeLivePreview');
+        if (previewRoot) {
+          previewRoot.dataset.device = target === 'mobile' ? 'mobile' : 'desktop';
+          if (previewRoot.dataset.device !== 'mobile') previewRoot.classList.remove('mobile-menu-open');
+        }
+        document.querySelectorAll('.preview-device-btn').forEach(deviceBtn => {
+          const isActive = deviceBtn.dataset.previewDevice === (target === 'mobile' ? 'mobile' : 'desktop');
+          deviceBtn.classList.toggle('active', isActive);
+        });
+
+        ns.preview?.scheduleFullPreviewRender?.();
+      });
+    });
+  }
+
   function initFormEvents(refs) {
     refs.providerSelector?.addEventListener('change', () => {
       currentSettings.provider = refs.providerSelector.value;
@@ -622,6 +764,16 @@
         refs.bgBlurIntensityValue.textContent = refs.bgBlurIntensityRange.value;
       }
     });
+
+    refs.mobileFrostedGlassSwitch?.addEventListener('change', () => {
+      updateToggleContainer(refs.mobileFrostedGlassSwitch, 'mobileFrostedGlassIntensityContainer');
+    });
+
+    refs.mobileFrostedGlassIntensityRange?.addEventListener('input', () => {
+      if (refs.mobileFrostedGlassIntensityValue) {
+        refs.mobileFrostedGlassIntensityValue.textContent = refs.mobileFrostedGlassIntensityRange.value;
+      }
+    });
   }
 
   function init() {
@@ -629,6 +781,7 @@
     if (!refs.settingsBtn || !refs.settingsModal) return false;
     initModalEvents(refs);
     initTabEvents(refs);
+    initCardDeviceTabs();
     initFormEvents(refs);
     return true;
   }

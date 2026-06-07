@@ -424,6 +424,22 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
     margin-bottom: 0.5rem;
 }
 
+.site-card .site-category {
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 767px) {
+    .site-card.style-2 .site-category {
+        display: inline-block;
+        max-width: min(100%, 5rem);
+        vertical-align: middle;
+    }
+}
+
 .site-card.style-2 p {
     text-align: center;
     margin-top: 0.5rem;
@@ -923,12 +939,12 @@ html:not(.dark) .dropdown-item.active {
   }
 }
 @media (max-width: 400px) {
-  .site-card .flex.items-start {
+  .site-card.style-2 .flex.items-start {
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
   }
-  .site-card .site-icon {
+  .site-card.style-2 .site-icon {
     margin-right: 0 !important;
     margin-bottom: 0.5rem !important;
     width: 3.5rem !important;
@@ -937,33 +953,33 @@ html:not(.dark) .dropdown-item.active {
     justify-content: center !important;
     align-items: center !important;
   }
-  .site-card .site-icon img,
-  .site-card .site-icon div {
+  .site-card.style-2 .site-icon img,
+  .site-card.style-2 .site-icon div {
     margin: 0 auto !important;
   }
-  .site-card .site-title {
+  .site-card.style-2 .site-title {
     text-align: center !important;
     width: 100% !important;
     display: block !important;
     transform-origin: center !important;
   }
-  .site-card .flex-1 {
+  .site-card.style-2 .flex-1 {
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
   }
-  .site-card p {
+  .site-card.style-2 p {
     text-align: center !important;
     margin-top: 0.5rem !important;
   }
-  .site-card .mt-3.flex {
+  .site-card.style-2 .mt-3.flex {
     margin-top: auto !important;
     justify-content: space-between !important;
     padding-top: 0.5rem !important;
     border-top: 1px solid rgba(0,0,0,0.05) !important;
   }
-  .dark .site-card .mt-3.flex {
+  .dark .site-card.style-2 .mt-3.flex {
     border-top: 1px solid rgba(255,255,255,0.1) !important;
   }
 }

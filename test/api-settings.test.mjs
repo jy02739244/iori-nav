@@ -184,6 +184,6 @@ test('POST /api/settings skips unchanged writes but still invalidates caches', a
   assert.equal(body.code, 200);
   assert.equal(settingWrites.length, 0);
   assert.equal(kv.store.has('settings_cache'), false);
-  assert.equal(kv.store.has('home_dirty_public_v11'), true);
-  assert.equal(kv.store.has('home_dirty_private_v11'), true);
+  assert.equal(kv.store.has('home_dirty_public_v12'), true);
+  assert.equal(kv.store.has('home_dirty_private_v12'), true);
 });
