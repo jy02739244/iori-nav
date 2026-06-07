@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **运行平台**：Cloudflare Pages + Pages Functions（Workers）+ D1（SQLite）+ KV
 - **语言**：纯 JavaScript（ES Modules，**无 TypeScript**）
 - **前端**：原生 HTML/JS + TailwindCSS（**SSR 模板替换**，不是 SPA）
-- **测试 / lint**：项目**没有**配置测试框架或 lint 工具，唯一的 dev 依赖是 TailwindCSS 与 Husky
+- **测试 / lint**：测试使用 Node.js 内置 `node:test`，暂无 lint 工具；主要 dev 依赖是 TailwindCSS 与 Husky
 
 `AGENTS.md` 是给 AI 助手阅读的详细规范，请在动手前一并参考。
 
@@ -20,6 +20,8 @@ npm install                # 安装依赖（Tailwind / Husky）
 npm run build:css          # 构建 tailwind.min.css（修改 tailwind.css 后必跑）
 npm run dev:css            # Tailwind watch 模式
 npm run dev                # 启动 wrangler pages dev（predev 会先跑 update-versions.js）
+npm run check              # 语法检查 + node:test 测试
+npm test                   # 运行 node:test 测试
 npm run version            # 手动重新计算静态资源 ?v= 哈希
 npm run changelog          # 根据 git log 自动更新 README 更新日志区块
 

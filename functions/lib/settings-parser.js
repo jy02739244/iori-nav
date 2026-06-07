@@ -22,7 +22,6 @@ export const SETTINGS_SCHEMA = {
     home_hide_hitokoto: { default: false, type: 'bool' },
     home_hitokoto_size: { default: '', type: 'string' },
     home_hitokoto_color: { default: '', type: 'string' },
-    home_hide_github: { default: false, type: 'boolOrOne' },
     home_hide_admin: { default: false, type: 'boolOrOne' },
     home_custom_font_url: { default: '', type: 'string' },
     home_title_font: { default: '', type: 'string' },
@@ -31,9 +30,12 @@ export const SETTINGS_SCHEMA = {
     home_hitokoto_font: { default: '', type: 'string' },
     home_site_name: { default: '', type: 'string' },
     home_site_description: { default: '', type: 'string' },
+    home_footer_text: { default: '', type: 'string' },
     home_search_engine_enabled: { default: false, type: 'bool' },
     home_default_category: { default: '', type: 'string' },
     home_remember_last_category: { default: false, type: 'bool' },
+    home_category_position: { default: 'below_search', type: 'string' },
+    home_category_flow: { default: 'single_line', type: 'string' },
     layout_grid_cols: { default: '4', type: 'string' },
     layout_custom_wallpaper: { default: '', type: 'string' },
     layout_menu_layout: { default: 'horizontal', type: 'string' },
@@ -43,6 +45,7 @@ export const SETTINGS_SCHEMA = {
     layout_enable_bg_blur: { default: false, type: 'bool' },
     layout_bg_blur_intensity: { default: '0', type: 'string' },
     layout_card_style: { default: 'style1', type: 'string' },
+    layout_card_animation: { default: 'radial', type: 'string' },
     layout_card_border_radius: { default: '12', type: 'string' },
     wallpaper_source: { default: 'bing', type: 'string' },
     wallpaper_cid_360: { default: '36', type: 'string' },
@@ -85,6 +88,12 @@ const URL_KEYS = new Set([
     'home_custom_font_url',
     'layout_custom_wallpaper',
 ]);
+
+function normalizeParsedCategoryPosition(position, menuLayout) {
+    if (position === 'above_description') return 'top';
+    if (['below_search', 'above_search', 'left', 'top'].includes(position)) return position;
+    return menuLayout === 'vertical' ? 'left' : 'below_search';
+}
 
 function normalizeBoolean(value) {
     if (value === true || value === false) return String(value);
@@ -170,8 +179,24 @@ export function normalizeSettingValueForStorage(key, value) {
         return { ok: false, message: 'Invalid layout_menu_layout' };
     }
 
+    if (key === 'home_category_position' && text === 'above_description') {
+        return { ok: true, value: 'top' };
+    }
+
+    if (key === 'home_category_position' && !['below_search', 'above_search', 'left', 'top'].includes(text)) {
+        return { ok: false, message: 'Invalid home_category_position' };
+    }
+
+    if (key === 'home_category_flow' && !['single_line', 'multi_line'].includes(text)) {
+        return { ok: false, message: 'Invalid home_category_flow' };
+    }
+
     if (key === 'layout_card_style' && !['style1', 'style2'].includes(text)) {
         return { ok: false, message: 'Invalid layout_card_style' };
+    }
+
+    if (key === 'layout_card_animation' && !['radial', 'slideUp', 'fadeIn', 'slideLeft', 'slideRight', 'convergeIn', 'flipIn', 'random'].includes(text)) {
+        return { ok: false, message: 'Invalid layout_card_animation' };
     }
 
     if (key === 'wallpaper_source' && !['bing', '360'].includes(text)) {
@@ -245,6 +270,16 @@ export function parseSettings(dbResults) {
             settings[key] = schema.default;
         }
     }
+
+    if (!dbMap.has('home_category_position') && settings.layout_menu_layout === 'vertical') {
+        settings.home_category_position = 'left';
+    } else {
+        settings.home_category_position = normalizeParsedCategoryPosition(
+            settings.home_category_position,
+            settings.layout_menu_layout
+        );
+    }
+    settings.layout_menu_layout = settings.home_category_position === 'left' ? 'vertical' : 'horizontal';
 
     return settings;
 }

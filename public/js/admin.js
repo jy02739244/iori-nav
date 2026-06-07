@@ -421,6 +421,7 @@ window.fetchConfigs = function(page = currentPage, keyword = currentSearchKeywor
         totalPagesSpan.innerText = Math.ceil(totalItems / pageSize);
         currentPageSpan.innerText = currentPage;
         allConfigs = data.data;
+        window.AdminSettings?.preview?.invalidatePreviewCards?.();
         renderConfig(allConfigs);
         updatePaginationButtons();
       } else {

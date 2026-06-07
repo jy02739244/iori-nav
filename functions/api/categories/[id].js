@@ -1,6 +1,32 @@
 // functions/api/categories/[id].js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 
+function buildPrivateDescendantStatements(env, categoryId) {
+  const descendantsCte = `
+    WITH RECURSIVE descendants(id) AS (
+      SELECT id FROM category WHERE id = ?
+      UNION ALL
+      SELECT c.id FROM category c
+      INNER JOIN descendants d ON c.parent_id = d.id
+    )
+  `;
+
+  return [
+    env.NAV_DB.prepare(`
+      ${descendantsCte}
+      UPDATE category
+      SET is_private = 1
+      WHERE id IN (SELECT id FROM descendants)
+    `).bind(categoryId),
+    env.NAV_DB.prepare(`
+      ${descendantsCte}
+      UPDATE sites
+      SET is_private = 1
+      WHERE catelog_id IN (SELECT id FROM descendants)
+    `).bind(categoryId),
+  ];
+}
+
 export async function onRequestPut(context) {
   const { request, env, params } = context;
   const categoryId = decodeURIComponent(params.id);
@@ -62,9 +88,10 @@ export async function onRequestPut(context) {
     }
 
     // 检查 parent_id 存在性及循环引用
+    let parentCategory = null;
     if (parentId !== 0) {
-      const parentExists = await env.NAV_DB.prepare('SELECT id FROM category WHERE id = ?').bind(parentId).first();
-      if (!parentExists) {
+      parentCategory = await env.NAV_DB.prepare('SELECT id, is_private FROM category WHERE id = ?').bind(parentId).first();
+      if (!parentCategory) {
         return errorResponse('父分类不存在', 400);
       }
       // 沿 parent 链向上查找，检测循环（限制最大深度防止异常数据）
@@ -92,7 +119,7 @@ export async function onRequestPut(context) {
     }
 
     sort_order = normalizeSortOrder(sort_order);
-    const isPrivate = body.is_private ? 1 : 0;
+    const isPrivate = parentCategory?.is_private === 1 ? 1 : (body.is_private ? 1 : 0);
 
     const batchStmts = [
       env.NAV_DB.prepare('UPDATE category SET catelog = ?, sort_order = ?, parent_id = ?, is_private = ? WHERE id = ?')
@@ -101,12 +128,9 @@ export async function onRequestPut(context) {
         .bind(catelog, categoryId),
     ];
 
-    // If category is set to private, force all sites in this category to be private
+    // A private category makes the whole subtree private so public navigation cannot expose descendants.
     if (isPrivate === 1) {
-      batchStmts.push(
-        env.NAV_DB.prepare('UPDATE sites SET is_private = 1 WHERE catelog_id = ?')
-          .bind(categoryId)
-      );
+      batchStmts.push(...buildPrivateDescendantStatements(env, categoryId));
     }
 
     await env.NAV_DB.batch(batchStmts);

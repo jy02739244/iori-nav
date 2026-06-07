@@ -138,6 +138,8 @@ html.dark body.custom-wallpaper .sidebar {
   flex: 1; /* 占据卡片所有垂直空间 */
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .site-card-content a {
@@ -201,6 +203,71 @@ header {
     transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
+.top-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: none;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.35));
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.top-action-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.top-action-icon:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.top-action-icon:focus-visible {
+  outline: 2px solid rgba(65, 109, 157, 0.55);
+  outline-offset: 3px;
+}
+
+.theme-action-icon:hover {
+  color: #d97706;
+}
+
+.admin-action-icon:hover {
+  color: #bfdbfe;
+}
+
+.dark .top-action-icon {
+  color: rgba(229, 231, 235, 0.82);
+}
+
+.dark .theme-action-icon:hover {
+  color: #fde047;
+}
+
+.dark .admin-action-icon:hover {
+  color: #93c5fd;
+}
+
+body.custom-wallpaper .top-action-icon {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.custom-wallpaper .theme-action-icon:hover {
+  color: #fbbf24;
+}
+
+body.custom-wallpaper .admin-action-icon:hover {
+  color: #bfdbfe;
+}
+
 .dark body.custom-wallpaper header {
     background-color: transparent !important;
 }
@@ -252,6 +319,11 @@ header {
   line-height: 1.25rem; font-weight: 500; white-space: nowrap;
   transition: all 0.2s ease; border: 1px solid transparent;
   cursor: pointer; text-decoration: none; height: 2.5rem;
+  min-width: calc(4em + 2rem);
+}
+
+#horizontalMoreBtn {
+  min-width: 2.5rem;
 }
 
 body:not(.app-ready) .nav-btn,
@@ -281,6 +353,25 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
 }
 .custom-wallpaper .nav-btn.active { background-color: #2563eb; color: white; }
 .dark.custom-wallpaper .nav-btn.active { background-color: #2563eb !important; color: white !important; }
+
+.horizontal-category-nav-shell.is-top {
+  padding-left: 4.5rem;
+  padding-right: 10.5rem;
+}
+
+@media (max-width: 720px) {
+  .horizontal-category-nav-shell.is-top {
+    padding-left: 3.75rem;
+    padding-right: 8.5rem;
+  }
+}
+
+@media (min-width: 1360px) {
+  .horizontal-category-nav-shell.is-top {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
 
 /* 风格一图标动画 */
 .site-card:not(.style-2) .site-icon {
@@ -398,14 +489,137 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
   }
 }
 
-/* 卡片加载动画 */
-@keyframes cardEnter {
-  from { opacity: 0; transform: translateY(20px); }
+/* 卡片加载/切换动画 */
+.card-anim-enter {
+  opacity: 0;
+  animation-name: cardRadialIn;
+  animation-duration: 0.6s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+  backface-visibility: hidden;
+  transition: none !important;
+  will-change: opacity, transform;
+}
+
+.card-anim-cleanup {
+  transition: none !important;
+}
+
+.card-anim-flip-settle {
+  position: relative;
+}
+
+.card-anim-slideUp { animation-name: cardSlideUpIn; animation-duration: 0.6s; }
+.card-anim-radial { animation-name: cardRadialIn; animation-duration: 0.5s; }
+.card-anim-fadeIn { animation-name: cardFadeIn; animation-duration: 0.6s; }
+.card-anim-slideLeft { animation-name: cardSlideLeftIn; animation-duration: 0.6s; }
+.card-anim-slideRight { animation-name: cardSlideRightIn; animation-duration: 0.6s; }
+.card-anim-convergeIn { animation-name: cardConvergeIn; animation-duration: 0.7s; }
+.card-anim-flipIn {
+  animation-name: cardFlipShellIn;
+  animation-duration: 0.68s;
+  animation-timing-function: cubic-bezier(0.25, 0.6, 0.25, 1);
+  perspective: 900px;
+  transform-origin: center;
+  transform-style: preserve-3d;
+  will-change: opacity, transform;
+  position: relative;
+}
+
+.site-card.card-anim-flipIn.frosted-glass-effect {
+  animation-name: cardFrostedFlipShellIn;
+  background: rgba(255, 255, 255, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(var(--frosted-glass-blur, 15px)) !important;
+  -webkit-backdrop-filter: blur(var(--frosted-glass-blur, 15px)) !important;
+}
+
+.card-anim-flipIn::before {
+  content: none;
+}
+
+.card-anim-flip-settle::before {
+  content: none;
+}
+
+.dark .site-card.card-anim-flipIn.frosted-glass-effect {
+  background: rgba(30, 41, 59, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(var(--frosted-glass-blur, 15px)) !important;
+  -webkit-backdrop-filter: blur(var(--frosted-glass-blur, 15px)) !important;
+}
+
+.card-anim-flipIn .site-card-content {
+  backface-visibility: hidden;
+  transform-origin: center;
+}
+
+.card-anim-flipIn.frosted-glass-effect .site-card-content {
+  animation: none;
+  will-change: auto;
+}
+
+@keyframes cardSlideUpIn {
+  from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.card-anim-enter {
-  animation: cardEnter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  opacity: 0; /* 初始状态不可见 */
+
+@keyframes cardRadialIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardSlideLeftIn {
+  from { opacity: 0; transform: translateX(-50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cardSlideRightIn {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cardConvergeIn {
+  from {
+    opacity: 0;
+    transform: translate(var(--card-anim-x, 0), var(--card-anim-y, -28px));
+  }
+  to { opacity: 1; transform: translate(0, 0); }
+}
+
+@keyframes cardFlipShellIn {
+  0% { opacity: 0; transform: perspective(900px) rotateY(-82deg); }
+  30% { opacity: 0.6; transform: perspective(900px) rotateY(-45deg); }
+  55% { opacity: 0.86; transform: perspective(900px) rotateY(-24deg); }
+  75% { opacity: 1; transform: perspective(900px) rotateY(-11deg); }
+  90% { opacity: 1; transform: perspective(900px) rotateY(-4deg); }
+  100% { opacity: 1; transform: perspective(900px) rotateY(0deg); }
+}
+
+@keyframes cardFrostedFlipShellIn {
+  0% { opacity: 0; transform: perspective(900px) rotateY(-82deg); }
+  16% { opacity: 1; transform: perspective(900px) rotateY(-82deg); }
+  34% { opacity: 1; transform: perspective(900px) rotateY(-45deg); }
+  58% { opacity: 1; transform: perspective(900px) rotateY(-24deg); }
+  78% { opacity: 1; transform: perspective(900px) rotateY(-11deg); }
+  92% { opacity: 1; transform: perspective(900px) rotateY(-4deg); }
+  100% { opacity: 1; transform: perspective(900px) rotateY(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-anim-enter {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* 搜索引擎切换选项 - 胶囊按钮样式 */

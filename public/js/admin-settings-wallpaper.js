@@ -112,6 +112,8 @@
     div.addEventListener('click', () => {
       if (refs.customWallpaperInput) {
         refs.customWallpaperInput.value = full;
+        refs.customWallpaperInput.dispatchEvent(new Event('input', { bubbles: true }));
+        refs.customWallpaperInput.dispatchEvent(new Event('change', { bubbles: true }));
         refs.customWallpaperInput.classList.add('bg-green-50');
         setTimeout(() => refs.customWallpaperInput.classList.remove('bg-green-50'), 300);
       }

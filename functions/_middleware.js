@@ -97,9 +97,9 @@ export async function markHomeCacheDirty(env, scope = 'all') {
       keys.push(getHomeDirtyKey('private'));
     }
 
-    for (const key of keys) {
-      await env.NAV_AUTH.put(key, dirtyValue, { expirationTtl: HOME_CACHE_TTL });
-    }
+    await Promise.all(
+      keys.map(key => env.NAV_AUTH.put(key, dirtyValue, { expirationTtl: HOME_CACHE_TTL }))
+    );
   } catch (e) {
     console.error('Failed to mark home cache dirty:', e);
   }

@@ -18,6 +18,7 @@ export function buildCardTemplateConfig(settings = {}) {
   const hideCategory = settings.layout_hide_category === true;
   const enableFrostedGlass = settings.layout_enable_frosted_glass === true;
   const cardStyle = settings.layout_card_style || 'style1';
+  const cardAnimation = settings.layout_card_animation || 'radial';
   const gridCols = settings.layout_grid_cols || '4';
   const hideCopyText = (Number(gridCols) || 4) >= 5;
 
@@ -27,6 +28,7 @@ export function buildCardTemplateConfig(settings = {}) {
     hideCategory,
     enableFrostedGlass,
     cardStyle,
+    cardAnimation,
     gridCols,
     hideCopyText,
     aboveFoldImageCount: 8,

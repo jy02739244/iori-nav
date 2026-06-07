@@ -239,7 +239,7 @@ export async function onRequest(context) {
   const submissionClass = submissionEnabled ? '' : 'hidden';
   const siteName = S.home_site_name || env.SITE_NAME || '灰色轨迹';
   const siteDescription = S.home_site_description || env.SITE_DESCRIPTION || '一个优雅、快速、易于部署的书签（网址）收藏与分享平台，完全基于 Cloudflare 全家桶构建';
-  const footerText = env.FOOTER_TEXT || '曾梦想仗剑走天涯';
+  const footerText = S.home_footer_text || env.FOOTER_TEXT || '曾梦想仗剑走天涯';
   const titleStyle = getStyleStr(S.home_title_size, S.home_title_color, S.home_title_font);
   const subtitleStyle = getStyleStr(S.home_subtitle_size, S.home_subtitle_color, S.home_subtitle_font);
   const statsStyle = getStyleStr(S.home_stats_size, S.home_stats_color, S.home_stats_font);
@@ -263,6 +263,34 @@ export async function onRequest(context) {
   const safeSiteDesc = escapeHTML(siteDescription);
   const horizontalTitleHtml = S.layout_hide_title ? '' : `<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3 ${titleColorClass}" ${titleStyle}>${safeSiteName}</h1>`;
   const horizontalSubtitleHtml = S.layout_hide_subtitle ? '' : `<p class="${subTextColorClass} opacity-90 text-sm md:text-base" ${subtitleStyle}>${safeSiteDesc}</p>`;
+  const normalizeCategoryPosition = (position, menuLayout) => {
+    if (position === 'above_description') return 'top';
+    if (['below_search', 'above_search', 'left', 'top'].includes(position)) return position;
+    return menuLayout === 'vertical' ? 'left' : 'below_search';
+  };
+  const categoryPosition = normalizeCategoryPosition(S.home_category_position, S.layout_menu_layout);
+  const isHorizontalCategoryLayout = categoryPosition !== 'left';
+  const categoryFlow = S.home_category_flow === 'multi_line' ? 'multi_line' : 'single_line';
+  const horizontalCategoryNavShellClass = categoryPosition === 'top'
+    ? 'horizontal-category-nav-shell is-top relative max-w-5xl mx-auto'
+    : 'horizontal-category-nav-shell relative max-w-5xl mx-auto';
+  const horizontalCategoryNavJustifyClass = categoryFlow === 'multi_line' ? 'justify-start' : 'justify-center';
+  const horizontalCategoryNavOverflowClass = categoryFlow === 'multi_line' ? 'overflow-visible' : 'overflow-hidden';
+  const horizontalCategoryNavStyle = categoryFlow === 'multi_line' ? '' : ' style="max-height: 60px;"';
+  const horizontalMoreHtml = categoryFlow === 'multi_line' ? '' : `
+          <div id="horizontalMoreWrapper" class="relative hidden">
+            <button id="horizontalMoreBtn" class="nav-btn inactive">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" /></svg>
+            </button>
+            <div id="horizontalMoreDropdown" class="dropdown-menu hidden absolute mt-2 w-auto z-50"></div>
+          </div>`;
+  const horizontalCategoryNavHtml = `
+      <div class="${horizontalCategoryNavShellClass}">
+        <div id="horizontalCategoryNav" class="flex flex-wrap ${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass} transition-all duration-300"${horizontalCategoryNavStyle}>
+          ${horizontalCatalogMarkup}
+          ${horizontalMoreHtml}
+        </div>
+      </div>`;
 
   const verticalHeaderContent = `
     <div class="max-w-4xl mx-auto text-center relative z-10 ${themeClass} py-8">
@@ -278,25 +306,17 @@ export async function onRequest(context) {
 
   const horizontalHeaderContent = `
     <div class="max-w-5xl mx-auto text-center relative z-10 ${themeClass}">
+      ${categoryPosition === 'top' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
       <div class="max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>
-      <div class="relative max-w-xl mx-auto mb-8">
+      ${categoryPosition === 'above_search' ? `<div class="mb-8">${horizontalCategoryNavHtml}</div>` : ''}
+      <div class="relative max-w-xl mx-auto ${categoryPosition === 'below_search' ? 'mb-8' : ''}">
         ${searchEngineOptions}
         <div class="relative">
           <input id="headerSearchInput" type="text" name="search" placeholder="搜索书签..." class="search-input-target w-full pl-12 pr-4 py-3.5 rounded-2xl transition-all shadow-lg outline-none focus:outline-none focus:ring-2 ${searchInputClass}" autocomplete="off">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 absolute left-4 top-3.5 ${searchIconClass}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         </div>
       </div>
-      <div class="relative max-w-5xl mx-auto">
-        <div id="horizontalCategoryNav" class="flex flex-wrap justify-center items-center gap-3 overflow-hidden transition-all duration-300" style="max-height: 60px;">
-          ${horizontalCatalogMarkup}
-          <div id="horizontalMoreWrapper" class="relative hidden">
-            <button id="horizontalMoreBtn" class="nav-btn inactive">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" /></svg>
-            </button>
-            <div id="horizontalMoreDropdown" class="dropdown-menu hidden absolute mt-2 w-auto z-50"></div>
-          </div>
-        </div>
-      </div>
+      ${categoryPosition === 'below_search' ? horizontalCategoryNavHtml : ''}
     </div>`;
 
   // === 15. 布局控制 ===
@@ -304,29 +324,22 @@ export async function onRequest(context) {
   let mainClass = 'lg:ml-64';
   let sidebarToggleClass = '';
   let mobileToggleVisibilityClass = 'lg:hidden';
-  let githubIconHtml = '';
   let adminIconHtml = '';
   let submissionIconHtml = '';
   const themeIconHtml = `
-    <button id="themeToggleBtn" class="flex items-center justify-center p-2 rounded-lg bg-white/80 backdrop-blur shadow-md hover:bg-white text-gray-700 hover:text-amber-500 dark:bg-gray-800/80 dark:text-gray-200 dark:hover:text-yellow-300 transition-all cursor-pointer" title="切换主题">
+    <button id="themeToggleBtn" class="top-action-icon theme-action-icon" title="切换主题">
       <svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block dark:hidden"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
       <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
     </button>`;
 
   let headerContent = verticalHeaderContent;
 
-  if (S.layout_menu_layout === 'horizontal') {
+  if (isHorizontalCategoryLayout) {
     sidebarClass = 'min-[550px]:hidden';
     mainClass = '';
     sidebarToggleClass = '!hidden';
     mobileToggleVisibilityClass = 'min-[550px]:hidden';
 
-    if (!S.home_hide_github) {
-      githubIconHtml = `
-        <a href="https://slink.661388.xyz/iori-nav" target="_blank" class="fixed top-4 left-4 z-50 hidden min-[550px]:flex items-center justify-center p-2 rounded-lg bg-white/80 backdrop-blur shadow-md hover:bg-white text-gray-700 hover:text-black dark:bg-gray-800/80 dark:text-gray-200 dark:hover:text-white transition-all" title="GitHub">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
-        </a>`;
-    }
     if (submissionEnabled) {
       submissionIconHtml = `
         <button type="button" id="addSiteBtnHorizontal" class="hidden min-[550px]:flex items-center justify-center p-2 rounded-lg bg-white/80 backdrop-blur shadow-md hover:bg-white text-gray-700 hover:text-accent-600 dark:bg-gray-800/80 dark:text-gray-200 dark:hover:text-accent-400 transition-all cursor-pointer" title="公开投稿">
@@ -335,8 +348,8 @@ export async function onRequest(context) {
     }
     if (!S.home_hide_admin) {
       adminIconHtml = `
-        <a href="/admin" target="_blank" class="flex items-center justify-center p-2 rounded-lg bg-white/80 backdrop-blur shadow-md hover:bg-white text-gray-700 hover:text-primary-600 dark:bg-gray-800/80 dark:text-gray-200 dark:hover:text-primary-400 transition-all" title="后台管理">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M7 18a5 5 0 0 1 10 0"/></path></svg>
+        <a href="/admin" target="_blank" class="top-action-icon admin-action-icon" title="后台管理">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M7 18a5 5 0 0 1 10 0"/></svg>
         </a>`;
     }
 
@@ -351,8 +364,7 @@ export async function onRequest(context) {
       <button id="sidebarToggle" class="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-500 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
       </button>
-    </div>
-    ${githubIconHtml}`;
+    </div>`;
 
   const footerClass = isCustomWallpaper
     ? 'bg-transparent py-8 px-6 mt-12 border-none shadow-none text-black dark:text-gray-200'
@@ -366,9 +378,8 @@ export async function onRequest(context) {
   let headInjections = '';
 
   // 注入隐藏图标的 CSS
-  if (S.home_hide_github || S.home_hide_admin) {
+  if (S.home_hide_admin) {
     let hideIconsCss = '<style>';
-    if (S.home_hide_github) hideIconsCss += 'a[title="GitHub"] { display: none !important; }';
     if (S.home_hide_admin) hideIconsCss += 'a[href^="/admin"] { display: none !important; }';
     hideIconsCss += '</style>';
     headInjections += hideIconsCss;
@@ -464,6 +475,7 @@ export async function onRequest(context) {
     hideCategory: S.layout_hide_category,
     gridCols: S.layout_grid_cols,
     cardStyle: S.layout_card_style,
+    cardAnimation: S.layout_card_animation,
     enableFrostedGlass: S.layout_enable_frosted_glass,
     rememberLastCategory: S.home_remember_last_category,
     // 当前 SSR 已渲染的分类（用于前端 Auto-restore 判断是否可跳过重绘）

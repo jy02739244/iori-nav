@@ -124,9 +124,7 @@ export async function onRequestPost(context) {
       // Continue, maybe it exists or error will happen on upsert
     }
 
-    const stmt = env.NAV_DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
-
-    const batch = [];
+    const normalizedEntries = [];
     for (const [key, value] of Object.entries(settings)) {
       // 不要保存临时字段
       if (IGNORED_SETTING_KEYS.has(key)) continue;
@@ -144,14 +142,28 @@ export async function onRequestPost(context) {
         return errorResponse(normalized.message, 400);
       }
 
-      batch.push(stmt.bind(key, normalized.value));
+      normalizedEntries.push([key, normalized.value]);
     }
 
-    if (batch.length > 0) {
-      await env.NAV_DB.batch(batch);
+    let changedEntries = normalizedEntries;
+    if (normalizedEntries.length > 0) {
+      const keys = normalizedEntries.map(([key]) => key);
+      const placeholders = keys.map(() => '?').join(',');
+      const { results = [] } = await env.NAV_DB
+        .prepare(`SELECT key, value FROM settings WHERE key IN (${placeholders})`)
+        .bind(...keys)
+        .all();
+      const existingSettings = new Map(results.map(row => [row.key, row.value]));
+
+      changedEntries = normalizedEntries.filter(([key, value]) => existingSettings.get(key) !== value);
     }
 
-    // 清除 settings 缓存和页面缓存，使新设置立即生效
+    if (changedEntries.length > 0) {
+      const stmt = env.NAV_DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+      await env.NAV_DB.batch(changedEntries.map(([key, value]) => stmt.bind(key, value)));
+    }
+
+    // 保存成功后始终刷新设置缓存和首页缓存，避免旧缓存状态阻止设置生效
     try {
       await Promise.all([
         env.NAV_AUTH.delete('settings_cache'),

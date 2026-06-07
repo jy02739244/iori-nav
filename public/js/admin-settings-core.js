@@ -9,7 +9,6 @@
     'layout_hide_subtitle',
     'home_hide_stats',
     'home_hide_hitokoto',
-    'home_hide_github',
     'home_hide_admin',
     'home_search_engine_enabled',
     'home_remember_last_category',
@@ -35,7 +34,10 @@
     'home_hitokoto_font',
     'home_site_name',
     'home_site_description',
+    'home_footer_text',
     'home_default_category',
+    'home_category_position',
+    'home_category_flow',
     'layout_frosted_glass_intensity',
     'layout_grid_cols',
     'layout_custom_wallpaper',
@@ -44,6 +46,7 @@
     'wallpaper_source',
     'wallpaper_cid_360',
     'layout_card_style',
+    'layout_card_animation',
     'layout_card_border_radius',
     'card_title_font',
     'card_title_size',
@@ -75,7 +78,6 @@
       home_hide_hitokoto: false,
       home_hitokoto_size: '',
       home_hitokoto_color: '',
-      home_hide_github: false,
       home_hide_admin: false,
       home_search_engine_enabled: false,
       home_default_category: '',
@@ -86,6 +88,9 @@
       home_hitokoto_font: '',
       home_site_name: '',
       home_site_description: '',
+      home_footer_text: '',
+      home_category_position: 'below_search',
+      home_category_flow: 'single_line',
       layout_enable_frosted_glass: false,
       layout_frosted_glass_intensity: '15',
       layout_grid_cols: '4',
@@ -97,6 +102,7 @@
       wallpaper_source: 'bing',
       wallpaper_cid_360: '36',
       layout_card_style: 'style1',
+      layout_card_animation: 'radial',
       layout_card_border_radius: '12',
       card_title_font: '',
       card_title_size: '',
@@ -127,13 +133,13 @@
       hideDescSwitch: document.getElementById('hideDescSwitch'),
       hideLinksSwitch: document.getElementById('hideLinksSwitch'),
       hideCategorySwitch: document.getElementById('hideCategorySwitch'),
-      hideGithubSwitch: document.getElementById('hideGithubSwitch'),
       hideAdminSwitch: document.getElementById('hideAdminSwitch'),
       frostedGlassSwitch: document.getElementById('frostedGlassSwitch'),
       frostedGlassIntensityRange: document.getElementById('frostedGlassIntensity'),
       frostedGlassIntensityValue: document.getElementById('frostedGlassIntensityValue'),
       gridColsRadios: document.getElementsByName('gridCols'),
-      menuLayoutRadios: document.getElementsByName('menuLayout'),
+      categoryPositionRadios: document.getElementsByName('categoryPosition'),
+      categoryFlowRadios: document.getElementsByName('categoryFlow'),
       customWallpaperInput: document.getElementById('customWallpaperInput'),
       bgBlurSwitch: document.getElementById('bgBlurSwitch'),
       bgBlurIntensityRange: document.getElementById('bgBlurIntensity'),
@@ -163,6 +169,7 @@
       homeHitokotoFontInput: document.getElementById('homeHitokotoFont'),
       homeSiteNameInput: document.getElementById('homeSiteName'),
       homeSiteDescriptionInput: document.getElementById('homeSiteDescription'),
+      homeFooterTextInput: document.getElementById('homeFooterText'),
       homeDefaultCategorySelect: document.getElementById('homeDefaultCategory'),
       homeRememberLastCategorySwitch: document.getElementById('homeRememberLastCategorySwitch'),
       searchEngineSwitch: document.getElementById('searchEngineSwitch'),
@@ -172,6 +179,7 @@
       cardTitleSizeInput: document.getElementById('cardTitleSize'),
       cardTitleColorInput: document.getElementById('cardTitleColor'),
       cardTitleColorPicker: document.getElementById('cardTitleColorPicker'),
+      cardAnimationSelect: document.getElementById('cardAnimationSelect'),
       cardDescFontInput: document.getElementById('cardDescFont'),
       cardDescSizeInput: document.getElementById('cardDescSize'),
       cardDescColorInput: document.getElementById('cardDescColor'),
@@ -214,6 +222,12 @@
     }
   }
 
+  function normalizeCategoryPosition(position, menuLayout) {
+    if (position === 'above_description') return 'top';
+    if (['below_search', 'above_search', 'left', 'top'].includes(position)) return position;
+    return menuLayout === 'vertical' ? 'left' : 'below_search';
+  }
+
   function updateToggleContainer(switchElement, containerId) {
     const container = document.getElementById(containerId);
     if (!container || !switchElement) return;
@@ -243,6 +257,15 @@
 
     if (serverSettings.bing_country !== undefined) {
       currentSettings.bing_country = serverSettings.bing_country;
+    }
+
+    if (serverSettings.home_category_position === undefined && serverSettings.layout_menu_layout === 'vertical') {
+      currentSettings.home_category_position = 'left';
+      currentSettings.layout_menu_layout = 'vertical';
+    } else {
+      const categoryPosition = normalizeCategoryPosition(currentSettings.home_category_position, currentSettings.layout_menu_layout);
+      currentSettings.home_category_position = categoryPosition;
+      currentSettings.layout_menu_layout = categoryPosition === 'left' ? 'vertical' : 'horizontal';
     }
   }
 
@@ -314,7 +337,6 @@
     currentSettings.layout_hide_desc = !!refs.hideDescSwitch?.checked;
     currentSettings.layout_hide_links = !!refs.hideLinksSwitch?.checked;
     currentSettings.layout_hide_category = !!refs.hideCategorySwitch?.checked;
-    currentSettings.home_hide_github = !!refs.hideGithubSwitch?.checked;
     currentSettings.home_hide_admin = !!refs.hideAdminSwitch?.checked;
     currentSettings.layout_hide_title = !!refs.hideTitleSwitch?.checked;
     currentSettings.home_title_size = refs.homeTitleSizeInput?.value.trim() || '';
@@ -334,6 +356,7 @@
     currentSettings.home_hitokoto_font = refs.homeHitokotoFontInput?.value.trim() || '';
     currentSettings.home_site_name = refs.homeSiteNameInput?.value.trim() || '';
     currentSettings.home_site_description = refs.homeSiteDescriptionInput?.value.trim() || '';
+    currentSettings.home_footer_text = refs.homeFooterTextInput?.value.trim() || '';
     currentSettings.home_default_category = refs.homeDefaultCategorySelect?.value || '';
     currentSettings.home_remember_last_category = !!refs.homeRememberLastCategorySwitch?.checked;
     currentSettings.home_search_engine_enabled = !!refs.searchEngineSwitch?.checked;
@@ -350,15 +373,26 @@
       }
     }
 
-    for (const radio of refs.menuLayoutRadios || []) {
+    let categoryPosition = normalizeCategoryPosition(currentSettings.home_category_position, currentSettings.layout_menu_layout);
+    for (const radio of refs.categoryPositionRadios || []) {
       if (radio.checked) {
-        currentSettings.layout_menu_layout = radio.value;
+        categoryPosition = radio.value;
+        break;
+      }
+    }
+    currentSettings.home_category_position = categoryPosition;
+    currentSettings.layout_menu_layout = categoryPosition === 'left' ? 'vertical' : 'horizontal';
+
+    for (const radio of refs.categoryFlowRadios || []) {
+      if (radio.checked) {
+        currentSettings.home_category_flow = radio.value;
         break;
       }
     }
 
     currentSettings.layout_enable_frosted_glass = !!refs.frostedGlassSwitch?.checked;
     currentSettings.layout_frosted_glass_intensity = refs.frostedGlassIntensityRange?.value || '15';
+    currentSettings.layout_card_animation = refs.cardAnimationSelect?.value || 'radial';
     currentSettings.layout_card_border_radius = refs.cardRadiusInput?.value || '12';
     currentSettings.card_title_font = refs.cardTitleFontInput?.value.trim() || '';
     currentSettings.card_title_size = refs.cardTitleSizeInput?.value.trim() || '';
@@ -446,7 +480,6 @@
     setChecked(refs.hideDescSwitch, currentSettings.layout_hide_desc);
     setChecked(refs.hideLinksSwitch, currentSettings.layout_hide_links);
     setChecked(refs.hideCategorySwitch, currentSettings.layout_hide_category);
-    setChecked(refs.hideGithubSwitch, currentSettings.home_hide_github);
     setChecked(refs.hideAdminSwitch, currentSettings.home_hide_admin);
     setChecked(refs.hideTitleSwitch, currentSettings.layout_hide_title);
     setValue(refs.homeTitleSizeInput, currentSettings.home_title_size || '36');
@@ -466,6 +499,7 @@
     setValue(refs.homeHitokotoFontInput, currentSettings.home_hitokoto_font || '');
     setValue(refs.homeSiteNameInput, currentSettings.home_site_name || '');
     setValue(refs.homeSiteDescriptionInput, currentSettings.home_site_description || '');
+    setValue(refs.homeFooterTextInput, currentSettings.home_footer_text || '');
     setValue(refs.homeDefaultCategorySelect, currentSettings.home_default_category || '');
     setChecked(refs.homeRememberLastCategorySwitch, currentSettings.home_remember_last_category);
     setChecked(refs.searchEngineSwitch, currentSettings.home_search_engine_enabled);
@@ -478,7 +512,13 @@
     updateToggleContainer(refs.bgBlurSwitch, 'bgBlurIntensityContainer');
     setValue(refs.bingCountrySelect, currentSettings.bing_country || '');
     setRadioValue(refs.gridColsRadios, currentSettings.layout_grid_cols);
-    setRadioValue(refs.menuLayoutRadios, currentSettings.layout_menu_layout);
+    const categoryPosition = normalizeCategoryPosition(currentSettings.home_category_position, currentSettings.layout_menu_layout);
+    currentSettings.home_category_position = categoryPosition;
+    currentSettings.layout_menu_layout = categoryPosition === 'left' ? 'vertical' : 'horizontal';
+    setRadioValue(refs.categoryPositionRadios, categoryPosition);
+    setRadioValue(refs.categoryFlowRadios, currentSettings.home_category_flow || 'single_line');
+    setValue(refs.cardAnimationSelect, currentSettings.layout_card_animation || 'radial');
+    ns.preview?.syncAnimationOptions?.();
     setRangeValue(refs.cardRadiusInput, refs.cardRadiusValue, currentSettings.layout_card_border_radius || '12');
     setValue(refs.cardTitleFontInput, currentSettings.card_title_font || '');
     setValue(refs.cardTitleSizeInput, currentSettings.card_title_size || '16');
@@ -518,6 +558,7 @@
       loadSettings();
       refs.settingsModal.style.display = 'block';
       document.body.classList.add('modal-open');
+      ns.preview?.scheduleFullPreviewRender?.();
     });
 
     refs.closeBtn?.addEventListener('click', closeModal);
@@ -539,6 +580,7 @@
           content.classList.remove('active');
           if (content.id === tabId) content.classList.add('active');
         });
+        ns.preview?.scheduleFullPreviewRender?.();
 
         const shouldLoadWallpaper = tabId === 'wallpaper-settings'
           && refs.onlineWallpapersDiv
