@@ -1,6 +1,7 @@
 // functions/api/update-description.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty } from '../_middleware';
 import { buildFaviconUrl } from '../lib/utils';
+import { normalizeBookmarkDesc, normalizeBookmarkLogo, normalizeOptionalBookmarkUrl } from '../lib/validators';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -18,6 +19,15 @@ export async function onRequestPost(context) {
       return errorResponse('Bookmark ID and description are required', 400);
     }
 
+    const descResult = normalizeBookmarkDesc(description);
+    if (!descResult.ok) return errorResponse(descResult.message, 400);
+
+    const urlResult = normalizeOptionalBookmarkUrl(url);
+    if (!urlResult.ok) return errorResponse(urlResult.message, 400);
+
+    const logoResult = normalizeBookmarkLogo(logo, { nullIfEmpty: true });
+    if (!logoResult.ok) return errorResponse(logoResult.message, 400);
+
     const site = await env.NAV_DB.prepare(
       'SELECT id, is_private FROM sites WHERE id = ?'
     ).bind(id).first();
@@ -27,12 +37,12 @@ export async function onRequestPost(context) {
     }
 
     const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
-    const sanitizedLogo = buildFaviconUrl(url, (logo || '').trim() || null, iconAPI);
+    const sanitizedLogo = buildFaviconUrl(urlResult.value, logoResult.value, iconAPI);
 
     // 3. 更新数据库
     const result = await env.NAV_DB.prepare(
       'UPDATE sites SET desc = ?, logo = ?, update_time = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(description, sanitizedLogo, id).run();
+    ).bind(descResult.value, sanitizedLogo, id).run();
 
     if (result.changes === 0) {
         return errorResponse('Bookmark not found or no changes made', 404);

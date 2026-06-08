@@ -1,6 +1,7 @@
 // functions/api/pending/[id].js
 import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty, normalizeSortOrder } from '../../_middleware';
 import { buildFaviconUrl, getUrlMatchCandidates, normalizeUrlForStorage } from '../../lib/utils';
+import { normalizeBookmarkDesc, normalizeBookmarkLogo, normalizeBookmarkName, normalizeBookmarkUrl } from '../../lib/validators';
 
 export async function onRequestPut(context) {
   const { request, env, params } = context;
@@ -37,16 +38,28 @@ export async function onRequestPut(context) {
       ? updateData.catelog_id
       : getField('catelogId', config.catelog_id);
 
-    const sanitizedName = String(getField('name', config.name) || '').trim();
-    const rawUrl = String(getField('url', config.url) || '').trim();
+    const nameResult = normalizeBookmarkName(getField('name', config.name));
+    if (!nameResult.ok) return errorResponse(nameResult.message, 400);
+
+    const urlResult = normalizeBookmarkUrl(getField('url', config.url));
+    if (!urlResult.ok) return errorResponse(urlResult.message, 400);
+
+    const logoResult = normalizeBookmarkLogo(getField('logo', config.logo), { nullIfEmpty: true });
+    if (!logoResult.ok) return errorResponse(logoResult.message, 400);
+
+    const descResult = normalizeBookmarkDesc(getField('desc', config.desc), { nullIfEmpty: true });
+    if (!descResult.ok) return errorResponse(descResult.message, 400);
+
+    const sanitizedName = nameResult.value;
+    const rawUrl = urlResult.value;
     const sanitizedUrl = normalizeUrlForStorage(rawUrl);
-    let sanitizedLogo = String(getField('logo', config.logo) || '').trim() || null;
-    const sanitizedDesc = String(getField('desc', config.desc) || '').trim() || null;
+    let sanitizedLogo = logoResult.value;
+    const sanitizedDesc = descResult.value;
     const sortOrderValue = hasField('sort_order') ? normalizeSortOrder(updateData.sort_order) : 9999;
     const isPrivateValue = getField('is_private', false) ? 1 : 0;
 
-    if (!sanitizedName || !rawUrl || !catelogId) {
-      return errorResponse('Name, URL and Catelog are required', 400);
+    if (!catelogId) {
+      return errorResponse('Catelog is required', 400);
     }
     if (!sanitizedUrl) {
       return errorResponse('URL must be a valid http or https URL', 400);

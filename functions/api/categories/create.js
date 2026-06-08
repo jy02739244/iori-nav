@@ -1,5 +1,6 @@
 // functions/api/categories/create.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
+import { normalizeCategoryName } from '../../lib/validators';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -10,11 +11,12 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const categoryName = (body.catelog || '').trim();
+    const categoryNameResult = normalizeCategoryName(body.catelog);
     
-    if (!categoryName) {
-      return errorResponse('分类名称不能为空', 400);
+    if (!categoryNameResult.ok) {
+      return errorResponse(categoryNameResult.message, 400);
     }
+    const categoryName = categoryNameResult.value;
 
     const parentId = body.parent_id ? parseInt(body.parent_id, 10) : 0;
 

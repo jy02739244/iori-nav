@@ -18,13 +18,13 @@
  */
 
 // 数据库 Schema 版本 - 修改此值会触发迁移
-export const SCHEMA_VERSION = 'v4';
+export const SCHEMA_VERSION = 'v5';
 
 // 上一个数据库 Schema 版本 - 仅用于首次迁移成功后 best-effort 清理旧迁移标记
-export const PREVIOUS_SCHEMA_VERSION = 'v3';
+export const PREVIOUS_SCHEMA_VERSION = 'v4';
 
 // 首页 HTML 缓存版本 - 修改此值会强制刷新首页缓存
-export const HOME_CACHE_VERSION = 'v11';
+export const HOME_CACHE_VERSION = 'v14';
 
 // 首页 HTML 缓存与 dirty 标记 TTL（30 天）
 export const HOME_CACHE_TTL = 2592000;
@@ -73,6 +73,9 @@ CREATE TABLE IF NOT EXISTS settings (
 
 CREATE INDEX IF NOT EXISTS idx_sites_catelog_id ON sites(catelog_id);
 CREATE INDEX IF NOT EXISTS idx_sites_sort_order ON sites(sort_order);
+CREATE INDEX IF NOT EXISTS idx_sites_private_sort ON sites(is_private, sort_order);
+CREATE INDEX IF NOT EXISTS idx_sites_catelog_name ON sites(catelog_name);
+CREATE INDEX IF NOT EXISTS idx_sites_url ON sites(url);
 `;
 
 // 字体映射表

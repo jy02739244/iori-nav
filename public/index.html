@@ -17,14 +17,14 @@
   <meta name="twitter:description" content="{{SITE_DESCRIPTION}}">
   <meta name="twitter:image" content="{{OG_IMAGE_URL}}">
   <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/style.css?v=208a5471">
+  <link rel="stylesheet" href="/css/style.css?v=bf15c1b3">
   <script>
     // Init Theme ASAP to prevent FOUC
     if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.classList.add('dark');
     }
   </script>
-  <link rel="stylesheet" href="/css/tailwind.min.css?v=c75e3681">
+  <link rel="stylesheet" href="/css/tailwind.min.css?v=94e9f2cc">
 </head>
 <body class="bg-secondary-50 font-sans text-gray-800">
   <!-- SVG sprite: 高频复用图标在此定义一次，卡片等处通过 <use href="#icon-xxx"/> 引用 -->
@@ -155,6 +155,11 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
     </svg>
   </button>
+  <button type="button" id="addSiteBtnFloating" class="{{SUBMISSION_CLASS}} fixed bottom-24 right-8 z-40 hidden min-[550px]:flex p-3 rounded-full bg-accent-500 text-white shadow-lg hover:bg-accent-600 transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2" title="公开投稿" aria-label="公开投稿">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14" />
+    </svg>
+  </button>
   
   <!-- 添加网站模态框 -->
   <div id="addSiteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 opacity-0 invisible transition-all duration-300">
@@ -196,6 +201,10 @@
               <option value="" disabled selected>加载中...</option>
             </select>
           </div>
+
+          <div id="addSiteTurnstile" class="hidden justify-center" style="min-height: 65px;"></div>
+
+          <div id="addSiteMessage" class="hidden rounded-lg border px-3 py-2 text-sm leading-relaxed"></div>
           
           <div class="flex justify-end pt-4">
             <button type="button" id="cancelAddSite" class="bg-white py-2 px-4 border border-primary-100 rounded-md shadow-sm text-sm font-medium text-primary-600 hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-200 mr-3">
@@ -210,6 +219,11 @@
     </div>
   </div>
   
-  <script src="/js/main.js?v=54ae47e1"></script>
+  <script src="/js/home-ui.js?v=7c74dc1b"></script>
+  <script src="/js/home-cards.js?v=13b3d413"></script>
+  <script src="/js/home-submit.js?v=5457a66d"></script>
+  <script src="/js/home-search.js?v=411d31cd"></script>
+  <script src="/js/home-category-nav.js?v=b3e8f669"></script>
+  <script src="/js/main.js?v=193ce81f"></script>
 </body>
 </html>

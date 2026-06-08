@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import vm from 'node:vm';
 
+import { getHomeDirtyKey } from '../functions/_middleware.js';
 import { onRequestPost } from '../functions/api/settings.js';
 
 function createKv(initialEntries = {}) {
@@ -184,6 +185,6 @@ test('POST /api/settings skips unchanged writes but still invalidates caches', a
   assert.equal(body.code, 200);
   assert.equal(settingWrites.length, 0);
   assert.equal(kv.store.has('settings_cache'), false);
-  assert.equal(kv.store.has('home_dirty_public_v11'), true);
-  assert.equal(kv.store.has('home_dirty_private_v11'), true);
+  assert.equal(kv.store.has(getHomeDirtyKey('public')), true);
+  assert.equal(kv.store.has(getHomeDirtyKey('private')), true);
 });

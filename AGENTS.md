@@ -64,6 +64,11 @@ npx wrangler d1 execute book --remote --file=schema.sql
 - **常量**: UPPER_SNAKE_CASE（`DB_SCHEMA`）
 - **布尔变量**: is/has 前缀（`isValid`、`hasChildren`）
 
+### 文件规模与提交规范
+
+- **新增文件行数**: 单个新增文件最好不要超过 500 行；如果实现接近或超过该规模，优先按职责拆分为多个模块。
+- **提交信息**: Git commit message 使用中文，简洁描述本次改动。
+
 ### 导入规范
 
 ```javascript

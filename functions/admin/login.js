@@ -1,6 +1,7 @@
 // functions/admin/login.js
 
 import { timingSafeEqual, checkLoginRateLimit, recordLoginFailure, clearLoginFailures, buildSessionCookie } from '../_middleware';
+import { getTurnstileConfig, verifyTurnstileToken } from '../lib/turnstile';
 
 function escapeHTML(str) {
   if (!str) return '';
@@ -22,9 +23,20 @@ async function createAdminSession(env, ttl = 86400) {
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 600; // 10 分钟
 
-function renderLoginPage(message = '') {
+function renderLoginPage(message = '', env = {}) {
   const hasError = Boolean(message);
   const safeMessage = hasError ? escapeHTML(message) : '';
+  const { siteKey, isConfigured, isComplete } = getTurnstileConfig(env);
+  const shouldRenderTurnstile = isConfigured && siteKey;
+  const turnstileScript = shouldRenderTurnstile
+    ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
+    : '';
+  const turnstileWidget = shouldRenderTurnstile
+    ? `<div class="form-group turnstile-group"><div class="cf-turnstile" data-sitekey="${escapeHTML(siteKey)}" data-theme="auto"></div></div>`
+    : '';
+  const configWarning = isConfigured && !isComplete
+    ? '<div class="error-message">Turnstile 配置不完整，请同时设置 Site Key 和 Secret Key</div>'
+    : '';
 
   const html = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -44,6 +56,7 @@ function renderLoginPage(message = '') {
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .login-title { font-size: 1.75rem; font-weight: 700; text-align: center; margin: 0 0 1.5rem 0; color: #333; }
     .form-group { margin-bottom: 1.25rem; }
+    .turnstile-group { display: flex; justify-content: center; min-height: 65px; margin-bottom: 1rem; }
     label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555; }
     input[type="text"], input[type="password"] {
       width: 100%; padding: 0.875rem 1rem; border: 1px solid #ddd; border-radius: 6px;
@@ -61,6 +74,7 @@ function renderLoginPage(message = '') {
     .back-link { display: block; text-align: center; margin-top: 1.5rem; color: #7209b7; text-decoration: none; font-size: 0.875rem; }
     .back-link:hover { text-decoration: underline; }
   </style>
+  ${turnstileScript}
 </head>
 <body>
   <div class="login-container">
@@ -84,6 +98,8 @@ function renderLoginPage(message = '') {
           <option value="90">90 天</option>
         </select>
       </div>
+      ${turnstileWidget}
+      ${configWarning}
       ${hasError ? `<div class="error-message">${safeMessage}</div>` : ''}
       <button type="submit">登 录</button>
     </form>
@@ -112,11 +128,11 @@ function renderLoginPage(message = '') {
 
 // GET: 显示登录页面
 export async function onRequestGet(context) {
-  const { request } = context;
+  const { request, env } = context;
   const url = new URL(request.url);
   const error = url.searchParams.get('error');
 
-  return renderLoginPage(error || '');
+  return renderLoginPage(error || '', env);
 }
 
 // POST: 处理登录提交
@@ -130,7 +146,7 @@ export async function onRequestPost(context) {
     // 暴力破解防护：检查 IP 是否被锁定
     const { locked } = await checkLoginRateLimit(env, ip, MAX_LOGIN_ATTEMPTS, LOCKOUT_SECONDS);
     if (locked) {
-      return renderLoginPage('登录尝试过于频繁，请 10 分钟后再试');
+      return renderLoginPage('登录尝试过于频繁，请 10 分钟后再试', env);
     }
 
     const formData = await request.formData();
@@ -138,9 +154,15 @@ export async function onRequestPost(context) {
     const password = (formData.get('password') || '').trim();
     const durationDays = parseInt(formData.get('duration') || '1', 10);
     const ttl = durationDays * 86400;
+    const turnstileToken = String(formData.get('cf-turnstile-response') || '').trim();
 
     if (!name || !password) {
-      return renderLoginPage('请输入用户名和密码');
+      return renderLoginPage('请输入用户名和密码', env);
+    }
+
+    const turnstileResult = await verifyTurnstileToken(turnstileToken, env, ip);
+    if (!turnstileResult.ok) {
+      return renderLoginPage(turnstileResult.message, env);
     }
 
     const storedUsername = await env.NAV_AUTH.get('admin_username');
@@ -148,7 +170,7 @@ export async function onRequestPost(context) {
 
     if (!storedUsername || !storedPassword) {
       console.error('Admin credentials not found in KV');
-      return renderLoginPage('系统配置错误，请联系管理员');
+      return renderLoginPage('系统配置错误，请联系管理员', env);
     }
 
     // 使用恒定时间比较，防止时序攻击
@@ -174,9 +196,9 @@ export async function onRequestPost(context) {
 
     // 登录失败：记录失败次数
     await recordLoginFailure(env, ip, MAX_LOGIN_ATTEMPTS, LOCKOUT_SECONDS);
-    return renderLoginPage('账号或密码错误，请重试');
+    return renderLoginPage('账号或密码错误，请重试', env);
   } catch (e) {
     console.error('Login error:', e);
-    return renderLoginPage('登录处理出错，请稍后重试');
+    return renderLoginPage('登录处理出错，请稍后重试', env);
   }
 }

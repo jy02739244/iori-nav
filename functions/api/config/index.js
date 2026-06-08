@@ -1,6 +1,7 @@
 // functions/api/config/index.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { escapeLikePattern, buildFaviconUrl, getUrlMatchCandidates, normalizeUrlForStorage, parsePagination } from '../../lib/utils';
+import { normalizeBookmarkDesc, normalizeBookmarkLogo, normalizeBookmarkName, normalizeBookmarkUrl } from '../../lib/validators';
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -68,16 +69,28 @@ export async function onRequestPost(context) {
     const { name, url, logo, desc, catelogId, sort_order, is_private } = config;
     const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
 
-    const sanitizedName = (name || '').trim();
-    const rawUrl = (url || '').trim();
+    const nameResult = normalizeBookmarkName(name);
+    if (!nameResult.ok) return errorResponse(nameResult.message, 400);
+
+    const urlResult = normalizeBookmarkUrl(url);
+    if (!urlResult.ok) return errorResponse(urlResult.message, 400);
+
+    const logoResult = normalizeBookmarkLogo(logo, { nullIfEmpty: true });
+    if (!logoResult.ok) return errorResponse(logoResult.message, 400);
+
+    const descResult = normalizeBookmarkDesc(desc, { nullIfEmpty: true });
+    if (!descResult.ok) return errorResponse(descResult.message, 400);
+
+    const sanitizedName = nameResult.value;
+    const rawUrl = urlResult.value;
     const sanitizedUrl = normalizeUrlForStorage(rawUrl);
-    let sanitizedLogo = (logo || '').trim() || null;
-    const sanitizedDesc = (desc || '').trim() || null;
+    let sanitizedLogo = logoResult.value;
+    const sanitizedDesc = descResult.value;
     const sortOrderValue = normalizeSortOrder(sort_order);
     const isPrivateValue = is_private ? 1 : 0;
 
-    if (!sanitizedName || !rawUrl || !catelogId) {
-      return errorResponse('Name, URL and Catelog are required', 400);
+    if (!catelogId) {
+      return errorResponse('Catelog is required', 400);
     }
 
     if (!sanitizedUrl) {

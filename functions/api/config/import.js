@@ -1,6 +1,49 @@
 // functions/api/config/import.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { getUrlMatchCandidates, normalizeUrlForStorage } from '../../lib/utils';
+import {
+    normalizeBookmarkDesc,
+    normalizeBookmarkLogo,
+    normalizeBookmarkName,
+    normalizeBookmarkUrl,
+    normalizeCategoryName,
+    validateImportSizes,
+} from '../../lib/validators';
+
+function getImportIdKey(value) {
+    return String(value ?? '');
+}
+
+function getImportParentIdKey(value) {
+    const key = getImportIdKey(value);
+    return key === '' ? '0' : key;
+}
+
+function buildPrivateDescendantStatements(db, categoryId) {
+    const descendantsCte = `
+      WITH RECURSIVE descendants(id) AS (
+        SELECT id FROM category WHERE id = ?
+        UNION ALL
+        SELECT c.id FROM category c
+        INNER JOIN descendants d ON c.parent_id = d.id
+      )
+    `;
+
+    return [
+        db.prepare(`
+          ${descendantsCte}
+          UPDATE category
+          SET is_private = 1
+          WHERE id IN (SELECT id FROM descendants)
+        `).bind(categoryId),
+        db.prepare(`
+          ${descendantsCte}
+          UPDATE sites
+          SET is_private = 1
+          WHERE catelog_id IN (SELECT id FROM descendants)
+        `).bind(categoryId),
+    ];
+}
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -44,6 +87,11 @@ export async function onRequestPost(context) {
       return errorResponse('Invalid JSON format. Expected { "category": [...], "sites": [...] } or an array of sites.', 400);
     }
 
+    const importSizeCheck = validateImportSizes(categoriesToImport, sitesToImport);
+    if (!importSizeCheck.ok) {
+      return errorResponse(importSizeCheck.message, 400);
+    }
+
     if (sitesToImport.length === 0) {
       return jsonResponse({ code: 200, message: 'Import successful, but no sites were found to import.' });
     }
@@ -57,6 +105,8 @@ export async function onRequestPost(context) {
 
     // --- Category Processing ---
     const oldCatIdToNewCatIdMap = new Map(); // Maps JSON ID -> DB ID
+    const privateCategoryIdsToPropagate = new Set();
+    const normalizedImportCategoryNames = new Map();
     let categoryNameToIdMap = new Map(); // For legacy format mapping
     
     // 1. Fetch all existing categories from DB
@@ -75,15 +125,17 @@ export async function onRequestPost(context) {
     if (isNewFormat) {
         // Validate all categories first
         for (const cat of categoriesToImport) {
-            if (!cat.catelog || !(cat.catelog.trim())) {
-                return errorResponse("导入失败：分类数据中存在无效条目，缺少 'catelog' 名称。", 400);
+            const categoryNameResult = normalizeCategoryName(cat.catelog);
+            if (!categoryNameResult.ok) {
+                return errorResponse(`导入失败：${categoryNameResult.message}`, 400);
             }
+            normalizedImportCategoryNames.set(cat, categoryNameResult.value);
         }
 
         // Sort categories to ensure parents are processed before children (Topological Sort)
         let sortedCats = [];
         let remaining = [...categoriesToImport];
-        let processedJsonIds = new Set([0, '0']);
+        let processedJsonIds = new Set(['0']);
         
         let lastRemainingCount = -1;
         while(remaining.length > 0) {
@@ -94,7 +146,7 @@ export async function onRequestPost(context) {
             lastRemainingCount = remaining.length;
             
             const [ready, notReady] = remaining.reduce((acc, cat) => {
-                const pid = cat.parent_id || 0;
+                const pid = getImportParentIdKey(cat.parent_id);
                 if (processedJsonIds.has(pid)) {
                     acc[0].push(cat);
                 } else {
@@ -104,30 +156,39 @@ export async function onRequestPost(context) {
             }, [[], []]);
             
             ready.sort((a, b) => (a.id || 0) - (b.id || 0));
-            ready.forEach(cat => processedJsonIds.add(cat.id));
+            ready.forEach(cat => processedJsonIds.add(getImportIdKey(cat.id)));
             sortedCats.push(...ready);
             remaining = notReady;
         }
         categoriesToImport = sortedCats;
 
         for (const cat of categoriesToImport) {
-            const catName = (cat.catelog || '').trim();
-            const jsonParentId = cat.parent_id || 0;
-            const isPrivate = cat.is_private ? 1 : 0; // Import privacy setting
+            const catName = normalizedImportCategoryNames.get(cat);
+            const jsonParentIdKey = getImportParentIdKey(cat.parent_id);
+            const importedIsPrivate = cat.is_private ? 1 : 0; // Import privacy setting
             
             let dbParentId = 0;
-            if (jsonParentId !== 0) {
-                if (oldCatIdToNewCatIdMap.has(jsonParentId)) {
-                    dbParentId = oldCatIdToNewCatIdMap.get(jsonParentId);
+            if (jsonParentIdKey !== '0') {
+                if (oldCatIdToNewCatIdMap.has(jsonParentIdKey)) {
+                    dbParentId = oldCatIdToNewCatIdMap.get(jsonParentIdKey);
                 } else {
                     dbParentId = 0;
                 }
             }
 
+            const parentCategory = dbParentId
+                ? existingDbCategories.find(c => String(c.id) === String(dbParentId))
+                : null;
+            const isPrivate = parentCategory?.is_private === 1 ? 1 : importedIsPrivate;
             const existing = findExistingCategory(catName, dbParentId);
             
             if (existing) {
-                oldCatIdToNewCatIdMap.set(cat.id, existing.id);
+                if (isPrivate === 1 && existing.is_private !== 1) {
+                    existing.is_private = 1;
+                    privateCategoryIdsToPropagate.add(existing.id);
+                    didMutate = true;
+                }
+                oldCatIdToNewCatIdMap.set(getImportIdKey(cat.id), existing.id);
             } else {
                 const sortOrder = normalizeSortOrder(cat.sort_order);
                 const result = await db.prepare('INSERT INTO category (catelog, sort_order, parent_id, is_private) VALUES (?, ?, ?, ?)')
@@ -137,21 +198,28 @@ export async function onRequestPost(context) {
                 didMutate = true;
                 
                 const newCatObj = { id: newId, catelog: catName, parent_id: dbParentId, is_private: isPrivate };
-                if (!existingDbCategories) {
-                     // existingDbCategories = [newCatObj]; 
-                } else {
-                    existingDbCategories.push(newCatObj);
-                }
+                existingDbCategories.push(newCatObj);
                 
-                oldCatIdToNewCatIdMap.set(cat.id, newId);
+                oldCatIdToNewCatIdMap.set(getImportIdKey(cat.id), newId);
             }
+        }
+
+        if (privateCategoryIdsToPropagate.size > 0) {
+            const privateStatements = [];
+            privateCategoryIdsToPropagate.forEach(categoryId => {
+                privateStatements.push(...buildPrivateDescendantStatements(db, categoryId));
+            });
+            await db.batch(privateStatements);
         }
     } else {
         if (existingDbCategories) {
              existingDbCategories.forEach(c => categoryNameToIdMap.set(c.catelog, c.id));
         }
         const defaultCategory = 'Default';
-        const categoryNames = [...new Set(sitesToImport.map(item => (item.catelog || defaultCategory).trim()))].filter(name => name);
+        const categoryNames = [...new Set(sitesToImport.map(item => {
+            const categoryNameResult = normalizeCategoryName(item.catelog || defaultCategory);
+            return categoryNameResult.ok ? categoryNameResult.value : '';
+        }))].filter(name => name);
         const newCategoryNames = categoryNames.filter(name => !categoryNameToIdMap.has(name));
 
         if (newCategoryNames.length > 0) {
@@ -176,8 +244,8 @@ export async function onRequestPost(context) {
 
     // --- Site Processing ---
     const siteUrls = [...new Set(sitesToImport.flatMap(item => {
-        const rawUrl = (item.url || '').trim();
-        return getUrlMatchCandidates(rawUrl);
+        const urlResult = normalizeBookmarkUrl(item.url);
+        return urlResult.ok ? getUrlMatchCandidates(urlResult.value) : [];
     }))];
     const existingSiteUrlMap = new Map();
     if (siteUrls.length > 0) {
@@ -202,11 +270,21 @@ export async function onRequestPost(context) {
     const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
 
     for (const site of sitesToImport) {
-        const rawUrl = (site.url || '').trim();
-        const sanitizedUrl = normalizeUrlForStorage(rawUrl);
-        const sanitizedName = (site.name || '').trim();
+        const nameResult = normalizeBookmarkName(site.name);
+        const urlResult = normalizeBookmarkUrl(site.url);
+        const logoResult = normalizeBookmarkLogo(site.logo);
+        const descResult = normalizeBookmarkDesc(site.desc, { nullIfEmpty: true });
 
-        if (!rawUrl || !sanitizedUrl || !sanitizedName) {
+        if (!nameResult.ok || !urlResult.ok || !logoResult.ok || !descResult.ok) {
+            itemsSkipped++;
+            continue;
+        }
+
+        const rawUrl = urlResult.value;
+        const sanitizedUrl = normalizeUrlForStorage(rawUrl);
+        const sanitizedName = nameResult.value;
+
+        if (!sanitizedUrl) {
             itemsSkipped++;
             continue;
         }
@@ -229,14 +307,19 @@ export async function onRequestPost(context) {
         let catIsPrivate = 0;
 
         if (isNewFormat) {
-            newCatId = oldCatIdToNewCatIdMap.get(site.catelog_id);
-            const catObj = existingDbCategories.find(c => c.id === newCatId);
+            newCatId = oldCatIdToNewCatIdMap.get(getImportIdKey(site.catelog_id));
+            const catObj = existingDbCategories.find(c => String(c.id) === String(newCatId));
             if (catObj) {
                 catNameForDb = catObj.catelog;
                 catIsPrivate = catObj.is_private || 0;
             }
         } else {
-            const catName = (site.catelog || 'Default').trim();
+            const catNameResult = normalizeCategoryName(site.catelog || 'Default');
+            if (!catNameResult.ok) {
+                itemsSkipped++;
+                continue;
+            }
+            const catName = catNameResult.value;
             newCatId = categoryNameToIdMap.get(catName);
             catNameForDb = catName;
             const catObj = existingDbCategories.find(c => c.id === newCatId);
@@ -250,14 +333,14 @@ export async function onRequestPost(context) {
             continue;
         }
 
-        let sanitizedLogo = (site.logo || '').trim();
+        let sanitizedLogo = logoResult.value;
         if ((!sanitizedLogo || sanitizedLogo.startsWith('data:image')) && sanitizedUrl.startsWith('http')) {
             const domain = sanitizedUrl.replace(/^https?:\/\//, '').split('/')[0];
             sanitizedLogo = `${iconAPI}${domain}`;
         }
         if (!sanitizedLogo) sanitizedLogo = null;
 
-        const sanitizedDesc = (site.desc || '').trim() || null;
+        const sanitizedDesc = descResult.value;
         const sortOrderValue = normalizeSortOrder(site.sort_order);
         
         // Handle Privacy Logic

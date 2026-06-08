@@ -1,5 +1,6 @@
 // functions/api/categories/[id].js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
+import { normalizeCategoryName } from '../../lib/validators';
 
 function buildPrivateDescendantStatements(env, categoryId) {
   const descendantsCte = `
@@ -73,12 +74,13 @@ export async function onRequestPut(context) {
       });
     }
 
-    const { catelog } = body;
+    const categoryNameResult = normalizeCategoryName(body.catelog);
     let { sort_order } = body;
 
-    if (!catelog) {
-      return errorResponse('Category name is required', 400);
+    if (!categoryNameResult.ok) {
+      return errorResponse(categoryNameResult.message, 400);
     }
+    const catelog = categoryNameResult.value;
 
     const parentId = body.parent_id !== undefined ? parseInt(body.parent_id, 10) : 0;
 

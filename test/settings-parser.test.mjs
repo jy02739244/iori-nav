@@ -12,6 +12,15 @@ test('parseSettings applies documented defaults', () => {
   assert.equal(settings.home_category_flow, 'single_line');
   assert.equal(settings.layout_card_animation, 'radial');
   assert.equal(settings.layout_hide_desc, false);
+  assert.equal(settings.mobile_layout_grid_cols, '3');
+  assert.equal(settings.mobile_layout_card_animation, 'radial');
+  assert.equal(settings.mobile_layout_hide_desc, true);
+  assert.equal(settings.mobile_layout_hide_links, true);
+  assert.equal(settings.mobile_layout_card_style, 'style2');
+  assert.equal(settings.card_title_size, '16');
+  assert.equal(settings.card_desc_size, '14');
+  assert.equal(settings.mobile_card_title_size, '13');
+  assert.equal(settings.mobile_card_desc_size, '11');
 });
 
 test('parseSettings converts stored boolean strings consistently', () => {
@@ -28,6 +37,28 @@ test('parseSettings converts stored boolean strings consistently', () => {
   assert.equal(settings.home_hide_admin, true);
   assert.equal(settings.layout_grid_cols, '6');
   assert.equal(settings.layout_card_animation, 'flipIn');
+});
+
+test('parseSettings lets mobile card settings inherit desktop settings when missing except independent mobile defaults', () => {
+  const settings = parseSettings([
+    { key: 'layout_hide_desc', value: 'false' },
+    { key: 'layout_hide_links', value: 'false' },
+    { key: 'layout_enable_frosted_glass', value: 'true' },
+    { key: 'layout_frosted_glass_intensity', value: '28' },
+    { key: 'layout_card_style', value: 'style1' },
+    { key: 'layout_card_animation', value: 'flipIn' },
+    { key: 'card_title_size', value: '18' },
+  ]);
+
+  assert.equal(settings.mobile_layout_hide_desc, true);
+  assert.equal(settings.mobile_layout_hide_links, true);
+  assert.equal(settings.mobile_layout_enable_frosted_glass, true);
+  assert.equal(settings.mobile_layout_frosted_glass_intensity, '28');
+  assert.equal(settings.mobile_layout_card_style, 'style2');
+  assert.equal(settings.mobile_layout_card_animation, 'flipIn');
+  assert.equal(settings.mobile_card_title_size, '13');
+  assert.equal(settings.mobile_card_desc_size, '11');
+  assert.equal(settings.mobile_layout_grid_cols, '3');
 });
 
 test('parseSettings maps legacy category layout settings to category position', () => {
@@ -62,9 +93,16 @@ test('normalizeSettingValueForStorage validates style and enum settings', () => 
   assert.deepEqual(normalizeSettingValueForStorage('card_desc_color', 'null'), { ok: true, value: '' });
   assert.equal(normalizeSettingValueForStorage('home_title_color', '#fff;position:fixed').ok, false);
   assert.equal(normalizeSettingValueForStorage('layout_grid_cols', '9').ok, false);
+  assert.deepEqual(normalizeSettingValueForStorage('mobile_layout_grid_cols', '3'), { ok: true, value: '3' });
+  assert.equal(normalizeSettingValueForStorage('mobile_layout_grid_cols', '4').ok, false);
   assert.deepEqual(normalizeSettingValueForStorage('layout_card_animation', 'radial'), { ok: true, value: 'radial' });
+  assert.deepEqual(normalizeSettingValueForStorage('mobile_layout_card_animation', 'random'), { ok: true, value: 'random' });
   assert.deepEqual(normalizeSettingValueForStorage('layout_card_animation', 'random'), { ok: true, value: 'random' });
   assert.equal(normalizeSettingValueForStorage('layout_card_animation', 'bounceIn').ok, false);
+  assert.deepEqual(normalizeSettingValueForStorage('layout_card_border_radius', '0'), { ok: true, value: '0' });
+  assert.deepEqual(normalizeSettingValueForStorage('mobile_layout_card_border_radius', '0'), { ok: true, value: '0' });
+  assert.deepEqual(normalizeSettingValueForStorage('layout_frosted_glass_intensity', '0'), { ok: true, value: '0' });
+  assert.deepEqual(normalizeSettingValueForStorage('mobile_layout_frosted_glass_intensity', '0'), { ok: true, value: '0' });
   assert.deepEqual(normalizeSettingValueForStorage('home_category_position', 'above_description'), { ok: true, value: 'top' });
   assert.deepEqual(normalizeSettingValueForStorage('home_category_position', 'above_search'), { ok: true, value: 'above_search' });
   assert.deepEqual(normalizeSettingValueForStorage('home_category_position', 'left'), { ok: true, value: 'left' });

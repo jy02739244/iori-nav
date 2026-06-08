@@ -1,6 +1,7 @@
 // functions/api/public-config.js
 import { jsonResponse } from '../_middleware';
 import { getSettingsKeys, parseSettings } from '../lib/settings-parser';
+import { getTurnstileConfig } from '../lib/turnstile';
 
 /**
  * @summary Get public configuration settings
@@ -9,6 +10,7 @@ import { getSettingsKeys, parseSettings } from '../lib/settings-parser';
  */
 export async function onRequestGet({ env }) {
   const submissionEnabled = String(env.ENABLE_PUBLIC_SUBMISSION) === 'true';
+  const turnstileConfig = getTurnstileConfig(env);
 
   const aiRequestDelay = parseInt(env.AI_REQUEST_DELAY, 10);
   const validAiRequestDelay = !isNaN(aiRequestDelay) && aiRequestDelay > 0 ? aiRequestDelay : 1500;
@@ -27,6 +29,7 @@ export async function onRequestGet({ env }) {
 
   return jsonResponse({
     submissionEnabled,
+    turnstileSiteKey: turnstileConfig.siteKey,
     aiRequestDelay: validAiRequestDelay,
     ...layoutSettings
   });

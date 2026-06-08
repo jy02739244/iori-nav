@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>书签管理页面</title>
   <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/admin.css?v=0111ef0d" />
+  <link rel="stylesheet" href="/css/admin.css?v=a0b938d0" />
   <link rel="stylesheet" href="/css/admin-dropdown.css?v=9efddb85" />
-  <link rel="stylesheet" href="/css/tailwind.min.css?v=c75e3681">
+  <link rel="stylesheet" href="/css/tailwind.min.css?v=94e9f2cc">
 </head>
 
 <body>
@@ -654,18 +654,18 @@
                     <span class="slider round"></span>
                   </label>
                 </div>
-                <div class="flex gap-2 mb-4 items-end">
-                  <div class="flex-[2]">
+                <div class="card-typography-row mb-4">
+                  <div class="card-typography-font">
                     <label class="text-xs text-gray-500 block mb-1">名称字体</label>
                     <select id="homeTitleFont"
                       class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-size">
                     <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
                     <input type="number" id="homeTitleSize" placeholder="36"
                       class="w-full text-sm p-1 border rounded h-[34px]">
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-color">
                     <label class="text-xs text-gray-500 block mb-1">颜色</label>
                     <div class="flex gap-1 h-[34px]">
                       <input type="color" id="homeTitleColorPicker"
@@ -684,18 +684,18 @@
                     <span class="slider round"></span>
                   </label>
                 </div>
-                <div class="flex gap-2 mb-0 items-end">
-                  <div class="flex-[2]">
+                <div class="card-typography-row">
+                  <div class="card-typography-font">
                     <label class="text-xs text-gray-500 block mb-1">描述字体</label>
                     <select id="homeSubtitleFont"
                       class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-size">
                     <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
                     <input type="number" id="homeSubtitleSize" placeholder="16"
                       class="w-full text-sm p-1 border rounded h-[34px]">
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-color">
                     <label class="text-xs text-gray-500 block mb-1">颜色</label>
                     <div class="flex gap-1 h-[34px]">
                       <input type="color" id="homeSubtitleColorPicker"
@@ -719,18 +719,18 @@
                     <span class="slider round"></span>
                   </label>
                 </div>
-                <div class="flex gap-2 mb-0 items-end">
-                  <div class="flex-[2]">
+                <div class="card-typography-row">
+                  <div class="card-typography-font">
                     <label class="text-xs text-gray-500 block mb-1">字体 (自动加载资源)</label>
                     <select id="homeStatsFont"
                       class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-size">
                     <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
                     <input type="number" id="homeStatsSize" placeholder="20"
                       class="w-full text-sm p-1 border rounded h-[34px]">
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-color">
                     <label class="text-xs text-gray-500 block mb-1">颜色</label>
                     <div class="flex gap-1 h-[34px]">
                       <input type="color" id="homeStatsColorPicker"
@@ -754,18 +754,18 @@
                     <span class="slider round"></span>
                   </label>
                 </div>
-                <div class="flex gap-2 mb-0 items-end">
-                  <div class="flex-[2]">
+                <div class="card-typography-row">
+                  <div class="card-typography-font">
                     <label class="text-xs text-gray-500 block mb-1">字体 (自动加载资源)</label>
                     <select id="homeHitokotoFont"
                       class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-size">
                     <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
                     <input type="number" id="homeHitokotoSize" placeholder="14"
                       class="w-full text-sm p-1 border rounded h-[34px]">
                   </div>
-                  <div class="flex-1">
+                  <div class="card-typography-color">
                     <label class="text-xs text-gray-500 block mb-1">颜色</label>
                     <div class="flex gap-1 h-[34px]">
                       <input type="color" id="homeHitokotoColorPicker"
@@ -779,14 +779,24 @@
 
             </div>
           </div>
-          <!-- 布局设置内容 -->
+          <!-- 卡片设置内容 -->
           <div id="layout-settings" class="settings-tab-content">
 
+            <div class="flex items-center justify-between gap-3 mb-3 border-b border-gray-200 pb-2">
+              <h4 class="text-sm font-bold text-gray-700">卡片设置</h4>
+              <div class="card-layout-options" role="tablist" aria-label="卡片设备设置">
+                <button type="button" class="card-device-tab-btn card-segment-option active"
+                  data-card-device-tab="desktop" role="tab" aria-selected="true">桌面卡片</button>
+                <button type="button" class="card-device-tab-btn card-segment-option"
+                  data-card-device-tab="mobile" role="tab" aria-selected="false">手机卡片</button>
+              </div>
+            </div>
 
+            <div id="desktopCardSettingsPanel" data-card-device-panel="desktop">
             <div class="p-2 hover:bg-gray-50 rounded">
               <div class="card-option-panel">
                 <div class="card-option-row">
-                  <label class="card-option-label">卡片布局</label>
+                  <label class="card-option-label">桌面布局</label>
                   <div class="card-layout-options">
                     <label class="card-layout-option">
                       <input type="radio" name="gridCols" value="4" class="sr-only">
@@ -833,14 +843,14 @@
                       <option value="random">随机动画</option>
                     </select>
                     <div class="card-animation-options" role="group" aria-label="切换动画">
-                      <button type="button" class="card-animation-option" data-animation="radial">中心扩散</button>
-                      <button type="button" class="card-animation-option" data-animation="slideUp">向上滑入</button>
-                      <button type="button" class="card-animation-option" data-animation="fadeIn">淡入</button>
-                      <button type="button" class="card-animation-option" data-animation="slideLeft">左侧滑入</button>
-                      <button type="button" class="card-animation-option" data-animation="slideRight">右侧滑入</button>
-                      <button type="button" class="card-animation-option" data-animation="convergeIn">两侧汇聚</button>
-                      <button type="button" class="card-animation-option" data-animation="flipIn">翻转进入</button>
-                      <button type="button" class="card-animation-option" data-animation="random">随机动画</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="radial">中心扩散</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="slideUp">向上滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="fadeIn">淡入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="slideLeft">左侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="slideRight">右侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="convergeIn">两侧汇聚</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="flipIn">翻转进入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="random">随机动画</button>
                     </div>
                   </div>
                 </div>
@@ -912,63 +922,6 @@
               </div>
             </div>
 
-            <!-- 书签标题样式 -->
-            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3">
-              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">书签标题样式</h4>
-              <div class="flex gap-2 mb-0 items-end">
-                <div class="flex-[2]">
-                  <label class="text-xs text-gray-500 block mb-1">字体</label>
-                  <select id="cardTitleFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
-                </div>
-                <div class="flex-1">
-                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
-                  <input type="number" id="cardTitleSize" placeholder="16"
-                    class="w-full text-sm p-1 border rounded h-[34px]">
-                </div>
-                <div class="flex-1">
-                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
-                  <div class="flex gap-1 h-[34px]">
-                    <input type="color" id="cardTitleColorPicker"
-                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
-                    <input type="text" id="cardTitleColor" placeholder="#111827"
-                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 描述样式 -->
-            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3 mb-3">
-              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">描述样式</h4>
-              <div class="flex gap-2 mb-0 items-end">
-                <div class="flex-[2]">
-                  <label class="text-xs text-gray-500 block mb-1">字体</label>
-                  <select id="cardDescFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
-                </div>
-                <div class="flex-1">
-                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
-                  <input type="number" id="cardDescSize" placeholder="14"
-                    class="w-full text-sm p-1 border rounded h-[34px]">
-                </div>
-                <div class="flex-1">
-                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
-                  <div class="flex gap-1 h-[34px]">
-                    <input type="color" id="cardDescColorPicker"
-                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
-                    <input type="text" id="cardDescColor" placeholder="#4b5563"
-                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="p-2 hover:bg-gray-50 rounded" id="cardRadiusContainer">
-              <label for="cardRadius" class="block text-gray-700 font-medium mb-1">卡片圆角: <span
-                  id="cardRadiusValue">12</span>px</label>
-              <input type="range" id="cardRadius" min="0" max="30" step="1"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-            </div>
-
             <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
               <label for="hideCategorySwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏分类</label>
               <label class="switch">
@@ -993,8 +946,6 @@
                 </label>
               </div>
 
-
-
               <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <label for="frostedGlassSwitch"
                   class="cursor-pointer select-none text-gray-700 font-medium">卡片毛玻璃效果</label>
@@ -1010,8 +961,219 @@
                 <input type="range" id="frostedGlassIntensity" min="0" max="50" step="1"
                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
               </div>
+            </div>
 
+            <!-- 书签标题样式 -->
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">书签标题样式</h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="cardTitleFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="cardTitleSize" placeholder="16"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="cardTitleColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="cardTitleColor" placeholder="#111827"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            <!-- 描述样式 -->
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3 mb-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">描述样式</h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="cardDescFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="cardDescSize" placeholder="14"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="cardDescColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="cardDescColor" placeholder="#4b5563"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-2 hover:bg-gray-50 rounded" id="cardRadiusContainer">
+              <label for="cardRadius" class="block text-gray-700 font-medium mb-1">卡片圆角: <span
+                  id="cardRadiusValue">12</span>px</label>
+              <input type="range" id="cardRadius" min="0" max="30" step="1"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            </div>
+
+            <div id="mobileCardSettingsPanel" data-card-device-panel="mobile" class="hidden">
+            <div class="p-2 hover:bg-gray-50 rounded">
+              <div class="card-option-panel">
+                <div class="card-option-row">
+                  <label class="card-option-label">手机布局</label>
+                  <div class="card-layout-options">
+                    <label class="card-layout-option">
+                      <input type="radio" name="mobileGridCols" value="1" class="sr-only">
+                      <span class="card-segment-option">1 列</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="mobileGridCols" value="2" class="sr-only">
+                      <span class="card-segment-option">2 列</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="mobileGridCols" value="3" class="sr-only">
+                      <span class="card-segment-option">3 列</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="card-option-row">
+                  <label class="card-option-label">卡片风格</label>
+                  <div class="card-style-options">
+                    <button type="button" id="mobileBtnStyle1"
+                      class="card-style-btn card-segment-option"
+                      data-style="style1">风格一</button>
+                    <button type="button" id="mobileBtnStyle2"
+                      class="card-style-btn card-segment-option active"
+                      data-style="style2">风格二</button>
+                  </div>
+                </div>
+
+                <div class="card-option-row">
+                  <label for="mobileCardAnimationSelect" class="card-option-label">切换动画</label>
+                  <div class="card-animation-control">
+                    <select id="mobileCardAnimationSelect" class="sr-only">
+                      <option value="radial">中心扩散</option>
+                      <option value="slideUp">向上滑入</option>
+                      <option value="fadeIn">淡入</option>
+                      <option value="slideLeft">左侧滑入</option>
+                      <option value="slideRight">右侧滑入</option>
+                      <option value="convergeIn">两侧汇聚</option>
+                      <option value="flipIn">翻转进入</option>
+                      <option value="random">随机动画</option>
+                    </select>
+                    <div class="card-animation-options" role="group" aria-label="手机切换动画">
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="radial">中心扩散</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="slideUp">向上滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="fadeIn">淡入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="slideLeft">左侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="slideRight">右侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="convergeIn">两侧汇聚</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="flipIn">翻转进入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="random">随机动画</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group-stack" style="margin-top: 1rem;">
+              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileHideCategorySwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏分类</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileHideCategorySwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileHideDescSwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏描述</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileHideDescSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileHideLinksSwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏链接行</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileHideLinksSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileFrostedGlassSwitch"
+                  class="cursor-pointer select-none text-gray-700 font-medium">卡片毛玻璃效果</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileFrostedGlassSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="p-2 hover:bg-gray-50 rounded" id="mobileFrostedGlassIntensityContainer">
+                <label for="mobileFrostedGlassIntensity" class="block text-gray-700 font-medium mb-1">毛玻璃模糊程度: <span
+                    id="mobileFrostedGlassIntensityValue">15</span>px</label>
+                <input type="range" id="mobileFrostedGlassIntensity" min="0" max="50" step="1"
+                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+              </div>
+            </div>
+
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">手机书签标题样式</h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="mobileCardTitleFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="mobileCardTitleSize" placeholder="13"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="mobileCardTitleColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="mobileCardTitleColor" placeholder="#111827"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3 mb-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">手机描述样式</h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="mobileCardDescFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="mobileCardDescSize" placeholder="11"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="mobileCardDescColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="mobileCardDescColor" placeholder="#4b5563"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-2 hover:bg-gray-50 rounded" id="mobileCardRadiusContainer">
+              <label for="mobileCardRadius" class="block text-gray-700 font-medium mb-1">手机卡片圆角: <span
+                  id="mobileCardRadiusValue">12</span>px</label>
+              <input type="range" id="mobileCardRadius" min="0" max="30" step="1"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
             </div>
           </div>
 
@@ -1363,13 +1525,24 @@
     </div>
   </div>
 
+  <script src="/js/admin-shared.js?v=bb97f086"></script>
   <script src="/js/admin-cache.js?v=7b8faa7b"></script>
-  <script src="/js/admin.js?v=8354c4ca"></script>
+  <script src="/js/admin-bookmark-list.js?v=63a1380b"></script>
+  <script src="/js/admin-pending.js?v=2482c2ea"></script>
+  <script src="/js/admin-tabs.js?v=fd9a0d73"></script>
+  <script src="/js/admin-bookmark-privacy.js?v=306f5fdb"></script>
+  <script src="/js/admin.js?v=39f7ce60"></script>
   <script src="/js/admin-categories.js?v=6ac61962"></script>
   <script src="/js/admin-bookmarks.js?v=050f96b1"></script>
   <script src="/js/admin-batch.js?v=30d922a5"></script>
-  <script src="/js/admin-settings-core.js?v=73a2646a"></script>
-  <script src="/js/admin-settings-preview.js?v=fc80ca3f"></script>
+  <script src="/js/admin-settings-core.js?v=ab5c642f"></script>
+  <script src="/js/admin-settings-preview-shared.js?v=3d0c2bf4"></script>
+  <script src="/js/admin-settings-preview-data.js?v=3eddb596"></script>
+  <script src="/js/admin-settings-preview-nav.js?v=104621ea"></script>
+  <script src="/js/admin-settings-preview-animation.js?v=41e847dd"></script>
+  <script src="/js/admin-settings-preview-render.js?v=9fcb5adb"></script>
+  <script src="/js/admin-settings-preview-controls.js?v=92006133"></script>
+  <script src="/js/admin-settings-preview.js?v=909bf2a1"></script>
   <script src="/js/admin-settings-wallpaper.js?v=6121d0fc"></script>
   <script src="/js/admin-settings-ai.js?v=96643057"></script>
   <script src="/js/admin-settings.js?v=3d60c17b"></script>

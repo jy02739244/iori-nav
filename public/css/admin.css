@@ -661,6 +661,116 @@ tr:nth-child(even) {
   border: 0;
 }
 
+.card-typography-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) 5rem minmax(0, 1fr);
+  grid-template-areas:
+    "font-label size-label color-label"
+    "font-control size-control color-control";
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.card-typography-font,
+.card-typography-size,
+.card-typography-color {
+  display: contents;
+  min-width: 0;
+}
+
+.card-typography-row label {
+  display: block;
+  white-space: nowrap;
+  margin-bottom: 0 !important;
+  line-height: 1.25rem;
+}
+
+.card-typography-font > label {
+  grid-area: font-label;
+}
+
+.card-typography-font > .custom-select {
+  grid-area: font-control;
+}
+
+.card-typography-size > label {
+  grid-area: size-label;
+}
+
+.card-typography-size > input {
+  grid-area: size-control;
+}
+
+.card-typography-color > label {
+  grid-area: color-label;
+}
+
+.card-typography-color > .flex {
+  grid-area: color-control;
+}
+
+.card-typography-row .custom-select,
+.card-typography-row input[type='number'],
+.card-typography-row input[type='text'] {
+  box-sizing: border-box;
+  height: 40px !important;
+  padding: 0 0.75rem !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.375rem !important;
+  background-color: #fff;
+  color: #1f2937;
+  font-size: 1rem !important;
+  line-height: 40px;
+}
+
+.card-typography-row .custom-select {
+  padding-right: 2.5rem !important;
+  background-position: right 0.75rem center;
+}
+
+.card-typography-row input[type='number'] {
+  padding-right: 0.25rem !important;
+}
+
+.card-typography-size input {
+  min-width: 5rem;
+}
+
+.card-typography-color .flex {
+  height: 40px !important;
+  min-width: 0;
+}
+
+.card-typography-color input[type='color'] {
+  box-sizing: border-box;
+  flex: 0 0 40px;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 4px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.375rem !important;
+  background: #fff;
+}
+
+.card-typography-color input[type='text'] {
+  width: 100%;
+  min-width: 0;
+}
+
+.card-typography-color input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.card-typography-color input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 0.2rem;
+}
+
+.card-typography-color input[type='color']::-moz-color-swatch {
+  border: 0;
+  border-radius: 0.2rem;
+}
+
 .preview-card-anim-enter {
   animation-duration: 0.6s;
   animation-timing-function: ease-out;
@@ -783,6 +893,21 @@ tr:nth-child(even) {
     min-width: 0;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+  }
+
+  .card-typography-row {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "font-label"
+      "font-control"
+      "size-label"
+      "size-control"
+      "color-label"
+      "color-control";
+  }
+
+  .card-typography-size input {
+    min-width: 0;
   }
 }
 
@@ -1065,8 +1190,8 @@ tr:nth-child(even) {
   background-color: rgba(255, 255, 255, 0.4);
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(var(--preview-frosted-blur, 15px));
-  -webkit-backdrop-filter: blur(var(--preview-frosted-blur, 15px));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .live-preview-page {
@@ -1589,6 +1714,9 @@ tr:nth-child(even) {
   font-size: 0.64rem;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .live-card-desc {
@@ -1873,7 +2001,6 @@ tr:nth-child(even) {
 }
 
 .home-live-preview[data-device="mobile"] .live-card-grid {
-  --preview-grid-cols: 2 !important;
   gap: 0.65rem;
   padding: 0 1rem 1rem;
 }
@@ -2463,6 +2590,27 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .site-card.style-2 .preview-category {
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
+}
+
+.site-card .site-category {
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-live-preview[data-device="mobile"] .site-card.style-2 .site-category,
+.site-card.style-2 .preview-category {
+    display: inline-block;
+    max-width: min(100%, 5rem);
+    vertical-align: middle;
+}
+
+.home-live-preview[data-device="mobile"] .live-card-category {
+    display: inline-block;
+    max-width: min(100%, 5rem);
+    vertical-align: middle;
 }
 
 .site-card.style-2 p {

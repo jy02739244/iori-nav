@@ -100,8 +100,8 @@ html.dark body.custom-wallpaper::before {
 /* 2. 侧边栏深色玻璃化 */
 html.dark body.custom-wallpaper .sidebar {
     background-color: rgba(17, 24, 39, 0.85) !important;
-    backdrop-filter: blur(var(--frosted-glass-blur, 15px));
-    -webkit-backdrop-filter: blur(var(--frosted-glass-blur, 15px));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -424,6 +424,22 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
     margin-bottom: 0.5rem;
 }
 
+.site-card .site-category {
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 767px) {
+    .site-card.style-2 .site-category {
+        display: inline-block;
+        max-width: min(100%, 5rem);
+        vertical-align: middle;
+    }
+}
+
 .site-card.style-2 p {
     text-align: center;
     margin-top: 0.5rem;
@@ -726,8 +742,8 @@ body:not(.app-ready) #sidebar a[href="?catalog=all"] {
 /* Light Mode + Wallpaper Sidebar Optimization */
 html:not(.dark) body.custom-wallpaper .sidebar {
     background-color: rgba(255, 255, 255, 0.4) !important;
-    backdrop-filter: blur(var(--frosted-glass-blur, 15px));
-    -webkit-backdrop-filter: blur(var(--frosted-glass-blur, 15px));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
@@ -923,12 +939,12 @@ html:not(.dark) .dropdown-item.active {
   }
 }
 @media (max-width: 400px) {
-  .site-card .flex.items-start {
+  .site-card.style-2 .flex.items-start {
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
   }
-  .site-card .site-icon {
+  .site-card.style-2 .site-icon {
     margin-right: 0 !important;
     margin-bottom: 0.5rem !important;
     width: 3.5rem !important;
@@ -937,33 +953,92 @@ html:not(.dark) .dropdown-item.active {
     justify-content: center !important;
     align-items: center !important;
   }
-  .site-card .site-icon img,
-  .site-card .site-icon div {
+  .site-card.style-2 .site-icon img,
+  .site-card.style-2 .site-icon div {
     margin: 0 auto !important;
   }
-  .site-card .site-title {
+  .site-card.style-2 .site-title {
     text-align: center !important;
     width: 100% !important;
     display: block !important;
     transform-origin: center !important;
   }
-  .site-card .flex-1 {
+  .site-card.style-2 .flex-1 {
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
   }
-  .site-card p {
+  .site-card.style-2 p {
     text-align: center !important;
     margin-top: 0.5rem !important;
   }
-  .site-card .mt-3.flex {
+  .site-card.style-2 .mt-3.flex {
     margin-top: auto !important;
     justify-content: space-between !important;
     padding-top: 0.5rem !important;
     border-top: 1px solid rgba(0,0,0,0.05) !important;
   }
-  .dark .site-card .mt-3.flex {
+  .dark .site-card.style-2 .mt-3.flex {
     border-top: 1px solid rgba(255,255,255,0.1) !important;
+  }
+}
+
+@media (max-width: 389px) {
+  #sitesGrid.grid-cols-2.mobile-card-style1,
+  #sitesGrid.grid-cols-3.mobile-card-style1,
+  #sitesGrid.grid-cols-3.mobile-card-style2 {
+    gap: 0.5rem;
+  }
+
+  #sitesGrid.grid-cols-2.mobile-card-style1 .site-card-content,
+  #sitesGrid.grid-cols-3.mobile-card-style1 .site-card-content,
+  #sitesGrid.grid-cols-3.mobile-card-style2 .site-card-content {
+    padding: 0.625rem 0.5rem;
+  }
+
+  #sitesGrid.grid-cols-2.mobile-card-style1 .site-card:not(.style-2) .site-icon,
+  #sitesGrid.grid-cols-3.mobile-card-style1 .site-card:not(.style-2) .site-icon {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    margin-right: 0.5rem !important;
+  }
+
+  #sitesGrid.grid-cols-3.mobile-card-style2 .site-card.style-2 .site-icon {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    margin-bottom: 0.375rem !important;
+  }
+
+  #sitesGrid.grid-cols-2.mobile-card-style1 .site-card:not(.style-2) .site-icon img,
+  #sitesGrid.grid-cols-2.mobile-card-style1 .site-card:not(.style-2) .site-icon div,
+  #sitesGrid.grid-cols-3.mobile-card-style1 .site-card:not(.style-2) .site-icon img,
+  #sitesGrid.grid-cols-3.mobile-card-style1 .site-card:not(.style-2) .site-icon div,
+  #sitesGrid.grid-cols-3.mobile-card-style2 .site-card.style-2 .site-icon img,
+  #sitesGrid.grid-cols-3.mobile-card-style2 .site-card.style-2 .site-icon div {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+  }
+
+  #sitesGrid.grid-cols-2.mobile-card-style1 .site-title,
+  #sitesGrid.grid-cols-3.mobile-card-style1 .site-title,
+  #sitesGrid.grid-cols-3.mobile-card-style2 .site-card.style-2 .site-title {
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0.125rem !important;
+  }
+
+  #sitesGrid.grid-cols-2.mobile-card-style1 .site-category,
+  #sitesGrid.grid-cols-3.mobile-card-style1 .site-category,
+  #sitesGrid.grid-cols-3.mobile-card-style2 .site-card.style-2 .site-category {
+    max-width: min(100%, 4.25rem);
+    padding: 0.125rem 0.375rem;
+    font-size: 0.68rem;
+    line-height: 1.15;
+  }
+
+  #sitesGrid.grid-cols-3.mobile-card-style2 .site-card.style-2 .inline-flex {
+    margin-top: 0.125rem;
+    margin-bottom: 0;
   }
 }

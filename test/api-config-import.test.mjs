@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { onRequestPost } from '../functions/api/config/import.js';
+import { INPUT_LIMITS } from '../functions/lib/validators.js';
 
 function createKv(initialEntries = {}) {
   const store = new Map(Object.entries(initialEntries));
@@ -82,4 +83,153 @@ test('import override updates the database URL form that actually exists', async
   assert.match(body.message, /更新 1 个/);
   assert.ok(updateCall);
   assert.equal(updateCall.params.at(-1), 'https://example.com');
+});
+
+test('import forces public children and sites private under a private parent category', async () => {
+  const runCalls = [];
+  let nextCategoryId = 10;
+  const db = {
+    prepare(sql) {
+      const createStatement = (params = []) => ({
+        async all() {
+          if (sql.includes('SELECT id, catelog, parent_id, is_private FROM category')) {
+            return { results: [] };
+          }
+          if (sql.includes('SELECT url FROM sites WHERE url IN')) {
+            return { results: [] };
+          }
+          throw new Error(`Unexpected all() SQL: ${sql} ${JSON.stringify(params)}`);
+        },
+        async run() {
+          runCalls.push({ sql, params });
+          if (sql.includes('INSERT INTO category')) {
+            return { success: true, meta: { last_row_id: nextCategoryId++ } };
+          }
+          return { success: true, meta: {} };
+        },
+      });
+
+      return {
+        bind(...params) {
+          return createStatement(params);
+        },
+        all: createStatement().all,
+        run: createStatement().run,
+      };
+    },
+    async batch(statements) {
+      for (const statement of statements) {
+        await statement.run();
+      }
+    },
+  };
+
+  const request = new Request('https://example.com/api/config/import', {
+    method: 'POST',
+    headers: {
+      Cookie: 'admin_session=token',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      category: [
+        { id: 1, catelog: '私人资料', parent_id: 0, is_private: 1 },
+        { id: 2, catelog: '账号面板', parent_id: 1, is_private: 0 },
+      ],
+      sites: [{
+        name: '内部面板',
+        url: 'https://internal.example',
+        catelog_id: 2,
+        is_private: 0,
+      }],
+    }),
+  });
+
+  const env = {
+    NAV_AUTH: createKv({ session_token: '1' }),
+    NAV_DB: db,
+  };
+
+  const response = await onRequestPost({ request, env });
+  const body = await response.json();
+  const categoryInsertCalls = runCalls.filter(call => call.sql.includes('INSERT INTO category'));
+  const siteInsertCall = runCalls.find(call => call.sql.includes('INSERT INTO sites'));
+
+  assert.equal(response.status, 201, body.message);
+  assert.match(body.message, /新增 1 个/);
+  assert.equal(categoryInsertCalls.length, 2);
+  assert.deepEqual(categoryInsertCalls[0].params, ['私人资料', 9999, 0, 1]);
+  assert.deepEqual(categoryInsertCalls[1].params, ['账号面板', 9999, 10, 1]);
+  assert.ok(siteInsertCall);
+  assert.equal(siteInsertCall.params[5], '账号面板');
+  assert.equal(siteInsertCall.params[7], 1);
+});
+
+test('import skips overlong bookmark rows instead of writing them', async () => {
+  const runCalls = [];
+  let nextCategoryId = 20;
+  const db = {
+    prepare(sql) {
+      const createStatement = (params = []) => ({
+        async all() {
+          if (sql.includes('SELECT id, catelog, parent_id, is_private FROM category')) {
+            return { results: [] };
+          }
+          if (sql.includes('SELECT url FROM sites WHERE url IN')) {
+            return { results: [] };
+          }
+          throw new Error(`Unexpected all() SQL: ${sql} ${JSON.stringify(params)}`);
+        },
+        async run() {
+          runCalls.push({ sql, params });
+          if (sql.includes('INSERT INTO category')) {
+            return { success: true, meta: { last_row_id: nextCategoryId++ } };
+          }
+          return { success: true, meta: {} };
+        },
+      });
+
+      return {
+        bind(...params) {
+          return createStatement(params);
+        },
+        all: createStatement().all,
+        run: createStatement().run,
+      };
+    },
+    async batch(statements) {
+      for (const statement of statements) {
+        await statement.run();
+      }
+    },
+  };
+
+  const request = new Request('https://example.com/api/config/import', {
+    method: 'POST',
+    headers: {
+      Cookie: 'admin_session=token',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      category: [{ id: 1, catelog: 'Default', parent_id: 0, is_private: 0 }],
+      sites: [{
+        name: 'Too long',
+        url: 'https://toolong.example',
+        desc: 'x'.repeat(INPUT_LIMITS.bookmarkDesc + 1),
+        catelog_id: 1,
+      }],
+    }),
+  });
+
+  const env = {
+    NAV_AUTH: createKv({ session_token: '1' }),
+    NAV_DB: db,
+  };
+
+  const response = await onRequestPost({ request, env });
+  const body = await response.json();
+
+  assert.equal(response.status, 201, body.message);
+  assert.match(body.message, /跳过 1 个/);
+  assert.equal(runCalls.some(call => call.sql.includes('INSERT INTO category')), true);
+  assert.equal(runCalls.some(call => call.sql.includes('INSERT INTO sites')), false);
 });

@@ -38,7 +38,7 @@ function createStatement(sql, settingsRows) {
   };
 }
 
-async function renderHome(settingsRows = []) {
+async function renderHome(settingsRows = [], envOverrides = {}) {
   const response = await onRequest({
     request: new Request('https://example.com/?render-test=1'),
     env: {
@@ -63,6 +63,7 @@ async function renderHome(settingsRows = []) {
       SITE_DESCRIPTION: 'Unit Description',
       FOOTER_TEXT: 'Unit Footer',
       ENABLE_PUBLIC_SUBMISSION: 'false',
+      ...envOverrides,
     },
     waitUntil() {},
   });
@@ -70,6 +71,15 @@ async function renderHome(settingsRows = []) {
   assert.equal(response.status, 200);
   return response.text();
 }
+
+test('home renders floating submission button only when public submission is enabled', async () => {
+  const disabledHtml = await renderHome();
+  const enabledHtml = await renderHome([], { ENABLE_PUBLIC_SUBMISSION: 'true' });
+
+  assert.match(disabledHtml, /id="addSiteBtnFloating" class="!hidden fixed bottom-24/);
+  assert.match(enabledHtml, /id="addSiteBtnFloating" class=" fixed bottom-24/);
+  assert.equal(enabledHtml.includes('addSiteBtnHorizontal'), false);
+});
 
 test('home category navigation defaults below the search box', async () => {
   const html = await renderHome();
@@ -101,6 +111,38 @@ test('home footer text can be configured from settings', async () => {
   assert.equal(defaultHtml.includes(`© ${year} Unit Footer`), true);
   assert.equal(configuredHtml.includes(`© ${year} Custom Footer`), true);
   assert.equal(configuredHtml.includes(`© ${year} Unit Footer`), false);
+});
+
+test('home grid uses configured mobile card columns', async () => {
+  const oneColHtml = await renderHome([
+    { key: 'mobile_layout_grid_cols', value: '1' },
+  ]);
+  const threeColHtml = await renderHome([
+    { key: 'mobile_layout_grid_cols', value: '3' },
+  ]);
+
+  assert.match(oneColHtml, /id="sitesGrid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 mobile-card-style2/);
+  assert.match(threeColHtml, /id="sitesGrid" class="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 mobile-card-style2/);
+});
+
+test('home grid marks the configured mobile card style', async () => {
+  const styleOneHtml = await renderHome([
+    { key: 'mobile_layout_card_style', value: 'style1' },
+  ]);
+
+  assert.match(styleOneHtml, /id="sitesGrid" class="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 mobile-card-style1/);
+});
+
+test('home card radius and frosted blur preserve zero values', async () => {
+  const html = await renderHome([
+    { key: 'layout_card_border_radius', value: '0' },
+    { key: 'mobile_layout_card_border_radius', value: '0' },
+    { key: 'layout_frosted_glass_intensity', value: '0' },
+    { key: 'mobile_layout_frosted_glass_intensity', value: '0' },
+  ]);
+
+  assert.match(html, /--card-radius: 0px; --frosted-glass-blur: 0px;/);
+  assert.match(html, /@media \(max-width: 767px\) \{ :root \{ --card-radius: 0px; --frosted-glass-blur: 0px; \} \}/);
 });
 
 test('home category navigation can render at the top', async () => {
