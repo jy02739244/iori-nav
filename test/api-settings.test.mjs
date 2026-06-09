@@ -71,12 +71,12 @@ function createDb(initialSettings = {}) {
 }
 
 function loadAdminSettingsDefaults() {
-  const source = readFileSync(resolve('public/js/admin-settings-core.js'), 'utf8');
+  const source = readFileSync(resolve('public/js/admin-settings-defaults.js'), 'utf8');
   const context = { window: {} };
 
-  vm.runInNewContext(source, context, { filename: 'public/js/admin-settings-core.js' });
+  vm.runInNewContext(source, context, { filename: 'public/js/admin-settings-defaults.js' });
 
-  return context.window.AdminSettings.core.getCurrentSettings();
+  return context.window.AdminSettings.defaults.createDefaultSettings();
 }
 
 test('POST /api/settings accepts the admin settings payload', async () => {

@@ -1,0 +1,336 @@
+/* AI 设置模态框样式 */
+#aiSettingsBtn {
+  background-color: #28a745; /* 绿色，表示 AI 或智能操作 */
+}
+
+#aiSettingsBtn:hover {
+  background-color: #218838;
+}
+
+.modal-content .radio-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.modal-content .radio-group input[type="radio"] {
+  width: auto;
+  margin-bottom: 0;
+}
+
+.modal-content .radio-group label {
+  margin-bottom: 0;
+  font-weight: normal;
+}
+
+.batch-operations {
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.batch-operations h3 {
+  margin-top: 0;
+}
+
+.batch-operations p {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+#batchCompleteDescBtn {
+  width: 100%;
+  margin-top: 10px;
+  background-color: #007bff;
+}
+
+#batchCompleteDescBtn:hover {
+  background-color: #0056b3;
+}
+
+/* =================================== */
+/* 新版 AI 设置模态框样式 (Settings Modal) */
+/* =================================== */
+
+.settings-modal .modal-content-wrapper {
+  background-color: #fff;
+  margin: 2vh auto;
+  padding: 0;
+  border: 1px solid #dee2e6;
+  width: min(96vw, 1440px);
+  max-width: none;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(390px, 460px);
+  height: min(92vh, 900px);
+  max-height: 92vh;
+  overflow: hidden;
+}
+
+.settings-panel-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+}
+
+.settings-preview-pane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  padding: 1rem;
+  background: #eef2f7;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.settings-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.settings-preview-kicker {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.settings-preview-header h3 {
+  margin: 0.15rem 0 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.settings-preview-device-tabs {
+  display: inline-flex;
+  padding: 0.2rem;
+  border-radius: 8px;
+  background: #e2e8f0;
+  gap: 0.2rem;
+}
+
+.preview-device-btn {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  height: 2rem;
+  padding: 0 0.75rem;
+}
+
+.preview-device-btn.active {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.home-live-preview {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #fdf8f3;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.home-live-preview-bg,
+.home-live-preview-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.home-live-preview-bg {
+  background-color: #fdf8f3;
+  background-position: center;
+  background-size: cover;
+  filter: blur(var(--preview-bg-blur, 0px));
+  transform: scale(var(--preview-bg-scale, 1));
+}
+
+.home-live-preview-vignette {
+  background: transparent;
+  opacity: 0;
+}
+
+.home-live-preview.has-wallpaper .home-live-preview-vignette {
+  background: rgba(0, 0, 0, 0.12);
+  opacity: 1;
+}
+
+.home-live-preview.is-horizontal .live-preview-sidebar {
+  display: none;
+}
+
+.home-live-preview-frame {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  color: #1f2937;
+}
+
+.live-preview-menu-toggle,
+.live-preview-mobile-overlay {
+  display: none;
+}
+
+.live-preview-sidebar {
+  width: 11rem;
+  flex: 0 0 11rem;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border-right: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 1rem 0.85rem;
+  overflow-x: hidden;
+}
+
+.live-sidebar-brand {
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.live-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.live-sidebar-nav > span,
+.live-category-nav .live-category-button,
+.live-category-nav .live-category-more {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-sidebar-nav > span {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 0.5rem;
+  color: #374151;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem 0.5rem calc(0.75rem + var(--live-sidebar-indent, 0rem));
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.live-sidebar-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 1.25rem;
+  margin-right: 0.5rem;
+  color: #9ca3af;
+}
+
+.live-sidebar-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-sidebar-nav > span.active {
+  background: #f6ede1;
+  color: #254267;
+}
+
+.live-sidebar-nav > span.active .live-sidebar-icon {
+  color: #416d9d;
+}
+
+.live-sidebar-nav > span:focus-visible,
+.live-category-nav [role="button"]:focus-visible {
+  outline: 2px solid rgba(65, 109, 157, 0.55);
+  outline-offset: 2px;
+}
+
+.home-live-preview.has-wallpaper .live-preview-sidebar {
+  background-color: rgba(255, 255, 255, 0.4);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.live-preview-page {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.live-preview-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 18rem;
+  padding: 2.25rem 2.25rem 1.5rem;
+  background: #305580;
+  color: #fff;
+  text-align: center;
+}
+
+.home-live-preview.has-wallpaper .live-preview-hero {
+  background: transparent;
+}
+
+.live-preview-actions {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: inline-flex;
+  gap: 0.55rem;
+}
+
+.live-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  color: rgba(255, 255, 255, 0.92);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+.live-action-icon svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.live-action-theme {
+  color: #fbbf24;
+}
+
+.live-action-admin {
+  color: #bfdbfe;
+}

@@ -1,0 +1,294 @@
+.settings-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.settings-modal .modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-modal .modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+.settings-modal .modal-close-btn:hover {
+  color: #343a40;
+}
+
+.settings-modal .modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  space-y: 1.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-modal .form-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.settings-modal .provider-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.settings-modal .provider-btn {
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  background-color: #f8f9fa;
+  color: #495057;
+  transition: all 0.2s;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.settings-modal .provider-btn:hover {
+  border-color: #adb5bd;
+}
+
+.settings-modal .provider-btn.active {
+  border-color: #007bff;
+  background-color: #e7f1ff;
+  color: #0056b3;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+.settings-modal .form-group-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.settings-modal .form-label-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.settings-modal .form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  background-color: #fff;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.settings-modal .form-input:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.settings-modal .form-hint {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.settings-modal .batch-actions-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.settings-modal .section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.settings-modal .bulk-action-box {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.settings-modal .progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.settings-modal .progress-bar-container {
+  width: 100%;
+  background-color: #e9ecef;
+  border-radius: 99px;
+  height: 0.75rem;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.settings-modal .progress-bar {
+  background-color: #007bff;
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.settings-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f8f9fa;
+  flex-shrink: 0;
+}
+
+.settings-modal .button-primary,
+.settings-modal .button-secondary,
+.settings-modal .button-tertiary,
+.settings-modal .button-danger {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.settings-modal .button-primary {
+  background-color: #007bff;
+  color: white;
+}
+.settings-modal .button-primary:hover {
+  background-color: #0056b3;
+}
+
+.settings-modal .button-secondary {
+  width: 100%;
+  justify-content: center;
+  background-color: #fff;
+  color: #495057;
+  border-color: #ced4da;
+}
+.settings-modal .button-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.settings-modal .button-tertiary {
+  background-color: #e9ecef;
+  color: #495057;
+}
+.settings-modal .button-tertiary:hover {
+  background-color: #dee2e6;
+}
+
+.settings-modal .button-danger {
+  width: 100%;
+  justify-content: center;
+  background-color: #fbebee;
+  color: #dc3545;
+  border-color: #f5c6cb;
+}
+.settings-modal .button-danger:hover {
+  background-color: #f8d7da;
+}
+
+/* AI 生成按钮 */
+.ai-generate-btn {
+  margin-left: 10px;
+  padding: 8px 12px;
+  background-color: #6f42c1; /* Purple to distinguish AI */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+  width: 36px;
+  height: 38px;
+}
+
+.ai-generate-btn:hover {
+  background-color: #59359a;
+}
+
+.ai-generate-btn:disabled {
+  background-color: #a58ac4;
+  cursor: not-allowed;
+}
+
+/* AI Loading Spinner */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ai-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Modal Messages */
+.modal-message {
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  visibility: hidden;
+}
+
+.modal-message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.modal-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.modal-message.info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+

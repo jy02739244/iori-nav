@@ -1,0 +1,272 @@
+.category-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.category-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+#refreshCategories {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #ced4da;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+#refreshCategories:hover {
+  background-color: #e9ecef;
+}
+.category-sort-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+.category-sort-input:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+.category-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.category-actions button {
+  padding: 5px 10px;
+  font-size: 0.85rem;
+}
+.category-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  gap: 5px;
+}
+.actions button {
+  padding: 5px 8px;
+  font-size: 0.8rem;
+}
+.edit-btn {
+  background-color: #17a2b8; /* 编辑按钮颜色 */
+}
+
+.del-btn {
+  background-color: #dc3545; /* 删除按钮颜色 */
+}
+.pagination {
+  text-align: center;
+  margin-top: 20px;
+}
+.pagination button {
+  margin: 0 5px;
+  background-color: #e9ecef; /* 分页按钮颜色 */
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+.pagination button:hover {
+  background-color: #dee2e6;
+}
+
+.success {
+  background-color: #28a745;
+  color: #fff;
+}
+.error {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.modal[style*="display: block"],
+.modal[style*="display:block"] {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: auto;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 1rem;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-close {
+  color: #9ca3af;
+  position: absolute;
+  right: 1.5rem;
+  top: 1.5rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.modal-close:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.modal-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  margin-right: 1rem;
+  margin-bottom: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+  flex: 1;
+  width: auto;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background-color: #fff;
+  min-width: 0; /* Fix flex overflow */
+}
+
+/* Ensure custom dropdown wrapper also flexes correctly */
+.form-group .custom-dropdown-wrapper {
+  flex: 1;
+}
+
+/* Fix switch alignment in flex layout */
+.form-group .switch {
+  margin: 0 !important;
+}
+
+/* Make sure the switch label takes remaining space or behaves correctly */
+.form-group .flex.items-center.justify-between {
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #3b82f6;
+  ring: 2px solid #93c5fd;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-content button[type='submit'] {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.modal-content button[type='submit']:hover {
+  background-color: #0056b3;
+}
+
+.custom-select {
+  /* 1. 去除浏览器默认样式（最关键的一步） */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* 2. 基础样式设置 */
+  width: 100%;                /* 宽度填满容器 */
+  padding: 10px 15px;         /* 内边距 */
+  padding-right: 40px;        /* 右侧留出更多空间给箭头，防止文字覆盖 */
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  
+  /* 3. 自定义箭头图标 (使用 SVG Data URI) */
+  /* 这是一个灰色的向下箭头 */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center; /* 箭头位置：靠右 10px，垂直居中 */
+  background-size: 16px 12px;             /* 箭头大小 */
+
+  /* 4. 过渡动画 */
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* 聚焦时的样式（与你之前的 input 保持一致） */
+.custom-select:focus {
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 禁用状态 */
+.custom-select:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+
+
