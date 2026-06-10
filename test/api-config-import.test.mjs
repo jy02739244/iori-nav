@@ -164,6 +164,80 @@ test('import forces public children and sites private under a private parent cat
   assert.equal(siteInsertCall.params[7], 1);
 });
 
+test('import maps Chrome root bookmarks into a root category', async () => {
+  const runCalls = [];
+  let nextCategoryId = 30;
+  const db = {
+    prepare(sql) {
+      const createStatement = (params = []) => ({
+        async all() {
+          if (sql.includes('SELECT id, catelog, parent_id, is_private FROM category')) {
+            return { results: [] };
+          }
+          if (sql.includes('SELECT url FROM sites WHERE url IN')) {
+            return { results: [] };
+          }
+          throw new Error(`Unexpected all() SQL: ${sql} ${JSON.stringify(params)}`);
+        },
+        async run() {
+          runCalls.push({ sql, params });
+          if (sql.includes('INSERT INTO category')) {
+            return { success: true, meta: { last_row_id: nextCategoryId++ } };
+          }
+          return { success: true, meta: {} };
+        },
+      });
+
+      return {
+        bind(...params) {
+          return createStatement(params);
+        },
+        all: createStatement().all,
+        run: createStatement().run,
+      };
+    },
+    async batch(statements) {
+      for (const statement of statements) {
+        await statement.run();
+      }
+    },
+  };
+
+  const request = new Request('https://example.com/api/config/import', {
+    method: 'POST',
+    headers: {
+      Cookie: 'admin_session=token',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      category: [],
+      sites: [{
+        name: 'Root Link',
+        url: 'https://root.example',
+        catelog_id: 0,
+      }],
+    }),
+  });
+
+  const env = {
+    NAV_AUTH: createKv({ session_token: '1' }),
+    NAV_DB: db,
+  };
+
+  const response = await onRequestPost({ request, env });
+  const body = await response.json();
+  const categoryInsertCall = runCalls.find(call => call.sql.includes('INSERT INTO category'));
+  const siteInsertCall = runCalls.find(call => call.sql.includes('INSERT INTO sites'));
+
+  assert.equal(response.status, 201, body.message);
+  assert.match(body.message, /新增 1 个/);
+  assert.ok(categoryInsertCall);
+  assert.deepEqual(categoryInsertCall.params, ['默认', 9999, 0, 0]);
+  assert.ok(siteInsertCall);
+  assert.equal(siteInsertCall.params[4], 30);
+  assert.equal(siteInsertCall.params[5], '默认');
+});
+
 test('import skips overlong bookmark rows instead of writing them', async () => {
   const runCalls = [];
   let nextCategoryId = 20;

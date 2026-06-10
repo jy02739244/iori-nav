@@ -301,22 +301,26 @@ function bindCategoryEvents() {
                 const confirmBtn = document.getElementById('confirmDeleteCategoryBtn');
                 const cancelBtn = document.getElementById('cancelDeleteCategoryBtn');
                 const closeBtn = document.getElementById('closeDeleteCategoryConfirmModal');
+
+                const closeModal = () => {
+                     deleteModal.style.display = 'none';
+                     document.body.classList.remove('modal-open');
+                };
                 
                 // 使用 cloneNode 快速清除所有 event listeners
                 const newConfirmBtn = confirmBtn.cloneNode(true);
                 confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
                 
                 newConfirmBtn.addEventListener('click', () => {
+                     closeModal();
                      deleteCategory(category_id);
-                     deleteModal.style.display = 'none';
                 });
-                
-                const closeModal = () => {
-                     deleteModal.style.display = 'none';
-                     document.body.classList.remove('modal-open');
-                }
+
                 cancelBtn.onclick = closeModal;
                 closeBtn.onclick = closeModal;
+                deleteModal.onclick = (event) => {
+                     if (event.target === deleteModal) closeModal();
+                };
                 
                 deleteModal.style.display = 'block';
                 document.body.classList.add('modal-open');

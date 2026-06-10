@@ -231,22 +231,32 @@ function showImportPreview(result) {
       return items;
   }
   
+  const rootCount = result.sites.filter(s => String(s.catelog_id) === '0').length;
+  const existingDefaultRootCategory = rootCount > 0
+      ? result.category.find(c => String(c.parent_id ?? 0) === '0' && String(c.catelog || '').trim() === '默认')
+      : null;
+  if (existingDefaultRootCategory) {
+      const stats = catMap.get(existingDefaultRootCategory.id);
+      if (stats) stats.count += rootCount;
+  }
+
   const treeHtml = buildPreviewHtml(0, 0);
-  const rootCount = result.sites.filter(s => s.catelog_id === 0).length;
-  const rootHtml = rootCount > 0 ? `<li>(根目录) <span class="text-gray-500 text-xs">(${rootCount} 书签)</span></li>` : '';
+  const shouldShowVirtualRootCategory = rootCount > 0 && !existingDefaultRootCategory;
+  const rootHtml = shouldShowVirtualRootCategory ? `<li>默认 <span class="text-gray-500 text-xs">(${rootCount} 书签，将导入到「默认」分类)</span></li>` : '';
+  const previewCategoryCount = result.category.length + (shouldShowVirtualRootCategory ? 1 : 0);
 
   previewModal.innerHTML = `
     <div class="modal-content">
       <span class="modal-close" id="closePreviewModal">×</span>
       <h2>导入预览</h2>
       <div style="margin: 20px 0;">
-        <p><strong>总共发现 ${result.sites.length} 个书签，${result.category.length} 个分类</strong></p>
+        <p><strong>总共发现 ${result.sites.length} 个书签，${previewCategoryCount} 个分类</strong></p>
         <div style="margin: 10px 0; padding: 10px; border: 1px solid #eee; max-height: 300px; overflow-y: auto; background: #f9f9f9;">
            <ul class="text-sm">
              ${rootHtml}${treeHtml}
            </ul>
         </div>
-        <p style="margin-top: 15px; color: #6c757d; font-size: 0.9rem;">注意: 将按照层级结构导入。若分类已存在，将合并。</p>
+        <p style="margin-top: 15px; color: #6c757d; font-size: 0.9rem;">注意: 将按照层级结构导入。根目录书签会导入到「默认」分类。若分类已存在，将合并。</p>
         <div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
             <label for="importOverride" style="font-size: 0.9rem; color: #333; cursor: pointer; font-weight: 500;">覆盖已存在书签 (根据 URL 判断)</label>
             <label class="switch"><input type="checkbox" id="importOverride"><span class="slider round"></span></label>

@@ -45,6 +45,8 @@ function buildPrivateDescendantStatements(db, categoryId) {
     ];
 }
 
+const ROOT_IMPORT_CATEGORY_NAME = '默认';
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -210,6 +212,34 @@ export async function onRequestPost(context) {
                 privateStatements.push(...buildPrivateDescendantStatements(db, categoryId));
             });
             await db.batch(privateStatements);
+        }
+
+        const hasRootSites = sitesToImport.some(site => getImportIdKey(site.catelog_id) === '0');
+        if (hasRootSites) {
+            const rootCategoryNameResult = normalizeCategoryName(ROOT_IMPORT_CATEGORY_NAME);
+            if (!rootCategoryNameResult.ok) {
+                return errorResponse(`导入失败：${rootCategoryNameResult.message}`, 400);
+            }
+
+            const rootCategoryName = rootCategoryNameResult.value;
+            const existingRootCategory = findExistingCategory(rootCategoryName, 0);
+
+            if (existingRootCategory) {
+                oldCatIdToNewCatIdMap.set('0', existingRootCategory.id);
+            } else {
+                const result = await db.prepare('INSERT INTO category (catelog, sort_order, parent_id, is_private) VALUES (?, ?, ?, ?)')
+                    .bind(rootCategoryName, 9999, 0, 0)
+                    .run();
+                const newRootCategoryId = result.meta.last_row_id;
+                existingDbCategories.push({
+                    id: newRootCategoryId,
+                    catelog: rootCategoryName,
+                    parent_id: 0,
+                    is_private: 0,
+                });
+                oldCatIdToNewCatIdMap.set('0', newRootCategoryId);
+                didMutate = true;
+            }
         }
     } else {
         if (existingDbCategories) {
