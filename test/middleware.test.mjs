@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 import {
   buildSessionCookie,
   checkRateLimit,
+  clearHomeCache,
   getSessionToken,
   isAdminAuthenticated,
   validateCsrfToken,
   validateOrigin,
 } from '../functions/_middleware.js';
+import { HOME_CACHE_VERSION } from '../functions/constants.js';
 
 if (!globalThis.crypto.subtle.timingSafeEqual) {
   globalThis.crypto.subtle.timingSafeEqual = (left, right) => {
@@ -23,8 +25,10 @@ if (!globalThis.crypto.subtle.timingSafeEqual) {
 
 function createKv(initialEntries = {}) {
   const store = new Map(Object.entries(initialEntries));
+  const deleteCalls = [];
   return {
     store,
+    deleteCalls,
     async get(key) {
       return store.get(key) ?? null;
     },
@@ -32,6 +36,7 @@ function createKv(initialEntries = {}) {
       store.set(key, value);
     },
     async delete(key) {
+      deleteCalls.push(key);
       store.delete(key);
     },
   };
@@ -117,4 +122,23 @@ test('checkRateLimit increments counts and blocks after the limit', async () => 
   assert.deepEqual(await checkRateLimit(env, 'rate_key', 2, 60), { allowed: true, remaining: 1 });
   assert.deepEqual(await checkRateLimit(env, 'rate_key', 2, 60), { allowed: true, remaining: 0 });
   assert.deepEqual(await checkRateLimit(env, 'rate_key', 2, 60), { allowed: false, remaining: 0 });
+});
+
+test('clearHomeCache deletes only versioned home cache keys', async () => {
+  const kv = createKv({
+    home_html_public: 'legacy-public',
+    home_html_private: 'legacy-private',
+    [`home_html_public_${HOME_CACHE_VERSION}`]: 'public',
+    [`home_html_private_${HOME_CACHE_VERSION}`]: 'private',
+  });
+  const env = { NAV_AUTH: kv };
+
+  await clearHomeCache(env, 'all');
+
+  assert.deepEqual(kv.deleteCalls.sort(), [
+    `home_html_private_${HOME_CACHE_VERSION}`,
+    `home_html_public_${HOME_CACHE_VERSION}`,
+  ]);
+  assert.equal(kv.store.get('home_html_public'), 'legacy-public');
+  assert.equal(kv.store.get('home_html_private'), 'legacy-private');
 });
