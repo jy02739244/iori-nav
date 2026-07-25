@@ -1,0 +1,13 @@
+name = "nav"
+account_id = "你的账户ID"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "NAV_DB"
+database_name = "book"
+database_id = "你的D1数据库ID"
+
+[[kv_namespaces]]
+binding = "NAV_AUTH"
+id = "你的KV命名空间ID"

@@ -26,9 +26,11 @@
   <strong>🌐 在线体验:</strong> <a href="https://iori.hidns.vip/">https://iori.hidns.vip</a>
 </p>
 
+> 📁 旧版本（`worker.js`、`work_v1.js`、`work_v2.js`）已移至 [`old/`](./old/) 目录，相关文档见 [old/README.md](./old/README.md)。
+
 ---
 
-## 🖼️ 效果预览
+## 预览
 
 | 风格一 | 风格一 |
 | :---: | :---: |
@@ -232,7 +234,11 @@ npx wrangler d1 execute book --local --file=schema.sql
 | **存储** | [Cloudflare KV](https://developers.cloudflare.com/workers/runtime-apis/kv/) |
 | **前端框架** | [TailwindCSS](https://tailwindcss.com/) |
 
----
+| 服务 | 免费额度 | 说明 |
+|------|---------|------|
+| Workers | 10 万次/天 | 本项目足够 |
+| D1 | 5 GB 存储 + 500 万行读/天 | 书签数据 |
+| KV | 10 万次/天 | 仅用于管理员认证 |
 
 ## 📋 更新日志
 
@@ -282,9 +288,19 @@ npx wrangler d1 execute book --local --file=schema.sql
 
 ---
 
-## 🌟 贡献
+| 问题 | 解决方案 |
+|------|---------|
+| `wrangler: command not found` | `npm install -g wrangler` |
+| Windows npm 权限错误 | 管理员 PowerShell: `Set-ExecutionPolicy RemoteSigned` |
+| `Invalid API Token` | 确认 Token 以 `cfut_` 开头且权限包含 Workers/D1/KV |
+| 部署后 502 | 检查 `wrangler.toml` 中的 `account_id`、`database_id`、`id` 是否正确 |
+| 部署后白屏/空白 | 检查浏览器控制台是否有 JS 错误；确认 `compatibility_date` 设为当前日期 |
+| 登录无反应 | 确保浏览器未禁用 Cookie（需支持 HttpOnly） |
+| `no such table` | 执行 `wrangler d1 execute book --remote --file=schema.sql` |
+| 忘记管理员密码 | 执行 `wrangler kv key put --namespace-id=<KV_ID> admin_password "新密码"` |
+| 数据丢失如何恢复 | 使用 `wrangler d1 export` 导出备份，定期执行 |
 
-欢迎通过 Issue 或 Pull Request 为本项目贡献代码、提出问题或建议！
+## 贡献指南
 
 1. Fork 本仓库
 2. 创建你的功能分支：`git checkout -b feature/amazing-feature`
@@ -294,9 +310,9 @@ npx wrangler d1 execute book --local --file=schema.sql
 
 ---
 
-## 📄 许可证
+## 许可证
 
-本项目采用 [MIT](LICENSE) 许可证。
+[MIT](LICENSE)
 
 ---
 
