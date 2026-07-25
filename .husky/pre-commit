@@ -1,0 +1,5 @@
+# 运行版本号更新脚本
+node scripts/update-versions.js
+
+# 如果有 HTML 文件被修改了，将其加入暂存区
+git add public/index.html public/admin/index.html 2>/dev/null || true

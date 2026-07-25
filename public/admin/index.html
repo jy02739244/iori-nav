@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>书签管理页面</title>
+  <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/admin-layout.css?v=42e6c65a" />
+  <link rel="stylesheet" href="/css/admin-forms.css?v=70b67305" />
+  <link rel="stylesheet" href="/css/admin-card-options.css?v=55b9995c" />
+  <link rel="stylesheet" href="/css/admin-preview-shell.css?v=82413550" />
+  <link rel="stylesheet" href="/css/admin-preview-controls.css?v=7fa6812c" />
+  <link rel="stylesheet" href="/css/admin-preview-cards.css?v=d0d0a9b0" />
+  <link rel="stylesheet" href="/css/admin-settings-modal.css?v=5fe5060a" />
+  <link rel="stylesheet" href="/css/admin-card-preview.css?v=a42c3dea" />
+  <link rel="stylesheet" href="/css/admin-feedback.css?v=15b4dada" />
+  <link rel="stylesheet" href="/css/admin-dropdown.css?v=9efddb85" />
+  <link rel="stylesheet" href="/css/tailwind.min.css?v=79714d4b">
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+      stroke-linejoin="round" stroke-width="2">
+      <path
+        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+    </symbol>
+  </svg>
+
+  <div class="container">
+    <header class="admin-header">
+      <div>
+        <h1>书签管理</h1>
+        <p class="admin-subtitle">
+          管理后台仅限受信任的管理员使用，请妥善保管账号
+        </p>
+      </div>
+      <div class="header-actions">
+        <button id="refreshCacheBtn" class="refresh-btn" title="手动刷新首页缓存">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          刷新缓存
+        </button>
+        <form method="post" action="/admin/logout" style="margin: 0;">
+          <button type="submit" class="logout-btn">退出登录</button>
+        </form>
+      </div>
+    </header>
+
+    <div class="import-export">
+      <div id="categoryFilterWrapper" class="custom-dropdown-wrapper min-w-[150px]"></div>
+      <input type="hidden" id="categoryFilter" value="">
+      <div id="searchInput" role="searchbox" contenteditable="true" tabindex="0" aria-label="搜索书签"
+        aria-multiline="false" data-placeholder="搜索书签(名称, URL, 分类)" data-empty="true"
+        class="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow h-[42px]"
+      ></div>
+      <input type="file" id="importFile" accept=".json,.html,.htm" style="display: none" />
+      <div class="flex flex-wrap gap-2 items-center">
+        <button id="batchBtn"
+          class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">批量管理</button>
+        <button id="importBtn"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">导入</button>
+        <button id="exportBtn"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">导出</button>
+        <button id="addCategoryBtn"
+          class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-sm font-medium text-sm flex items-center gap-1 h-[42px] whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          新增分类
+        </button>
+        <button id="addBookmarkBtn"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm flex items-center gap-1 h-[42px] whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          新增书签
+        </button>
+        <button id="settingsBtn"
+          class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors shadow-sm font-medium text-sm h-[42px] whitespace-nowrap">设置</button>
+      </div>
+    </div>
+
+    <!-- 导出选项模态框 -->
+    <div id="exportModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeExportModal">×</span>
+        <h2>导出选项</h2>
+        <div class="p-4">
+          <p class="text-sm text-gray-600 mb-4">请选择导出数据的包含范围：</p>
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-100">
+            <div class="flex flex-col">
+              <span class="text-gray-700 font-medium text-sm">包含私密数据</span>
+              <span class="text-gray-400 text-xs mt-1">同时也包含私密分类下的书签</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="exportIncludePrivate">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-4">
+          <button id="cancelExportBtn"
+            class="px-4 py-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm">取消</button>
+          <button id="confirmExportBtn"
+            class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">确认导出</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteConfirmModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeDeleteConfirmModal">×</span>
+        <h2>确认删除</h2>
+        <div class="p-4">
+          <p class="text-gray-700 font-medium text-base mb-2">确定要删除该书签吗？</p>
+          <p class="text-gray-500 text-sm">此操作无法撤销，请谨慎操作。</p>
+        </div>
+        <div class="flex justify-end gap-3 mt-4">
+          <button id="cancelDeleteBtn"
+            class="w-24 h-10 flex items-center justify-center bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+          <button id="confirmDeleteBtn"
+            class="w-24 h-10 flex items-center justify-center bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium shadow-sm transition-colors">删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 刷新缓存确认模态框 -->
+    <div id="refreshCacheModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeRefreshCacheModal">×</span>
+        <h2>刷新缓存</h2>
+        <div class="p-4">
+          <p class="text-gray-700 font-medium text-base mb-2">确定要手动刷新首页缓存吗？</p>
+          <p class="text-gray-500 text-sm">通常情况下，数据更新会自动刷新缓存，无需手动操作。</p>
+        </div>
+        <div class="flex justify-end gap-3 mt-4">
+          <button id="cancelRefreshCacheBtn"
+            class="w-24 h-10 flex items-center justify-center bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+          <button id="confirmRefreshCacheBtn"
+            class="w-24 h-10 flex items-center justify-center bg-orange-600 text-white rounded hover:bg-orange-700 text-sm font-medium shadow-sm transition-colors"
+            style="background-color: #ea580c; color: white;">确认刷新</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量删除确认模态框 -->
+    <div id="batchDeleteConfirmModal" class="modal" style="display: none; z-index: 2000;">
+      <div class="modal-content" style="max-width: 400px;">
+        <span class="modal-close" id="closeBatchDeleteConfirmModal">×</span>
+        <h2>批量删除确认</h2>
+        <div class="p-4">
+          <p id="batchDeleteConfirmText" class="text-gray-700 font-medium text-base mb-2">确定要删除选中的书签吗？</p>
+          <p class="text-gray-500 text-sm">此操作无法撤销，请谨慎操作。</p>
+        </div>
+        <div class="flex justify-end gap-3 mt-4">
+          <button id="cancelBatchDeleteBtn"
+            class="px-4 py-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+          <button id="confirmBatchDeleteBtn"
+            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium shadow-sm transition-colors">删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分类删除确认模态框 -->
+    <div id="deleteCategoryConfirmModal" class="modal" style="display: none">
+      <div class="modal-content" style="max-width: 400px;">
+        <span class="modal-close" id="closeDeleteCategoryConfirmModal">×</span>
+        <h2>确认删除分类</h2>
+        <div class="p-4">
+          <p class="text-gray-700 font-medium text-base mb-2">确定要删除该分类吗？</p>
+          <p class="text-gray-500 text-sm">此操作无法撤销，请谨慎操作。</p>
+        </div>
+        <div class="flex justify-end gap-3 mt-4">
+          <button id="cancelDeleteCategoryBtn"
+            class="px-4 py-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+          <button id="confirmDeleteCategoryBtn"
+            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium shadow-sm transition-colors">删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增分类模态框 -->
+    <div id="addCategoryModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeCategoryModal">×</span>
+        <h2>新增分类</h2>
+        <form id="addCategoryForm">
+          <div class="form-group">
+            <label for="newCategoryName">分类名称:</label>
+            <input type="text" id="newCategoryName" required />
+          </div>
+          <div class="form-group">
+            <label for="newCategoryParent">父级分类(可选):</label>
+            <div id="newCategoryParentWrapper" class="custom-dropdown-wrapper"></div>
+            <input type="hidden" id="newCategoryParent" value="0">
+          </div>
+          <div class="form-group">
+            <label for="newCategorySortOrder">排序值(可选):</label>
+            <input type="number" id="newCategorySortOrder" placeholder="默认9999" />
+          </div>
+          <div class="form-group flex items-center justify-between mt-2 mb-4">
+            <label for="newCategoryIsPrivate" class="cursor-pointer select-none text-gray-700 font-medium">私密分类:</label>
+            <label class="switch">
+              <input type="checkbox" id="newCategoryIsPrivate">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="flex flex-row justify-end gap-3 mt-6">
+            <button type="button" id="cancelAddCategoryBtn"
+              class="w-24 h-10 m-0 flex items-center justify-center bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+            <button type="submit"
+              class="w-24 h-10 !mt-0 m-0 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- 编辑分类模态框 -->
+    <div id="editCategoryModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeEditCategoryModal">×</span>
+        <h2>编辑分类</h2>
+        <form id="editCategoryForm">
+          <input type="hidden" name="id" id="editCategoryId" />
+          <div class="form-group">
+            <label for="editCategoryName">分类名称:</label>
+            <input type="text" id="editCategoryName" required />
+          </div>
+          <div class="form-group">
+            <label for="editCategoryParent">父级分类(可选):</label>
+            <div id="editCategoryParentWrapper" class="custom-dropdown-wrapper"></div>
+            <input type="hidden" id="editCategoryParent" value="0">
+          </div>
+          <div class="form-group">
+            <label for="editCategorySortOrder">排序值(可选):</label>
+            <input type="number" id="editCategorySortOrder" />
+          </div>
+          <div class="form-group flex items-center justify-between mt-2 mb-4">
+            <label for="editCategoryIsPrivate"
+              class="cursor-pointer select-none text-gray-700 font-medium">私密分类:</label>
+            <label class="switch">
+              <input type="checkbox" id="editCategoryIsPrivate">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="flex flex-row justify-end gap-3 mt-6">
+            <button type="button" id="cancelEditCategoryBtn"
+              class="w-24 h-10 m-0 flex items-center justify-center bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+            <button type="submit"
+              class="w-24 h-10 !mt-0 m-0 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- 新增书签模态框 -->
+    <div id="addBookmarkModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeBookmarkModal">×</span>
+        <h2>新增书签</h2>
+        <form id="addBookmarkForm">
+          <div class="form-group">
+            <label for="addBookmarkName">名称:</label>
+            <input type="text" id="addBookmarkName" required />
+          </div>
+          <div class="form-group">
+            <label for="addBookmarkUrl">URL:</label>
+            <input type="text" id="addBookmarkUrl" required />
+          </div>
+          <div class="form-group">
+            <label for="addBookmarkLogo">Logo(可选):</label>
+            <input type="text" id="addBookmarkLogo" placeholder="默认自动根据url获取" />
+          </div>
+          <div class="form-group">
+            <label for="addBookmarkDesc">描述(可选):</label>
+            <input type="text" id="addBookmarkDesc" />
+            <button type="button" id="addBookmarkAiBtn" class="ai-generate-btn" title="AI 生成描述">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg>
+            </button>
+          </div>
+          <div class="form-group">
+            <label for="addBookmarkCatelog">分类:</label>
+            <div id="addBookmarkCatelogWrapper" class="custom-dropdown-wrapper w-full"></div>
+            <input type="hidden" id="addBookmarkCatelog" required>
+          </div>
+          <div class="form-group">
+            <label for="addBookmarkSortOrder">排序值(可选):</label>
+            <input type="number" id="addBookmarkSortOrder" placeholder="9999" />
+          </div>
+          <div class="form-group flex items-center justify-between">
+            <label for="addBookmarkIsPrivate" class="cursor-pointer select-none text-gray-700 font-medium">私密书签:</label>
+            <label class="switch">
+              <input type="checkbox" id="addBookmarkIsPrivate">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="flex flex-row justify-end gap-3 mt-6">
+            <button type="button" id="cancelAddBookmarkBtn"
+              class="w-24 h-10 m-0 flex items-center justify-center bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+            <button type="submit"
+              class="w-24 h-10 !mt-0 m-0 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 编辑书签模态框 -->
+    <div id="editBookmarkModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeEditBookmarkModal">×</span>
+        <h2>编辑书签</h2>
+        <form id="editBookmarkForm">
+          <input type="hidden" name="id" id="editBookmarkId" />
+          <div class="form-group">
+            <label for="editBookmarkName">名称:</label>
+            <input type="text" name="name" id="editBookmarkName" required />
+          </div>
+          <div class="form-group">
+            <label for="editBookmarkUrl">URL:</label>
+            <input type="text" name="url" id="editBookmarkUrl" required />
+          </div>
+          <div class="form-group">
+            <label for="editBookmarkLogo">Logo(可选):</label>
+            <input type="text" name="logo" id="editBookmarkLogo" placeholder="默认自动根据url获取" />
+          </div>
+          <div class="form-group">
+            <label for="editBookmarkDesc">描述(可选):</label>
+            <input type="text" name="desc" id="editBookmarkDesc" />
+            <button type="button" id="editBookmarkAiBtn" class="ai-generate-btn" title="AI 生成描述">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg>
+            </button>
+          </div>
+          <div class="form-group">
+            <label for="editBookmarkCatelog">分类:</label>
+            <div id="editBookmarkCatelogWrapper" class="custom-dropdown-wrapper w-full"></div>
+            <input type="hidden" id="editBookmarkCatelog" name="catelog_id" required>
+          </div>
+          <div class="form-group">
+            <label for="editBookmarkSortOrder">排序值(可选):</label>
+            <input type="number" name="sort_order" id="editBookmarkSortOrder" placeholder="9999" />
+          </div>
+          <div class="form-group flex items-center justify-between">
+            <label for="editBookmarkIsPrivate"
+              class="cursor-pointer select-none text-gray-700 font-medium">私密书签:</label>
+            <label class="switch">
+              <input type="checkbox" name="is_private" id="editBookmarkIsPrivate">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="flex flex-row justify-end gap-3 mt-6">
+            <button type="button" id="cancelEditBookmarkBtn"
+              class="w-24 h-10 m-0 flex items-center justify-center bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+            <button type="submit"
+              class="w-24 h-10 !mt-0 m-0 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 审核投稿模态框 -->
+    <div id="reviewPendingModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close" id="closeReviewPendingModal">×</span>
+        <h2>审核投稿</h2>
+        <form id="reviewPendingForm">
+          <input type="hidden" name="id" id="reviewPendingId" />
+          <div class="form-group">
+            <label for="reviewPendingName">名称:</label>
+            <input type="text" name="name" id="reviewPendingName" required />
+          </div>
+          <div class="form-group">
+            <label for="reviewPendingUrl">URL:</label>
+            <input type="text" name="url" id="reviewPendingUrl" required />
+          </div>
+          <div class="form-group">
+            <label for="reviewPendingLogo">Logo(可选):</label>
+            <input type="text" name="logo" id="reviewPendingLogo" placeholder="默认自动根据url获取" />
+          </div>
+          <div class="form-group">
+            <label for="reviewPendingDesc">描述(可选):</label>
+            <input type="text" name="desc" id="reviewPendingDesc" />
+            <button type="button" id="reviewPendingAiBtn" class="ai-generate-btn" title="AI 生成描述">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg>
+            </button>
+          </div>
+          <div class="form-group">
+            <label for="reviewPendingCatelog">分类:</label>
+            <div id="reviewPendingCatelogWrapper" class="custom-dropdown-wrapper w-full"></div>
+            <input type="hidden" id="reviewPendingCatelog" name="catelog_id" required>
+          </div>
+          <div class="form-group">
+            <label for="reviewPendingSortOrder">排序值(可选):</label>
+            <input type="number" name="sort_order" id="reviewPendingSortOrder" placeholder="9999" />
+          </div>
+          <div class="form-group flex items-center justify-between">
+            <label for="reviewPendingIsPrivate"
+              class="cursor-pointer select-none text-gray-700 font-medium">私密书签:</label>
+            <label class="switch">
+              <input type="checkbox" name="is_private" id="reviewPendingIsPrivate">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="flex flex-row justify-end gap-3 mt-6">
+            <button type="button" id="cancelReviewPendingBtn"
+              class="w-24 h-10 m-0 flex items-center justify-center bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-medium transition-colors">取消</button>
+            <button type="submit"
+              class="w-24 h-10 !mt-0 m-0 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors">通过</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+
+
+
+    <!-- 设置模态框 -->
+    <div id="settingsModal" class="modal settings-modal" style="display: none;">
+      <div class="modal-content-wrapper">
+        <div class="settings-preview-pane">
+          <div class="settings-preview-header">
+            <div>
+              <div class="settings-preview-kicker">首页预览</div>
+              <h3 id="livePreviewPanelTitle">灰色轨迹</h3>
+            </div>
+            <div class="settings-preview-device-tabs" role="group" aria-label="预览尺寸">
+              <button type="button" class="preview-device-btn active" data-preview-device="desktop">桌面</button>
+              <button type="button" class="preview-device-btn" data-preview-device="mobile">移动</button>
+            </div>
+          </div>
+
+          <div id="homeLivePreview" class="home-live-preview" data-device="desktop">
+            <div class="home-live-preview-bg" data-preview-role="wallpaper"></div>
+            <div class="home-live-preview-vignette" data-preview-role="wallpaperOverlay"></div>
+            <div class="home-live-preview-frame">
+              <button type="button" class="live-preview-menu-toggle" data-preview-role="mobileMenuToggle"
+                title="打开分类导航" aria-label="打开分类导航" aria-expanded="false">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div class="live-preview-mobile-overlay" data-preview-role="mobileOverlay"></div>
+              <aside class="live-preview-sidebar" data-preview-role="sidebar">
+                <div class="live-sidebar-brand" data-preview-role="sidebarTitle">分类导航</div>
+                <nav class="live-sidebar-nav" data-preview-role="sidebarCategories"></nav>
+              </aside>
+
+              <main class="live-preview-page">
+                <header class="live-preview-hero" data-preview-role="hero">
+                  <div class="live-preview-actions">
+                    <span class="live-action-icon live-action-theme" title="切换主题">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                      </svg>
+                    </span>
+                    <span class="live-action-icon live-action-admin" data-preview-role="adminIcon" title="后台管理">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
+                        <path d="M7 18a5 5 0 0 1 10 0"></path>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="live-preview-title-block">
+                    <h1 data-preview-role="siteTitle">灰色轨迹</h1>
+                    <p data-preview-role="siteDescription">一个优雅、快速、易于部署的书签收藏与分享平台</p>
+                  </div>
+                  <div class="live-search-engines" data-preview-role="searchEngines">
+                    <label class="search-engine-option active" data-engine="local"><span>站内</span></label>
+                    <label class="search-engine-option" data-engine="google"><span>Google</span></label>
+                    <label class="search-engine-option" data-engine="baidu"><span>Baidu</span></label>
+                    <label class="search-engine-option" data-engine="github"><span>Github</span></label>
+                  </div>
+                  <div class="live-search-box">
+                    <input type="text" name="search" placeholder="搜索书签..."
+                      class="search-input-target w-full pl-12 pr-4 py-3.5 rounded-2xl transition-all shadow-lg outline-none focus:outline-none focus:ring-2"
+                      autocomplete="off" readonly>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="live-search-icon h-6 w-6 absolute left-4 top-3.5"
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <nav class="live-category-nav" data-preview-role="categoryNav"></nav>
+                </header>
+
+                <section class="live-preview-meta" data-preview-role="metaRow">
+                  <h4 data-preview-role="statsText">全部收藏 · 6 个书签</h4>
+                  <p data-preview-role="hitokotoText">疏影横斜水清浅，暗香浮动月黄昏。</p>
+                </section>
+
+                <section class="live-card-grid" data-preview-role="cardGrid"></section>
+
+                <footer class="live-preview-footer" data-preview-role="footer">
+                  <div class="live-preview-footer-inner">
+                    <span class="live-preview-footer-link">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path
+                          d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4">
+                        </path>
+                        <path d="M9 18c-4.51 2-5-2-7-2"></path>
+                      </svg>
+                      <span>Github</span>
+                    </span>
+                    <span class="live-preview-footer-separator">|</span>
+                    <p>© <span data-preview-role="footerYear">2026</span> <span data-preview-role="footerText">曾梦想仗剑走天涯</span></p>
+                  </div>
+                </footer>
+              </main>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-panel-pane">
+        <div class="modal-header">
+          <h3 class="modal-title"><span>⚙️</span> 系统设置</h3>
+          <button id="closeSettingsModal" class="modal-close-btn">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="settings-tabs">
+            <button class="settings-tab-btn active" data-tab="home-settings">首页设置</button>
+            <button class="settings-tab-btn" data-tab="layout-settings">卡片设置</button>
+            <button class="settings-tab-btn" data-tab="wallpaper-settings">壁纸设置</button>
+            <button class="settings-tab-btn" data-tab="ai-settings">AI 设置</button>
+          </div>
+
+          <!-- 首页设置内容 -->
+          <div id="home-settings" class="settings-tab-content active">
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mb-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">站点信息</h4>
+              <div class="space-y-3">
+                <div>
+                  <label for="homeSiteName" class="text-xs text-gray-500 block mb-1">站点名称 (优先于环境变量)</label>
+                  <input type="text" id="homeSiteName" placeholder="例如：我的导航" class="w-full text-sm p-2 border rounded">
+                </div>
+                <div>
+                  <label for="homeSiteDescription" class="text-xs text-gray-500 block mb-1">站点描述 (优先于环境变量)</label>
+                  <textarea id="homeSiteDescription" placeholder="请输入站点描述..." class="w-full text-sm p-2 border rounded"
+                    rows="2"></textarea>
+                </div>
+                <div>
+                  <label for="homeFooterText" class="text-xs text-gray-500 block mb-1">页脚描述 (优先于环境变量)</label>
+                  <input type="text" id="homeFooterText" placeholder="例如：曾梦想仗剑走天涯" class="w-full text-sm p-2 border rounded">
+                </div>
+              </div>
+            </div>
+
+            <div class="p-2 hover:bg-gray-50 rounded">
+              <div class="card-option-panel home-menu-option-panel">
+                <div class="card-option-row">
+                  <label class="card-option-label home-option-label">分类位置</label>
+                  <div class="card-layout-options">
+                    <label class="card-layout-option">
+                      <input type="radio" name="categoryPosition" value="below_search" class="sr-only">
+                      <span class="card-segment-option">搜索框下方</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="categoryPosition" value="above_search" class="sr-only">
+                      <span class="card-segment-option">搜索框上方</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="categoryPosition" value="left" class="sr-only">
+                      <span class="card-segment-option">左侧</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="categoryPosition" value="top" class="sr-only">
+                      <span class="card-segment-option">顶部</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="card-option-row">
+                  <label class="card-option-label home-option-label">分类排列</label>
+                  <div class="card-layout-options">
+                    <label class="card-layout-option">
+                      <input type="radio" name="categoryFlow" value="single_line" class="sr-only">
+                      <span class="card-segment-option">单行</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="categoryFlow" value="multi_line" class="sr-only">
+                      <span class="card-segment-option">多行</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="card-option-row">
+                  <label for="homeDefaultCategory" class="card-option-label home-option-label">默认分类</label>
+                  <select id="homeDefaultCategory" class="home-default-category-select text-sm p-2 border rounded bg-white">
+                    <option value="">默认 (全部)</option>
+                  </select>
+                </div>
+                <div class="card-option-row">
+                  <label for="homeRememberLastCategorySwitch" class="card-option-label home-option-label">记住分类</label>
+                  <label class="switch scale-75 origin-left">
+                    <input type="checkbox" id="homeRememberLastCategorySwitch">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mb-4 px-2">左侧会启用侧边栏；顶部会把分类放在站点标题上方；单行会把溢出的分类收进更多按钮，多行会直接换行显示；移动端固定使用竖向分类。</p>
+
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mb-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">功能图标</h4>
+              <div class="flex items-center justify-between">
+                <label for="hideAdminSwitch"
+                  class="cursor-pointer select-none text-gray-700 font-medium text-sm">隐藏管理后台图标</label>
+                <label class="switch scale-75 origin-right">
+                  <input type="checkbox" id="hideAdminSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group-stack" style="margin-top: 1rem;">
+              <div class="p-3 bg-gray-50 rounded border border-gray-100 mb-3">
+                <div class="flex items-center justify-between">
+                  <label for="searchEngineSwitch"
+                    class="cursor-pointer select-none text-gray-700 font-medium text-sm">启用站外搜索
+                    (Google/Baidu/Github)</label>
+                  <label class="switch scale-75 origin-right">
+                    <input type="checkbox" id="searchEngineSwitch">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 标题设置 -->
+              <div class="p-3 bg-gray-50 rounded border border-gray-100">
+                <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">名称与描述样式 (Style)</h4>
+
+                <div class="flex items-center justify-between mb-2">
+                  <label for="hideTitleSwitch"
+                    class="cursor-pointer select-none text-gray-700 font-medium text-sm">隐藏站点名称</label>
+                  <label class="switch scale-75 origin-right">
+                    <input type="checkbox" id="hideTitleSwitch">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+                <div class="card-typography-row mb-4">
+                  <div class="card-typography-font">
+                    <label class="text-xs text-gray-500 block mb-1">名称字体</label>
+                    <select id="homeTitleFont"
+                      class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                  </div>
+                  <div class="card-typography-size">
+                    <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
+                    <input type="number" id="homeTitleSize" placeholder="36"
+                      class="w-full text-sm p-1 border rounded h-[34px]">
+                  </div>
+                  <div class="card-typography-color">
+                    <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                    <div class="flex gap-1 h-[34px]">
+                      <input type="color" id="homeTitleColorPicker"
+                        class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                      <input type="text" id="homeTitleColor" placeholder="#ffffff"
+                        class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-2">
+                  <label for="hideSubtitleSwitch"
+                    class="cursor-pointer select-none text-gray-700 font-medium text-sm">隐藏站点描述</label>
+                  <label class="switch scale-75 origin-right">
+                    <input type="checkbox" id="hideSubtitleSwitch">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+                <div class="card-typography-row">
+                  <div class="card-typography-font">
+                    <label class="text-xs text-gray-500 block mb-1">描述字体</label>
+                    <select id="homeSubtitleFont"
+                      class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                  </div>
+                  <div class="card-typography-size">
+                    <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
+                    <input type="number" id="homeSubtitleSize" placeholder="16"
+                      class="w-full text-sm p-1 border rounded h-[34px]">
+                  </div>
+                  <div class="card-typography-color">
+                    <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                    <div class="flex gap-1 h-[34px]">
+                      <input type="color" id="homeSubtitleColorPicker"
+                        class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                      <input type="text" id="homeSubtitleColor" placeholder="#e1e7f1"
+                        class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 统计信息设置 -->
+              <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3">
+                <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">卡片统计 (列表标题)</h4>
+
+                <div class="flex items-center justify-between mb-2">
+                  <label for="hideStatsSwitch"
+                    class="cursor-pointer select-none text-gray-700 font-medium text-sm">隐藏统计</label>
+                  <label class="switch scale-75 origin-right">
+                    <input type="checkbox" id="hideStatsSwitch">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+                <div class="card-typography-row">
+                  <div class="card-typography-font">
+                    <label class="text-xs text-gray-500 block mb-1">字体 (自动加载资源)</label>
+                    <select id="homeStatsFont"
+                      class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                  </div>
+                  <div class="card-typography-size">
+                    <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
+                    <input type="number" id="homeStatsSize" placeholder="20"
+                      class="w-full text-sm p-1 border rounded h-[34px]">
+                  </div>
+                  <div class="card-typography-color">
+                    <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                    <div class="flex gap-1 h-[34px]">
+                      <input type="color" id="homeStatsColorPicker"
+                        class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                      <input type="text" id="homeStatsColor" placeholder="#1f2937"
+                        class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 一言设置 -->
+              <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3">
+                <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">一言 (Hitokoto)</h4>
+
+                <div class="flex items-center justify-between mb-2">
+                  <label for="hideHitokotoSwitch"
+                    class="cursor-pointer select-none text-gray-700 font-medium text-sm">隐藏一言</label>
+                  <label class="switch scale-75 origin-right">
+                    <input type="checkbox" id="hideHitokotoSwitch">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+                <div class="card-typography-row">
+                  <div class="card-typography-font">
+                    <label class="text-xs text-gray-500 block mb-1">字体 (自动加载资源)</label>
+                    <select id="homeHitokotoFont"
+                      class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                  </div>
+                  <div class="card-typography-size">
+                    <label class="text-xs text-gray-500 block mb-1">字体大小 (px)</label>
+                    <input type="number" id="homeHitokotoSize" placeholder="14"
+                      class="w-full text-sm p-1 border rounded h-[34px]">
+                  </div>
+                  <div class="card-typography-color">
+                    <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                    <div class="flex gap-1 h-[34px]">
+                      <input type="color" id="homeHitokotoColorPicker"
+                        class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                      <input type="text" id="homeHitokotoColor" placeholder="#6b7280"
+                        class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <!-- 卡片设置内容 -->
+          <div id="layout-settings" class="settings-tab-content">
+
+            <div class="flex items-center justify-between gap-3 mb-3 border-b border-gray-200 pb-2">
+              <h4 class="text-sm font-bold text-gray-700">卡片设置</h4>
+              <div class="card-layout-options" role="tablist" aria-label="卡片设备设置">
+                <button type="button" class="card-device-tab-btn card-segment-option active"
+                  data-card-device-tab="desktop" role="tab" aria-selected="true">桌面卡片</button>
+                <button type="button" class="card-device-tab-btn card-segment-option"
+                  data-card-device-tab="mobile" role="tab" aria-selected="false">手机卡片</button>
+              </div>
+            </div>
+
+            <div id="desktopCardSettingsPanel" data-card-device-panel="desktop">
+            <div class="p-2 hover:bg-gray-50 rounded">
+              <div class="card-option-panel">
+                <div class="card-option-row">
+                  <label class="card-option-label">桌面布局</label>
+                  <div class="card-layout-options">
+                    <label class="card-layout-option">
+                      <input type="radio" name="gridCols" value="4" class="sr-only">
+                      <span class="card-segment-option">4 列</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="gridCols" value="5" class="sr-only">
+                      <span class="card-segment-option">5 列</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="gridCols" value="6" class="sr-only">
+                      <span class="card-segment-option">6 列</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="gridCols" value="7" class="sr-only">
+                      <span class="card-segment-option">7 列</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="card-option-row">
+                  <label class="card-option-label">卡片风格</label>
+                  <div class="card-style-options">
+                    <button type="button" id="btnStyle1"
+                      class="card-style-btn card-segment-option active"
+                      data-style="style1">风格一</button>
+                    <button type="button" id="btnStyle2"
+                      class="card-style-btn card-segment-option"
+                      data-style="style2">风格二</button>
+                    <button type="button" id="btnStyle3"
+                      class="card-style-btn card-segment-option"
+                      data-style="style3">风格三</button>
+                  </div>
+                </div>
+
+                <div class="card-option-row">
+                  <label for="cardAnimationSelect" class="card-option-label">切换动画</label>
+                  <div class="card-animation-control">
+                    <select id="cardAnimationSelect" class="sr-only">
+                      <option value="radial">中心扩散</option>
+                      <option value="slideUp">向上滑入</option>
+                      <option value="fadeIn">淡入</option>
+                      <option value="slideLeft">左侧滑入</option>
+                      <option value="slideRight">右侧滑入</option>
+                      <option value="convergeIn">两侧汇聚</option>
+                      <option value="flipIn">翻转进入</option>
+                      <option value="random">随机动画</option>
+                    </select>
+                    <div class="card-animation-options" role="group" aria-label="切换动画">
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="radial">中心扩散</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="slideUp">向上滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="fadeIn">淡入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="slideLeft">左侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="slideRight">右侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="convergeIn">两侧汇聚</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="flipIn">翻转进入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="desktop" data-animation="random">随机动画</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="previewWrapper" class="p-6 rounded-xl mb-4 overflow-hidden flex justify-center items-center"
+                style="background-image: url('https://cdn.jsdelivr.net/gh/jy02739244/iori-nav@master/image/fengge.jpg'); background-size: cover; background-position: center; min-height: 280px;">
+                <!-- Style 1 Preview -->
+                <div id="cardStyle1PreviewContainer" class="w-full max-w-[280px]">
+                  <div class="site-card bg-white border border-gray-200 shadow-sm pointer-events-none"
+                    id="cardStyle1Preview">
+                    <div class="site-card-content">
+                      <div class="flex items-start">
+                        <div class="site-icon flex-shrink-0 mr-4 w-10 h-10">
+                          <img src="https://www.baidu.com/favicon.ico"
+                            class="w-10 h-10 rounded-lg object-cover bg-gray-100" alt="Baidu">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <h3 class="site-title text-base font-medium text-gray-900 truncate">Baidu</h3>
+                          <span
+                            class="preview-category inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">搜索引擎</span>
+                        </div>
+                      </div>
+                      <p class="preview-desc mt-2 text-sm text-gray-600 leading-relaxed line-clamp-2">
+                        百度搜索引擎，快速查找信息，提供多种搜索服务。百度是全球最大的中文搜索引擎、最大的中文网站。</p>
+                      <div class="preview-links mt-3 flex items-center justify-between">
+                        <span class="text-xs text-blue-600 truncate max-w-[140px]">https://www.baidu.com</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-400" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Style 2 Preview -->
+                <div id="cardStyle2PreviewContainer" class="w-full max-w-[280px] hidden">
+                  <div class="site-card style-2 bg-white border border-gray-200 shadow-sm pointer-events-none"
+                    id="cardStyle2Preview">
+                    <div class="site-card-content">
+                      <div class="flex flex-col items-center text-center">
+                        <div class="site-icon mb-2 w-12 h-12">
+                          <img src="https://www.baidu.com/favicon.ico"
+                            class="w-12 h-12 rounded-lg object-cover bg-gray-100 mx-auto" alt="Baidu">
+                        </div>
+                        <div class="w-full flex flex-col items-center">
+                          <h3 class="site-title text-base font-medium text-gray-900 truncate w-full text-center">Baidu
+                          </h3>
+                          <span
+                            class="preview-category inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">搜索引擎</span>
+                        </div>
+                      </div>
+                      <p class="preview-desc mt-2 text-sm text-gray-600 leading-relaxed line-clamp-2 text-center">
+                        百度搜索引擎，快速查找信息，提供多种搜索服务。百度是全球最大的中文搜索引擎、最大的中文网站。</p>
+                      <div
+                        class="preview-links mt-3 flex items-center justify-between border-t border-gray-100 pt-2 w-full">
+                        <span class="text-xs text-blue-600 truncate w-full text-center">https://www.baidu.com</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-400" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Style 3 Preview -->
+                <div id="cardStyle3PreviewContainer" class="w-full max-w-[190px] hidden">
+                  <div class="site-card style-3 pointer-events-none" id="cardStyle3Preview">
+                    <div class="site-card-content">
+                      <div class="flex items-start">
+                        <div class="site-icon flex-shrink-0">
+                          <img src="https://www.baidu.com/favicon.ico" class="object-contain" alt="Baidu">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <h3 class="site-title">Baidu</h3>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p id="desktopStyle3FixedHideHint" class="text-xs text-gray-500 px-2 -mt-2 mb-3 hidden">风格三为紧凑导航块，固定隐藏分类、描述和链接行。</p>
+
+            <div id="hideCategoryOption" class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+              <label for="hideCategorySwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏分类</label>
+              <label class="switch">
+                <input type="checkbox" id="hideCategorySwitch">
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group-stack" style="margin-top: 1rem;">
+              <div id="hideDescOption" class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="hideDescSwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏描述</label>
+                <label class="switch">
+                  <input type="checkbox" id="hideDescSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div id="hideLinksOption" class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="hideLinksSwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏链接行</label>
+                <label class="switch">
+                  <input type="checkbox" id="hideLinksSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="frostedGlassSwitch"
+                  class="cursor-pointer select-none text-gray-700 font-medium">卡片毛玻璃效果</label>
+                <label class="switch">
+                  <input type="checkbox" id="frostedGlassSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="p-2 hover:bg-gray-50 rounded" id="frostedGlassIntensityContainer">
+                <label for="frostedGlassIntensity" class="block text-gray-700 font-medium mb-1">毛玻璃模糊程度: <span
+                    id="frostedGlassIntensityValue">15</span>px</label>
+                <input type="range" id="frostedGlassIntensity" min="0" max="50" step="1"
+                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+              </div>
+            </div>
+
+            <!-- 书签标题样式 -->
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">书签标题样式 <span
+                  class="font-normal text-gray-400">（颜色同时用于外部搜索文字）</span></h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="cardTitleFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="cardTitleSize" placeholder="16"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="cardTitleColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="cardTitleColor" placeholder="#111827"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 描述样式 -->
+            <div id="desktopCardDescStylePanel" class="p-3 bg-gray-50 rounded border border-gray-100 mt-3 mb-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">描述样式</h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="cardDescFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="cardDescSize" placeholder="14"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="cardDescColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="cardDescColor" placeholder="#4b5563"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-2 hover:bg-gray-50 rounded" id="cardRadiusContainer">
+              <label for="cardRadius" class="block text-gray-700 font-medium mb-1">卡片圆角: <span
+                  id="cardRadiusValue">12</span>px</label>
+              <input type="range" id="cardRadius" min="0" max="30" step="1"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            </div>
+
+            <div id="mobileCardSettingsPanel" data-card-device-panel="mobile" class="hidden">
+            <div class="p-2 hover:bg-gray-50 rounded">
+              <div class="card-option-panel">
+                <div class="card-option-row">
+                  <label class="card-option-label">手机布局</label>
+                  <div class="card-layout-options">
+                    <label class="card-layout-option">
+                      <input type="radio" name="mobileGridCols" value="1" class="sr-only">
+                      <span class="card-segment-option">1 列</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="mobileGridCols" value="2" class="sr-only">
+                      <span class="card-segment-option">2 列</span>
+                    </label>
+                    <label class="card-layout-option">
+                      <input type="radio" name="mobileGridCols" value="3" class="sr-only">
+                      <span class="card-segment-option">3 列</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="card-option-row">
+                  <label class="card-option-label">卡片风格</label>
+                  <div class="card-style-options">
+                    <button type="button" id="mobileBtnStyle1"
+                      class="card-style-btn card-segment-option"
+                      data-style="style1">风格一</button>
+                    <button type="button" id="mobileBtnStyle2"
+                      class="card-style-btn card-segment-option active"
+                      data-style="style2">风格二</button>
+                    <button type="button" id="mobileBtnStyle3"
+                      class="card-style-btn card-segment-option"
+                      data-style="style3">风格三</button>
+                  </div>
+                </div>
+
+                <div class="card-option-row">
+                  <label for="mobileCardAnimationSelect" class="card-option-label">切换动画</label>
+                  <div class="card-animation-control">
+                    <select id="mobileCardAnimationSelect" class="sr-only">
+                      <option value="radial">中心扩散</option>
+                      <option value="slideUp">向上滑入</option>
+                      <option value="fadeIn">淡入</option>
+                      <option value="slideLeft">左侧滑入</option>
+                      <option value="slideRight">右侧滑入</option>
+                      <option value="convergeIn">两侧汇聚</option>
+                      <option value="flipIn">翻转进入</option>
+                      <option value="random">随机动画</option>
+                    </select>
+                    <div class="card-animation-options" role="group" aria-label="手机切换动画">
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="radial">中心扩散</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="slideUp">向上滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="fadeIn">淡入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="slideLeft">左侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="slideRight">右侧滑入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="convergeIn">两侧汇聚</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="flipIn">翻转进入</button>
+                      <button type="button" class="card-animation-option" data-animation-device="mobile" data-animation="random">随机动画</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p id="mobileStyle3FixedHideHint" class="text-xs text-gray-500 px-2 -mt-2 mb-3 hidden">风格三为紧凑导航块，固定隐藏分类、描述和链接行。</p>
+
+            <div class="form-group-stack" style="margin-top: 1rem;">
+              <div id="mobileHideCategoryOption" class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileHideCategorySwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏分类</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileHideCategorySwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div id="mobileHideDescOption" class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileHideDescSwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏描述</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileHideDescSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div id="mobileHideLinksOption" class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileHideLinksSwitch" class="cursor-pointer select-none text-gray-700 font-medium">隐藏链接行</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileHideLinksSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="mobileFrostedGlassSwitch"
+                  class="cursor-pointer select-none text-gray-700 font-medium">卡片毛玻璃效果</label>
+                <label class="switch">
+                  <input type="checkbox" id="mobileFrostedGlassSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="p-2 hover:bg-gray-50 rounded" id="mobileFrostedGlassIntensityContainer">
+                <label for="mobileFrostedGlassIntensity" class="block text-gray-700 font-medium mb-1">毛玻璃模糊程度: <span
+                    id="mobileFrostedGlassIntensityValue">15</span>px</label>
+                <input type="range" id="mobileFrostedGlassIntensity" min="0" max="50" step="1"
+                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+              </div>
+            </div>
+
+            <div class="p-3 bg-gray-50 rounded border border-gray-100 mt-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">手机书签标题样式 <span
+                  class="font-normal text-gray-400">（颜色同时用于手机外部搜索文字）</span></h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="mobileCardTitleFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="mobileCardTitleSize" placeholder="13"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="mobileCardTitleColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="mobileCardTitleColor" placeholder="#111827"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="mobileCardDescStylePanel" class="p-3 bg-gray-50 rounded border border-gray-100 mt-3 mb-3">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-gray-200 pb-1">手机描述样式</h4>
+              <div class="card-typography-row">
+                <div class="card-typography-font">
+                  <label class="text-xs text-gray-500 block mb-1">字体</label>
+                  <select id="mobileCardDescFont" class="custom-select w-full text-sm p-1 border rounded h-[34px]"></select>
+                </div>
+                <div class="card-typography-size">
+                  <label class="text-xs text-gray-500 block mb-1">大小 (px)</label>
+                  <input type="number" id="mobileCardDescSize" placeholder="11"
+                    class="w-full text-sm p-1 border rounded h-[34px]">
+                </div>
+                <div class="card-typography-color">
+                  <label class="text-xs text-gray-500 block mb-1">颜色</label>
+                  <div class="flex gap-1 h-[34px]">
+                    <input type="color" id="mobileCardDescColorPicker"
+                      class="h-full w-8 cursor-pointer border-0 p-0 rounded overflow-hidden">
+                    <input type="text" id="mobileCardDescColor" placeholder="#4b5563"
+                      class="flex-1 text-sm p-1 border rounded h-full min-w-0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-2 hover:bg-gray-50 rounded" id="mobileCardRadiusContainer">
+              <label for="mobileCardRadius" class="block text-gray-700 font-medium mb-1">手机卡片圆角: <span
+                  id="mobileCardRadiusValue">12</span>px</label>
+              <input type="range" id="mobileCardRadius" min="0" max="30" step="1"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            </div>
+          </div>
+
+
+
+          <!-- 壁纸设置内容 -->
+          <div id="wallpaper-settings" class="settings-tab-content">
+            <div class="form-group-stack" style="margin-top: 1rem;">
+              <div class="p-2 hover:bg-gray-50 rounded">
+                <div class="wallpaper-field-label-row mb-2">
+                  <label for="customWallpaperInput" class="text-gray-700 font-medium">自定义壁纸</label>
+                  <button type="button" id="restoreStyleWallpaperBtn" class="restore-style-wallpaper-btn">
+                    恢复风格默认壁纸
+                  </button>
+                </div>
+                <input type="url" id="customWallpaperInput" name="custom_wallpaper_asset"
+                  placeholder="https://example.com/wallpaper.jpg" class="form-input w-full"
+                  aria-label="自定义壁纸链接" autocomplete="new-password" inputmode="url"
+                  autocapitalize="none" autocorrect="off" spellcheck="false" readonly
+                  data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
+                <p class="text-xs text-gray-500 mt-2">可直接填写图片链接；留空则按当前卡片风格使用默认壁纸</p>
+              </div>
+              <div class="p-2 rounded bg-gray-50 border border-gray-100 mt-4">
+                <div class="flex flex-col space-y-3 mb-2">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-gray-700 font-medium">在线壁纸库 (点击应用)</label>
+                    <div class="flex items-center space-x-1 bg-gray-200 rounded p-1">
+                      <button id="wpSourceBing"
+                        class="px-3 py-1 text-xs font-medium rounded shadow-sm bg-white text-gray-800 transition-colors">Bing</button>
+                      <button id="wpSource360"
+                        class="px-3 py-1 text-xs font-medium rounded text-gray-600 hover:text-gray-800 hover:bg-white/50 transition-colors">360</button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between bg-white p-2 rounded border border-gray-200">
+                    <span class="text-xs text-gray-500" id="wpFilterLabel">筛选:</span>
+
+                    <!-- Bing Filter -->
+                    <select id="bingCountry"
+                      class="text-sm border-none bg-transparent focus:ring-0 outline-none focus:outline-none text-gray-700 font-medium cursor-pointer text-right">
+                      <option value="">默认 (Global)</option>
+                      <option value="spotlight">Spotlight (Windows 聚焦)</option>
+                    </select>
+
+                    <!-- 360 Filter (Hidden by default) -->
+                    <select id="category360"
+                      class="text-sm border-none bg-transparent focus:ring-0 outline-none focus:outline-none text-gray-700 font-medium cursor-pointer text-right hidden">
+                      <option value="36">4K专区</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div id="onlineWallpapers"
+                  class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 min-h-[150px] max-h-[400px] overflow-y-auto custom-scrollbar p-1">
+                  <div class="col-span-full text-center text-gray-400 py-10 text-sm">加载中...</div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <label for="bgBlurSwitch" class="cursor-pointer select-none text-gray-700 font-medium">背景虚化</label>
+                <label class="switch">
+                  <input type="checkbox" id="bgBlurSwitch">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="p-2 hover:bg-gray-50 rounded" id="bgBlurIntensityContainer">
+                <label for="bgBlurIntensity" class="block text-gray-700 font-medium mb-1">背景虚化程度: <span
+                    id="bgBlurIntensityValue">0</span>px</label>
+                <input type="range" id="bgBlurIntensity" min="0" max="50" step="1"
+                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+              </div>
+
+
+            </div>
+          </div>
+
+          <!-- AI 设置内容 -->
+          <div id="ai-settings" class="settings-tab-content">
+            <div>
+              <label class="form-label" for="providerSelector">API 提供商</label>
+              <select id="providerSelector" class="form-input" style="margin-bottom: 1rem;">
+                <option value="workers-ai">Cloudflare Workers AI (推荐)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="openai">OpenAI 兼容</option>
+              </select>
+            </div>
+
+            <div class="form-group-stack">
+              <div>
+                <label for="apiKey" class="form-label-icon"><span>🔑</span> API Key</label>
+                <input type="password" id="apiKey" placeholder="sk-..." class="form-input">
+              </div>
+
+              <div id="baseUrlGroup" style="display: none;">
+                <label for="baseUrl" class="form-label-icon"><span>🌍</span> Base URL (API 地址)</label>
+                <input type="text" id="baseUrl" placeholder="https://api.openai.com" class="form-input">
+                <p class="form-hint">例如: https://api.openai.com (不需要加 /v1/chat/completions)</p>
+              </div>
+
+              <div>
+                <label for="modelName" id="modelNameLabel" class="form-label-icon"><span>✨</span> 模型名称</label>
+                <input type="text" id="modelName" placeholder="gemini-1.5-flash" class="form-input"
+                  autocomplete="off" autocapitalize="off" spellcheck="false">
+                <p id="modelNameHint" class="form-hint"></p>
+              </div>
+            </div>
+
+            <div class="batch-actions-section" style="margin-top: 1rem;">
+              <div id="bulkGenerateIdle" class="bulk-action-box">
+                <p class="form-hint">自动扫描所有没有描述的链接，并调用上方配置的 AI 模型生成简介。</p>
+                <button id="batchCompleteDescBtn" class="button-secondary">
+                  <span>✨</span> 一键补全所有描述
+                </button>
+              </div>
+              <div id="bulkGenerateProgress" class="bulk-action-box" style="display: none;">
+                <div class="progress-info">
+                  <span>正在生成描述...</span>
+                  <span id="progressCounter">0 / 0</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div id="progressBar" class="progress-bar"></div>
+                </div>
+                <button id="stopBulkGenerateBtn" class="button-danger">
+                  <span>⏸️</span> 停止处理
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="cancelSettingsBtn" class="button-tertiary">取消</button>
+          <button id="saveSettingsBtn" class="button-primary"><span>💾</span> 保存设置</button>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="message" style="display: none;"></div>
+
+    <div class="tab-wrapper">
+      <div class="tab-buttons">
+        <button class="tab-button active" data-tab="config">书签列表</button>
+        <button class="tab-button" data-tab="pending">待审核列表</button>
+        <button class="tab-button" data-tab="categories">分类列表</button>
+      </div>
+
+      <div id="config" class="tab-content active">
+        <div class="grid-wrapper">
+          <div class="bookmark-toolbar mb-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <p class="text-gray-500 text-sm">
+                拖动卡片可调整排序
+              </p>
+            </div>
+          </div>
+          <div id="configGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            <!-- data render by js -->
+          </div>
+          <div class="pagination mt-6 flex justify-center items-center gap-4">
+            <button id="prevPage" disabled
+              class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">上一页</button>
+            <span class="text-gray-600">
+              <span id="currentPage" class="font-medium">1</span> / <span id="totalPages">1</span>
+            </span>
+            <button id="nextPage" disabled
+              class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">下一页</button>
+
+            <select id="pageSizeSelect"
+              class="ml-2 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+              <option value="50" selected>50条/页</option>
+              <option value="100">100条/页</option>
+              <option value="200">200条/页</option>
+              <option value="500">500条/页</option>
+              <option value="10000">全部</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="pending" class="tab-content">
+        <div class="table-wrapper">
+          <table id="pendingTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>URL</th>
+                <th>图标</th>
+                <th>描述</th>
+                <th>分类</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="pendingTableBody">
+              <!-- data render by js -->
+            </tbody>
+          </table>
+          <div class="pagination">
+            <button id="pendingPrevPage" disabled>上一页</button>
+            <span id="pendingCurrentPage">1</span>/<span id="pendingTotalPages">1</span>
+            <button id="pendingNextPage" disabled>下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="categories" class="tab-content">
+        <div class="grid-wrapper">
+          <div class="category-toolbar mb-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <button id="categoryBackBtn"
+                class="hidden text-sm text-gray-600 hover:text-primary-600 flex items-center bg-white border border-gray-300 px-3 py-1 rounded shadow-sm transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                返回上级
+              </button>
+              <span id="categoryBreadcrumb" class="text-gray-700 font-medium ml-2"></span>
+              <p class="category-hint text-gray-500 text-sm ml-2 hidden sm:block">
+                拖动卡片可调整排序
+              </p>
+            </div>
+          </div>
+          <div id="categoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            <!-- data render by js -->
+          </div>
+          <div class="pagination mt-6 flex justify-center items-center gap-4">
+            <button id="categoryPrevPage" disabled
+              class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">上一页</button>
+            <span class="text-gray-600">
+              <span id="categoryCurrentPage" class="font-medium">1</span> / <span id="categoryTotalPages">1</span>
+            </span>
+            <button id="categoryNextPage" disabled
+              class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">下一页</button>
+
+            <select id="categoryPageSizeSelect"
+              class="ml-2 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+              <option value="20">20条/页</option>
+              <option value="50">50条/页</option>
+              <option value="100">100条/页</option>
+              <option value="10000" selected>全部</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量管理模态框 -->
+  <div id="batchModal" class="modal" style="display: none;">
+    <div class="modal-content flex flex-col"
+      style="max-width: 900px; width: 90%; height: 80vh; max-height: 800px; margin: auto;">
+      <span class="modal-close" id="closeBatchModal">×</span>
+      <h2 class="mb-4">批量管理</h2>
+
+      <!-- 顶部工具栏 -->
+      <div class="flex flex-wrap gap-4 justify-between items-center mb-4 p-2 bg-gray-50 rounded shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-gray-700">过滤:</span>
+          <div id="batchCategoryFilterWrapper" class="custom-dropdown-wrapper" style="width: 200px;"></div>
+          <input type="hidden" id="batchCategoryFilter" value="">
+        </div>
+
+        <div class="flex gap-2">
+          <button id="batchDeleteBtn"
+            class="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">删除</button>
+          <button id="batchChangeCategoryBtn"
+            class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">更改分类</button>
+          <button id="batchChangePrivacyBtn"
+            class="bg-gray-600 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">更改隐私</button>
+        </div>
+      </div>
+
+      <!-- 表格区域 -->
+      <div class="flex-1 overflow-auto border rounded border-gray-200 min-h-0">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-gray-100 sticky top-0 z-10">
+            <tr>
+              <th class="p-3 border-b w-12 text-center">
+                <input type="checkbox" id="batchSelectAll" class="rounded">
+              </th>
+              <th class="p-3 border-b w-16">ID</th>
+              <th class="p-3 border-b w-16">Logo</th>
+              <th class="p-3 border-b">标题</th>
+              <th class="p-3 border-b w-32">分类</th>
+              <th class="p-3 border-b w-20 text-center">隐私</th>
+            </tr>
+          </thead>
+          <tbody id="batchTableBody" class="text-sm">
+            <!-- 动态填充 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 底部通过分页 -->
+      <div class="mt-4 flex justify-between items-center shrink-0">
+        <div class="text-sm text-gray-500">
+          已选 <span id="batchSelectedCount" class="font-bold text-gray-800">0</span> 项
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="batchPrevPage"
+            class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 text-sm">上一页</button>
+          <span class="text-sm">
+            <span id="batchCurrentPageNum">1</span> / <span id="batchTotalPagesNum">1</span>
+          </span>
+          <button id="batchNextPage"
+            class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 text-sm">下一页</button>
+          <select id="batchPageSize" class="ml-2 border rounded p-1 text-sm">
+            <option value="50">50条/页</option>
+            <option value="100">100条/页</option>
+            <option value="200">200条/页</option>
+            <option value="500">500条/页</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量更改分类模态框 -->
+  <div id="batchCategoryModal" class="modal" style="display: none; z-index: 2000;">
+    <div class="modal-content" style="max-width: 400px;">
+      <span class="modal-close" id="closeBatchCategoryModal">×</span>
+      <h3>选择新分类</h3>
+      <p class="text-sm text-gray-500 mb-4">将选中的书签移动到以下分类：</p>
+      <div class="form-group">
+        <div id="batchTargetCategoryWrapper" class="custom-dropdown-wrapper w-full"></div>
+        <input type="hidden" id="batchTargetCategory" value="">
+      </div>
+      <div class="flex justify-end gap-3 mt-4">
+        <button id="cancelBatchCategoryBtn" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm">取消</button>
+        <button id="confirmBatchCategoryBtn"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量更改隐私模态框 -->
+  <div id="batchPrivacyModal" class="modal" style="display: none; z-index: 2000;">
+    <div class="modal-content" style="max-width: 400px;">
+      <span class="modal-close" id="closeBatchPrivacyModal">×</span>
+      <h3>更改隐私属性</h3>
+      <p class="text-sm text-gray-500 mb-4">设置选中书签的隐私状态：</p>
+      <div class="flex gap-4 justify-center mb-6">
+        <label class="flex items-center gap-2 cursor-pointer p-3 border rounded hover:bg-gray-50 flex-1">
+          <input type="radio" name="batchPrivacyOption" value="1" class="w-4 h-4 text-blue-600">
+          <span>私密 (Private)</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer p-3 border rounded hover:bg-gray-50 flex-1">
+          <input type="radio" name="batchPrivacyOption" value="0" checked class="w-4 h-4 text-blue-600">
+          <span>公开 (Public)</span>
+        </label>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button id="cancelBatchPrivacyBtn" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm">取消</button>
+        <button id="confirmBatchPrivacyBtn"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin-shared.js?v=bb97f086"></script>
+  <script src="/js/admin-cache.js?v=7b8faa7b"></script>
+  <script src="/js/admin-bookmark-list.js?v=d6db3383"></script>
+  <script src="/js/admin-pending.js?v=2482c2ea"></script>
+  <script src="/js/admin-tabs.js?v=fd9a0d73"></script>
+  <script src="/js/admin-bookmark-privacy.js?v=306f5fdb"></script>
+  <script src="/js/admin.js?v=39f7ce60"></script>
+  <script src="/js/admin-categories.js?v=aa436f47"></script>
+  <script src="/js/admin-bookmarks.js?v=050f96b1"></script>
+  <script src="/js/admin-batch.js?v=30d922a5"></script>
+  <script src="/js/wallpaper-defaults.js?v=b65f42d1"></script>
+  <script src="/js/admin-settings-defaults.js?v=309e396c"></script>
+  <script src="/js/admin-settings-form.js?v=e48d6596"></script>
+  <script src="/js/admin-settings-core.js?v=7c31f3ce"></script>
+  <script src="/js/admin-settings-preview-shared.js?v=3d0c2bf4"></script>
+  <script src="/js/admin-settings-preview-data.js?v=3eddb596"></script>
+  <script src="/js/admin-settings-preview-nav.js?v=7d9c14b8"></script>
+  <script src="/js/admin-settings-preview-animation.js?v=caa22fec"></script>
+  <script src="/js/admin-settings-preview-render.js?v=cd40b868"></script>
+  <script src="/js/admin-settings-preview-controls.js?v=b32cd231"></script>
+  <script src="/js/admin-settings-preview.js?v=909bf2a1"></script>
+  <script src="/js/admin-settings-wallpaper.js?v=948f7d65"></script>
+  <script src="/js/admin-settings-ai.js?v=0d8c0558"></script>
+  <script src="/js/admin-settings.js?v=3d60c17b"></script>
+  <script src="/js/admin-import-export.js?v=0ee9e0b0"></script>
+</body>
+
+</html>

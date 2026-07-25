@@ -1,0 +1,21 @@
+{
+  "name": "iori-nav",
+  "private": true,
+  "description": "书签导航站点 - 基于 Cloudflare 全家桶",
+  "scripts": {
+    "prepare": "husky",
+    "predev": "node scripts/update-versions.js",
+    "dev": "wrangler pages dev",
+    "check": "npm run check:syntax && npm test",
+    "check:syntax": "node scripts/check-syntax.js",
+    "test": "node --no-warnings --loader ./scripts/node-extensionless-loader.mjs --test \"test/**/*.test.mjs\"",
+    "version": "node scripts/update-versions.js",
+    "changelog": "node scripts/update-changelog.js",
+    "build:css": "npx tailwindcss -i ./public/css/tailwind.css -o ./public/css/tailwind.min.css --minify",
+    "dev:css": "npx tailwindcss -i ./public/css/tailwind.css -o ./public/css/tailwind.min.css --watch"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "tailwindcss": "^3.4.17"
+  }
+}

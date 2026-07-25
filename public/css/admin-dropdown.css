@@ -1,0 +1,94 @@
+/* Custom Cascading Dropdown */
+.custom-dropdown-wrapper {
+  position: relative;
+  /* width: 100%; removed to allow flex/auto width */ 
+}
+
+.custom-dropdown-trigger {
+  width: 100%;
+  padding: 10px 15px;
+  padding-right: 40px; /* Space for arrow */
+  background-color: #fff;
+  border: 1px solid #d1d5db; /* Updated to match new design */
+  border-radius: 0.5rem; /* Updated to match new design */
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  user-select: none;
+  min-height: 42px; /* Match standard input height */
+  display: flex;
+  align-items: center;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.custom-dropdown-trigger::after {
+  content: '';
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-top-color: #6b7280; /* Updated color */
+}
+
+.custom-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+/* Specific style for Category Filter to be wider */
+#categoryFilterWrapper .custom-dropdown-menu {
+  width: 200%; /* Make it 2x wider as requested */
+  min-width: 250px; /* Ensure a minimum readable width */
+}
+
+/* 批量管理模态框中的下拉菜单需要向上弹出，如果空间不足 */
+/* 这通常需要 JS 判断，但我们可以给它一个更大的 z-index 和 max-height */
+#batchModal .custom-dropdown-menu {
+  z-index: 9999;
+  max-height: 200px;
+}
+
+/* 修复：批量更改分类的小模态框，下拉菜单高度增加 */
+#batchCategoryModal .custom-dropdown-menu {
+  max-height: 300px; /* 显示更多内容 */
+  z-index: 9999;
+}
+
+/* 如果是最后几行的下拉菜单，可以尝试让它向上弹出（需要 JS 或 CSS 选择器技巧） */
+/* 例如，我们可以默认让它稍微短一点，或者依靠表格底部的 padding */
+
+.custom-dropdown-menu.show {
+  display: block;
+}
+
+.custom-dropdown-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  position: relative; 
+  display: flex;
+  align-items: center;
+  color: #333;
+}
+
+.custom-dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: #007bff;
+}
+
+.custom-dropdown-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

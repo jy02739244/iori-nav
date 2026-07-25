@@ -1,22 +1,27 @@
-node_modules/
-.wrangler/
-.dev.vars
-wrangler.toml
-
-# IDE
-.vscode/
-.idea/
-
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+node_modules/
+.wrangler/
+wrangler.toml
 
-# Dev docs
-TASK.md
-FIX_TASKS.md
-TEST_REPORT.md
-PROJECT_ANALYSIS.md
-COMPREHENSIVE_REVIEW.md
+# Husky internal files
+.husky/_
+
+# Editor
+.vscode/
+.idea/
+.trae/
+.gemini/
+.cursor/
+.codex/
+.claude/
+.kiro/
+.github/
+.agent/
+.roo/
+.shared/
+.windsurf/
+*.swp
+*.swo

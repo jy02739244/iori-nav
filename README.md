@@ -1,24 +1,29 @@
-# 拾光集 - 精品网址导航站
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/c0200239-4b89-4f3f-9d5d-99f731661d7c" alt="拾光集Logo" width="200">
-</p>
+# 灰色轨迹 - 精品网址导航站
 
 <p align="center">
   一个优雅、快速、易于部署的书签（网址）收藏与分享平台，完全基于 Cloudflare 全家桶构建。
 </p>
 
 <p align="center">
-  <a href="https://nav.wangwangit.com">在线演示</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#配置项">配置</a> •
-  <a href="#常见问题">FAQ</a> •
-  <a href="#贡献指南">贡献</a>
+  <a href="https://github.com/jy02739244/iori-nav/stargazers"><img src="https://img.shields.io/github/stars/jy02739244/iori-nav?style=flat-square&logo=github&color=yellow" alt="Stars"></a>
+  <a href="https://github.com/jy02739244/iori-nav/network/members"><img src="https://img.shields.io/github/forks/jy02739244/iori-nav?style=flat-square&logo=github&color=blue" alt="Forks"></a>
+  <a href="https://github.com/jy02739244/iori-nav/blob/main/LICENSE"><img src="https://img.shields.io/github/license/jy02739244/iori-nav?style=flat-square&color=green" alt="License"></a>
+  <a href="https://github.com/jy02739244/iori-nav/issues"><img src="https://img.shields.io/github/issues/jy02739244/iori-nav?style=flat-square&color=orange" alt="Issues"></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/license/wangwangit/nav" alt="License">
-  <img src="https://img.shields.io/github/stars/wangwangit/nav" alt="Stars">
+  <a href="#-核心特性">特性</a> •
+  <a href="#-版本亮点">版本亮点</a> •
+  <a href="#-快速部署">快速部署</a> •
+  <a href="#-本地开发">本地开发</a> •
+  <a href="#-环境变量说明">变量说明</a> •
+  <a href="#-常见部署问题">常见问题</a> •
+  <a href="#-技术栈">技术栈</a> •
+  <a href="#-更新日志">更新日志</a>
+</p>
+
+<p align="center">
+  <strong>🌐 在线体验:</strong> <a href="https://iori.hidns.vip/">https://iori.hidns.vip</a>
 </p>
 
 > 📁 旧版本（`worker.js`、`work_v1.js`、`work_v2.js`）已移至 [`old/`](./old/) 目录，相关文档见 [old/README.md](./old/README.md)。
@@ -27,192 +32,207 @@
 
 ## 预览
 
-| 首页 | 后台管理 |
+| 风格一 | 风格一 |
 | :---: | :---: |
-| ![首页预览](./old/首页.png) | ![后台预览](./old/后台.png) |
+| ![风格一预览 1](./image/fengge1_1.png) | ![风格一预览 2](./image/fengge1_2.png) |
 
-## 特性
+| 风格二 | 风格三 |
+| :---: | :---: |
+| ![风格二预览](./image/fengge2.png) | ![风格三预览](./image/fengge3.png) |
 
-- 📱 响应式设计，适配桌面、平板、手机
-- 🔍 站内模糊搜索
-- 📂 分类管理，支持自定义排序
-- 🔒 HttpOnly 会话认证，12 小时有效期
-- 📝 访客投稿（可关闭）
-- ⚡ Cloudflare 边缘缓存，秒级加载
-- 📤 数据导入/导出
+| 桌面设置界面 | 移动设置界面 |
+| :---: | :---: |
+| ![桌面设置界面预览](./image/setting.png) | ![移动设置界面预览](./image/phone_setting.png) |
 
-## 技术栈
+后台设置页支持分别配置桌面端与手机端卡片，包括卡片列数、卡片风格、切换动画、是否隐藏描述/链接行/分类、毛玻璃效果、圆角以及标题和描述的字体样式。后台设置页面为 URL 后加 `/admin`。
 
-| 组件 | 技术 |
-|------|------|
-| 计算 | [Cloudflare Workers](https://workers.cloudflare.com/) |
-| 数据库 | [Cloudflare D1](https://developers.cloudflare.com/d1/) |
-| KV 存储 | [Cloudflare KV](https://developers.cloudflare.com/workers/runtime-apis/kv/) |
-| 前端 | [TailwindCSS](https://tailwindcss.com/) |
+| 手机端风格一 | 手机端风格二 | 手机端风格三 |
+| :---: | :---: | :---: |
+| ![手机端风格一预览](./image/phone_1.png) | ![手机端风格二预览](./image/phone_2.png) | ![手机端风格三预览](./image/phone_3.png) |
 
-## 项目结构
+> 💡 手机端可独立设置 1/2/3 列布局，并根据卡片密度自动优化复制按钮显示；卡片的毛玻璃效果和程度也可以在后台设置里自定义。
 
-```
-src/
-├── index.js          # 入口，路由分发
-├── api/              # API 路由（站点 CRUD、分类排序、待审核）
-├── admin/            # 后台管理（认证、页面渲染）
-├── frontend/         # 前台页面渲染
-├── templates/        # HTML/CSS 模板
-└── utils/            # 工具函数
-```
+---
 
-## 前置条件
+## ✨ 核心特性
 
-| 依赖 | 版本 | 说明 |
-|------|------|------|
-| [Cloudflare 账号](https://dash.cloudflare.com/sign-up) | — | 免费注册，需要 Workers、D1、KV 的访问权限 |
-| [Node.js](https://nodejs.org) | 18+ | 运行时 |
-| [Wrangler](https://developers.cloudflare.com/workers/wrangler/) | 3.0+ | Cloudflare CLI |
+| 特性 | 说明 |
+| :--- | :--- |
+| 📱 **响应式设计** | 完美适配桌面、平板和手机等各种设备 |
+| 🎨 **主题美观** | 界面简洁优雅，支持自定义主色调与夜间模式 |
+| 🔍 **快速搜索** | 内置站内模糊搜索，迅速定位所需网站 |
+| 📂 **分类清晰** | 通过多级分类组织书签，浏览直观高效 |
+| 🔒 **安全后台** | 基于 KV 的管理员认证，提供完整的书签增删改查后台 |
+| 📝 **用户提交** | 支持访客提交书签，经管理员审核后显示（可通过环境变量关闭） |
+| ⚡ **性能卓越** | 利用 Cloudflare 边缘缓存，秒级加载，节省 D1 数据库读取成本 |
+| 📤 **数据管理** | 支持书签数据的导入与导出，兼容 Chrome 导出的 HTML 格式 |
 
-<details>
-<summary><strong>Windows 用户注意</strong></summary>
+---
 
-1. 前往 https://nodejs.org 下载 LTS 版本，安装时勾选 "Add to PATH"。
-2. 打开 PowerShell 运行 `node -v` 确认安装成功。
-3. 若遇到 `npm : 无法加载文件...` 权限错误，以管理员身份运行：
-   ```powershell
-   Set-ExecutionPolicy RemoteSigned
-   ```
-</details>
+## 🔄 版本亮点
 
-## 快速开始
+- 🛡️ **后台会话安全升级**：登录 `/admin` 后将颁发 HttpOnly 会话 Cookie（默认 1 天，可选 1/7/30/60/90 天），凭据不再暴露在 URL 中，并新增一键退出登录。
+- 🧹 **输入与展示双重校验**：新增 URL 规范化、HTML 转义与排序值归一化逻辑，前后台同时防止脏数据和潜在 XSS。
+- 🔐 **访客投稿可控**：通过 `ENABLE_PUBLIC_SUBMISSION` 环境变量即可关闭前台投稿入口，相关接口自动返回 403。
+- 🤖 **AI 一键自动生成描述**：提供 Workers AI、Google Gemini 和 OpenAI 接口。
+- 🖼️ **Logo 自动生成**：默认使用 [faviconsnap.com](https://faviconsnap.com) 接口，可在环境变量中自定义。
+- 📦 **导入导出数据**：提供书签数据的导入与导出，支持 Chrome 导出的 HTML 格式一键导入。
 
-### 1. 安装 Wrangler 并登录
+---
 
-```bash
-npm install -g wrangler
-wrangler login
-```
+## 🚀 快速部署
 
-如果是无头环境（服务器/CI），使用 API Token：
+> **准备工作**：你需要一个 [Cloudflare](https://dash.cloudflare.com/) 账号。
 
-```bash
-# Cloudflare 控制台 → My Profile → API Tokens → Create Token
-# 使用 "Edit Cloudflare Workers" 模板，确保包含 D1 和 KV 权限
-export CLOUDFLARE_API_TOKEN="cfut_your_token_here"
-```
+### 步骤 1：Fork 本仓库
 
-### 2. 创建资源
+[![Fork on GitHub](https://img.shields.io/badge/Fork-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/jy02739244/iori-nav/fork)
 
-```bash
-# 创建 D1 数据库
-wrangler d1 create book
+点击上方 **"Fork on GitHub"** 按钮，并点上 ⭐ Star！
 
-# 初始化表结构
-wrangler d1 execute book --remote --file=schema.sql
+### 步骤 2：部署到 Cloudflare Pages
 
-# 创建 KV 命名空间
-wrangler kv namespace create NAV_AUTH
-```
+[![Deploy to Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://dash.cloudflare.com/?to=/:account/pages/new/provider/github)
 
-设置管理员账号：
+点击上方按钮跳转到 Cloudflare，然后选择连接到 GitHub，授权后选择刚才 Fork 的项目。
 
-```bash
-wrangler kv key put --namespace-id=<你的KV_ID> admin_username "admin"
-wrangler kv key put --namespace-id=<你的KV_ID> admin_password "你的密码"
-```
+<img width="2252" height="1380" alt="选择项目" src="https://github.com/user-attachments/assets/0588e0d0-befb-4962-b422-922a8c895674" />
 
-### 3. 配置
+点击 **开始设置** 后，需要填写构建输出目录为 `public`，其他保持默认即可。
 
-复制 `wrangler.toml.example` 为 `wrangler.toml`，填入你的资源 ID：
+<img width="2112" height="1404" alt="构建设置" src="https://github.com/user-attachments/assets/654a23af-d75f-477d-848e-fea8a41740dc" />
 
-```bash
-cp wrangler.toml.example wrangler.toml
-```
+### 步骤 3：创建 D1 数据库
 
-```toml
-name = "nav"
-account_id = "你的账户ID"
-main = "src/index.js"
-compatibility_date = "2024-01-01"
+1. 在 Cloudflare 控制台，进入 `存储和数据库` → `D1 SQL 数据库`。
+2. 点击 `创建数据库`，数据库名称输入 `book`，然后创建。
 
-[[d1_databases]]
-binding = "NAV_DB"
-database_name = "book"
-database_id = "你的D1数据库ID"
+<img width="2836" height="1298" alt="创建D1数据库" src="https://github.com/user-attachments/assets/644032c6-304c-46cc-b039-9eafbc6f7a6b" />
 
-[[kv_namespaces]]
-binding = "NAV_AUTH"
-id = "你的KV命名空间ID"
-```
+### 步骤 4：创建 KV 存储
 
-### 4. 部署
+1. 在 Cloudflare 控制台，进入 `存储和数据库` → `Worker KV`。
+2. 点击 `创建命名空间`，名称输入 `NAV_AUTH`。
 
-```bash
-wrangler deploy
-```
+    <img width="2744" height="974" alt="创建KV命名空间" src="https://github.com/user-attachments/assets/11d08862-7887-4883-97ce-390780e7fccd" />
 
-### 5. 使用
+3. 创建后，为此 KV 添加两个条目，用于设置后台登录的 **用户名** 和 **密码**：
+    - `admin_username`：你的管理员用户名（例如 `admin`）
+    - `admin_password`：你的管理员密码
 
-1. 访问你的 Worker 域名。
-2. 进入 `/admin`，用上面设置的账号密码登录。
-3. 添加书签，首页即可展示。
+    <img width="2810" height="1188" alt="设置KV条目" src="https://github.com/user-attachments/assets/2114e42b-03d2-400f-a8f8-54dc156a7922" />
 
-## 本地开发
+### 步骤 5：绑定服务
+
+1. 进入你刚刚创建的 Pages 项目的 `设置` → `绑定`。
+2. 点击 `添加绑定`，选择 `D1 数据库`：
+    - 变量名称：`NAV_DB`
+    - D1 数据库：选择你创建的 `book`
+3. 点击 `添加绑定`，选择 `KV 命名空间`：
+    - 变量名称：`NAV_AUTH`
+    - KV 命名空间：选择你创建的 `NAV_AUTH`
+4. 如需使用 Cloudflare Workers AI，继续点击 `添加绑定`，选择 `Workers AI`：
+    - 变量名称：`AI`
+
+<img width="2152" height="1236" alt="绑定服务" src="./image/bind.png" />
+
+### 步骤 6：重新部署
+
+点击项目的 **部署** 选项，在最后一次的部署后边选择 **重新部署**，等待部署完成，绑定自定义域名即可开始使用。
+
+<img width="2482" height="1374" alt="重新部署" src="https://github.com/user-attachments/assets/d2f12af3-9aba-458e-9d16-00f7468c22e9" />
+
+---
+
+## 🧪 本地开发
+
+> 本地开发依赖 `wrangler.toml`。仓库提供了可提交的 `wrangler.example.toml` 模板，真实配置文件仍会被 `.gitignore` 忽略，避免误提交资源 ID 或密钥。
 
 ```bash
-wrangler dev
-# http://localhost:8787
+# 安装依赖（TailwindCSS / Husky）
+npm install
+
+# 复制本地配置模板，并填入你自己的 D1/KV 资源 ID
+cp wrangler.example.toml wrangler.toml
+
+# 构建 CSS（首次或修改 tailwind.css 后执行）
+npm run build:css
+
+# 启动本地开发服务器
+npm run dev
+
+# 本地执行数据库 schema（可选）
+npx wrangler d1 execute book --local --file=schema.sql
 ```
 
-## ⚠️ 数据库说明
+---
 
-### SQL 保留字
+## 🔑 环境变量说明
 
-本项目使用 Cloudflare D1（SQLite 兼容）。建表时有以下注意事项：
+### 1) 必需绑定（Pages 项目设置 -> 绑定）
 
-| 列名 | 说明 | 注意事项 |
-|------|------|----------|
-| `desc` | 网站描述 | SQLite 保留字（`ORDER BY ... DESC`），当前 D1 可正常解析。若迁移至 MySQL/PostgreSQL，需加反引号：`` `desc` ``，或重命名为 `description` |
-| `catelog` | 分类名称 | 项目自定义命名（非标准 `catalog`），已在代码中统一使用 |
-| `sort_order` | 排序值 | `order` 是保留字，但 `sort_order` 不冲突 |
+| 绑定名 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `NAV_DB` | D1 | 主数据库绑定（必需） |
+| `NAV_AUTH` | KV | 会话、限流、缓存标记存储（必需） |
+### 2) 条件绑定（Pages 项目设置 -> 绑定）
 
-### 备份与恢复
+| 绑定名 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `AI` | Workers AI | 使用 Cloudflare Workers AI 生成描述时必需 |
 
-```bash
-# 导出数据库（全量）
-wrangler d1 export book --output backup_$(date +%Y%m%d).sql
+### 3) 可选变量（Pages 项目设置 -> 变量和机密）
 
-# 导入备份
-wrangler d1 execute book --remote --file=backup_20260527.sql
-```
+| 变量名 | 默认值 | 说明 |
+| :--- | :--- | :--- |
+| `ENABLE_PUBLIC_SUBMISSION` | `false` | 是否允许访客投稿 |
+| `SITE_NAME` | `灰色轨迹` | 首页站点名称（环境变量兜底） |
+| `SITE_DESCRIPTION` | `一个优雅、快速、易于部署的书签（网址）收藏与分享平台，完全基于 Cloudflare 全家桶构建` | 首页副标题（环境变量兜底） |
+| `FOOTER_TEXT` | `曾梦想仗剑走天涯` | 首页页脚文案 |
+| `ICON_API` | `https://faviconsnap.com/api/favicon?url=` | 自动补全 logo 的接口前缀 |
+| `AI_REQUEST_DELAY` | `1500` | AI 一键补全描述调用间隔（毫秒） |
+| `WORKERS_AI_MODEL` | `@cf/google/gemma-4-26b-a4b-it` | Workers AI 模型兜底；后台 AI 设置中保存的模型优先 |
+| `TURNSTILE_SITE_KEY` | 空 | Cloudflare Turnstile 站点密钥；与 `TURNSTILE_SECRET_KEY` 同时配置后启用后台登录与公开投稿人机验证 |
+| `TURNSTILE_SECRET_KEY` | 空 | Cloudflare Turnstile 机密密钥；与 `TURNSTILE_SITE_KEY` 同时配置后启用后台登录与公开投稿人机验证 |
 
-## 配置项
+> `DISPLAY_CATEGORY` 已废弃，当前版本不会读取该变量。
 
-| 配置 | 说明 | 默认值 |
-|------|------|--------|
-| `ENABLE_PUBLIC_SUBMISSION` | 是否允许访客投稿 | `true` |
+### 3) 配置优先级说明
 
-关闭访客投稿：
+- 首页名称/副标题等支持后台设置项的字段，优先读取数据库 `settings`，环境变量作为兜底。
+- `AI_REQUEST_DELAY` 在代码中的默认兜底为 `1500`；本地可按 API 限频自行调整。
+- Workers AI 的模型可以在后台 AI 设置中手动填写；需要使用 Workers AI 的 `@cf/...` 模型名。
+- Workers AI 设置推荐：`@cf/google/gemma-4-26b-a4b-it`（默认）、`@cf/mistralai/mistral-small-3.1-24b-instruct`、`@cf/qwen/qwq-32b`、`@cf/qwen/qwen3-30b-a3b-fp8`、`@cf/meta/llama-3.1-8b-instruct-fp8`。其余模型请自行测试。
 
-```bash
-wrangler secret put ENABLE_PUBLIC_SUBMISSION
-# 输入: false
-```
+> **💡 提示**：如使用免费的 Gemini API Key（模型 `gemini-2.5-flash-lite`），频率限制为 15 次/分钟，请根据实际情况调整 `AI_REQUEST_DELAY`。
 
-## 🔐 安全与运维
+### 🔐 管理后台
 
-### 重置管理员密码
+> 后台管理页面地址为：`https://你的域名/admin`
 
-```bash
-# 重新设置密码（替换 <KV_ID> 和 新密码）
-wrangler kv key put --namespace-id=<KV_ID> admin_password "新密码"
-```
+后台登录凭据存放在 `NAV_AUTH` KV 中的 `admin_username` 与 `admin_password` 两个键内。登录 `/admin` 时需要在页面表单中输入账号与密码，系统会返回一个 **HttpOnly 会话 Cookie（默认 1 天，可选 1/7/30/60/90 天）**，无需也不再支持在 URL 查询参数中传递凭据。点击后台右上角的 **"退出登录"** 按钮即可立即销毁会话。
 
-### 会话机制
+如需给后台登录与公开投稿增加 Cloudflare Turnstile 人机验证，请在 Cloudflare Turnstile 控制台创建站点后，将站点密钥配置为 `TURNSTILE_SITE_KEY`，机密密钥配置为 `TURNSTILE_SECRET_KEY`。两个变量都为空时会保持原流程；只配置其中一个会提示配置不完整。
 
-- 登录后颁发 **HttpOnly + Secure + SameSite=Strict** Cookie
-- 会话有效期 **12 小时**，期间自动续期
-- 退出登录立即销毁服务端会话
-- 不支持 URL 参数传参登录（旧版方式已废弃）
+---
 
-### Cloudflare 账号要求
+## ❗ 常见部署问题
+
+- `/admin` 无法登录或反复跳回登录页：确认已绑定 `NAV_AUTH`，并在该 KV 中创建 `admin_username`、`admin_password`。
+- 首页 500 或数据为空：确认 `NAV_DB` 已正确绑定到 `book` 数据库，且已执行过 `schema.sql`。
+- 前台看不到投稿入口：确认 `ENABLE_PUBLIC_SUBMISSION=true`（字符串或布尔都可，代码会统一转换）。
+- 修改了 `public/css/tailwind.css` 但样式未生效：先执行 `npm run build:css` 再重新部署。
+
+---
+
+## 🔧 技术栈
+
+| 类别 | 技术 |
+| :--- | :--- |
+| **计算** | [Cloudflare Workers](https://workers.cloudflare.com/) |
+| **数据库** | [Cloudflare D1](https://developers.cloudflare.com/d1/) |
+| **存储** | [Cloudflare KV](https://developers.cloudflare.com/workers/runtime-apis/kv/) |
+| **前端框架** | [TailwindCSS](https://tailwindcss.com/) |
 
 | 服务 | 免费额度 | 说明 |
 |------|---------|------|
@@ -220,9 +240,53 @@ wrangler kv key put --namespace-id=<KV_ID> admin_password "新密码"
 | D1 | 5 GB 存储 + 500 万行读/天 | 书签数据 |
 | KV | 10 万次/天 | 仅用于管理员认证 |
 
-> 💡 个人使用基本不会超出免费额度。
+## 📋 更新日志
 
-## 常见问题
+<!-- changelog:start -->
+- 📂 **2026-07-14**：增加卡片风格三，风格增加默认壁纸
+- 🔧 **2026-06-23**：清理 AI 设置调试日志
+- 📂 **2026-06-21**：增强分类结构与私密数据支持
+- 🛡️ **2026-06-20**：优化登录会话与安全防护
+- 📦 **2026-06-09**：增强导入导出与批量管理能力
+- 🎨 **2026-06-08**：优化卡片样式与后台界面体验
+- 🎨 **2026-06-07**：增加手机卡片设置
+- 🎨 **2026-06-06**：首页设置预览与页脚优化
+- 🎞️ **2026-06-05**：新增卡片动画并隐藏图标
+- 🔧 **2026-05-28**：拆分设置模块并补充测试
+- 🛡️ **2026-05-06**：完善投稿审核与安全校验
+- 🐞 **2026-05-05**：修复后台HTML转义
+- 🔧 **2026-04-20**：补缓存头并清理资源
+- 🔧 **2026-04-19**：精简字体与后台逻辑
+- ⚡ **2026-04-17**：深度优化首页性能
+- ⚡ **2026-03-31**：优化查询与缓存一致性
+- 🐞 **2026-03-27**：稳定首页缓存与搜索
+- 🛡️ **2026-03-15**：增加CSRF安全防护
+- 🛡️ **2026-03-14**：强化SQL注入防护
+- 🔧 **2026-03-07**：统一数据库迁移流程
+- 🖼️ **2026-03-04**：更新图标获取接口
+- ⚡ **2026-02-26**：优化首页交互与文档
+- ⚡ **2026-02-24**：优化缓存策略并提升加载性能
+- 🖼️ **2026-02-23**：优化壁纸功能与加载体验，并补充文档说明
+- 🐞 **2026-01-24**：修复若干问题并提升稳定性，并加强登录安全
+- ⚡ **2026-01-20**：优化缓存策略并提升加载性能
+- ⚡ **2026-01-19**：优化缓存策略并提升加载性能
+- 🔧 **2026-01-16**：美化后台管理界面，隐藏待审核列表
+- 🎨 **2026-01-15**：优化卡片样式与后台界面体验
+- ⚡ **2026-01-10**：优化缓存策略并提升加载性能
+- 🧰 **2025-12-30**：更新文档与部署使用说明
+- 🐞 **2025-12-29**：修复若干问题并提升稳定性
+- 📦 **2025-12-27**：增强导入导出与批量管理能力
+- 📂 **2025-12-25**：增强分类结构与私密数据支持
+- 🖼️ **2025-12-24**：优化壁纸功能与加载体验
+- 📦 **2025-12-23**：增强导入导出与批量管理能力，并增强分类能力
+- 🐞 **2025-12-22**：修复若干问题并提升稳定性
+- 🎨 **2025-12-20**：优化卡片样式与后台界面体验，并修复多项问题
+- 📂 **2025-12-19**：增强分类结构与私密数据支持，并修复多项问题
+- 🎨 **2025-12-18**：优化卡片样式与后台界面体验，并增强分类能力
+- 🧰 **2025-12-14**：更新文档与部署使用说明
+<!-- changelog:end -->
+
+---
 
 | 问题 | 解决方案 |
 |------|---------|
@@ -239,22 +303,26 @@ wrangler kv key put --namespace-id=<KV_ID> admin_password "新密码"
 ## 贡献指南
 
 1. Fork 本仓库
-2. 创建分支 (`git checkout -b feature/xxx`)
-3. 提交更改 (`git commit -m 'feat: add xxx'`)
-4. 推送 (`git push origin feature/xxx`)
-5. 发起 Pull Request
+2. 创建你的功能分支：`git checkout -b feature/amazing-feature`
+3. 提交你的更改：`git commit -m 'Add some amazing feature'`
+4. 推送到你的分支：`git push origin feature/amazing-feature`
+5. 创建一个 Pull Request
+
+---
 
 ## 许可证
 
 [MIT](LICENSE)
 
-## 联系
-
-- 作者: [@一只会飞的旺旺](https://github.com/wangwangit)
-- 项目: [https://github.com/wangwangit/nav](https://github.com/wangwangit/nav)
-
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
-
 ---
 
-<p align="center">如果觉得有用，请给个 ⭐️</p>
+## 📞 联系方式
+
+- **项目作者**：[@灰色轨迹](https://github.com/jy02739244)
+- **项目链接**：[https://github.com/jy02739244/iori-nav](https://github.com/jy02739244/iori-nav)
+
+<p align="center">如果你喜欢这个项目，请给它一个 ⭐️！</p>
+
+## ⭐ Star 趋势
+
+[![Star History Chart](https://api.star-history.com/svg?repos=jy02739244/iori-nav&type=date&legend=top-left)](https://www.star-history.com/#jy02739244/iori-nav&type=date&legend=top-left)

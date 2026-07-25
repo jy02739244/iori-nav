@@ -1,0 +1,53 @@
+/* Toast Message (Right Top) */
+#message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  font-weight: 500;
+  animation: slideInRight 0.3s ease-out;
+  display: none;
+  background-color: white; /* default fallback */
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 禁用背景滚动 */
+body.modal-open {
+  overflow: hidden !important;
+}
+
+/* 修复：批量更改分类模态框 (batchCategoryModal) 下拉框显示不全的问题 */
+/* 必须允许 overflow visible，否则 absolute 定位的下拉菜单会被截断 */
+#batchCategoryModal .modal-content {
+  overflow: visible !important;
+  /* min-height: 300px;  Removed to avoid blank space */
+}
+
+/* 确保批量管理大模态框 (batchModal) 的内容不溢出 */
+#batchModal .modal-content {
+  overflow: hidden !important; /* 恢复 hidden，防止滚动条溢出圆角 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 恢复表格区域的正常滚动 */
+#batchModal .flex-1.overflow-auto {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  overflow: auto !important;
+}
