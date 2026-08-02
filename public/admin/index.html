@@ -6,17 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>书签管理页面</title>
   <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/admin-layout.css?v=42e6c65a" />
-  <link rel="stylesheet" href="/css/admin-forms.css?v=70b67305" />
-  <link rel="stylesheet" href="/css/admin-card-options.css?v=55b9995c" />
-  <link rel="stylesheet" href="/css/admin-preview-shell.css?v=82413550" />
-  <link rel="stylesheet" href="/css/admin-preview-controls.css?v=7fa6812c" />
-  <link rel="stylesheet" href="/css/admin-preview-cards.css?v=d0d0a9b0" />
-  <link rel="stylesheet" href="/css/admin-settings-modal.css?v=5fe5060a" />
-  <link rel="stylesheet" href="/css/admin-card-preview.css?v=a42c3dea" />
-  <link rel="stylesheet" href="/css/admin-feedback.css?v=15b4dada" />
-  <link rel="stylesheet" href="/css/admin-dropdown.css?v=9efddb85" />
-  <link rel="stylesheet" href="/css/tailwind.min.css?v=79714d4b">
+  <script>
+    // 初始化暗色模式（在 CSS 加载前执行，防止闪烁）
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+  <link rel="stylesheet" href="/css/admin-layout.css?v=768f9ade" />
+  <link rel="stylesheet" href="/css/admin-forms.css?v=4b439f93" />
+  <link rel="stylesheet" href="/css/admin-card-options.css?v=32c2dfc2" />
+  <link rel="stylesheet" href="/css/admin-preview-shell.css?v=dd018be2" />
+  <link rel="stylesheet" href="/css/admin-preview-controls.css?v=2fbbc84e" />
+  <link rel="stylesheet" href="/css/admin-preview-cards.css?v=ec41ebfe" />
+  <link rel="stylesheet" href="/css/admin-settings-modal.css?v=6a2e5a16" />
+  <link rel="stylesheet" href="/css/admin-card-preview.css?v=0d44f94c" />
+  <link rel="stylesheet" href="/css/admin-feedback.css?v=7f73bd85" />
+  <link rel="stylesheet" href="/css/admin-dropdown.css?v=a8270a59" />
+  <link rel="stylesheet" href="/css/tailwind.min.css?v=f582695f">
+  <link rel="stylesheet" href="/css/admin-apple.css?v=5d93d2ca">
 </head>
 
 <body>
@@ -37,6 +44,20 @@
         </p>
       </div>
       <div class="header-actions">
+        <a href="/" class="home-link" title="返回首页">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          返回首页
+        </a>
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="切换暗色模式" aria-label="切换暗色模式">
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+        </button>
         <button id="refreshCacheBtn" class="refresh-btn" title="手动刷新首页缓存">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
@@ -1572,31 +1593,31 @@
     </div>
   </div>
 
-  <script src="/js/admin-shared.js?v=bb97f086"></script>
-  <script src="/js/admin-cache.js?v=7b8faa7b"></script>
-  <script src="/js/admin-bookmark-list.js?v=d6db3383"></script>
-  <script src="/js/admin-pending.js?v=2482c2ea"></script>
-  <script src="/js/admin-tabs.js?v=fd9a0d73"></script>
-  <script src="/js/admin-bookmark-privacy.js?v=306f5fdb"></script>
-  <script src="/js/admin.js?v=39f7ce60"></script>
-  <script src="/js/admin-categories.js?v=aa436f47"></script>
-  <script src="/js/admin-bookmarks.js?v=050f96b1"></script>
-  <script src="/js/admin-batch.js?v=30d922a5"></script>
-  <script src="/js/wallpaper-defaults.js?v=b65f42d1"></script>
-  <script src="/js/admin-settings-defaults.js?v=309e396c"></script>
-  <script src="/js/admin-settings-form.js?v=e48d6596"></script>
-  <script src="/js/admin-settings-core.js?v=7c31f3ce"></script>
-  <script src="/js/admin-settings-preview-shared.js?v=3d0c2bf4"></script>
-  <script src="/js/admin-settings-preview-data.js?v=3eddb596"></script>
-  <script src="/js/admin-settings-preview-nav.js?v=7d9c14b8"></script>
-  <script src="/js/admin-settings-preview-animation.js?v=caa22fec"></script>
-  <script src="/js/admin-settings-preview-render.js?v=cd40b868"></script>
-  <script src="/js/admin-settings-preview-controls.js?v=b32cd231"></script>
-  <script src="/js/admin-settings-preview.js?v=909bf2a1"></script>
-  <script src="/js/admin-settings-wallpaper.js?v=948f7d65"></script>
-  <script src="/js/admin-settings-ai.js?v=0d8c0558"></script>
-  <script src="/js/admin-settings.js?v=3d60c17b"></script>
-  <script src="/js/admin-import-export.js?v=0ee9e0b0"></script>
+  <script src="/js/admin-shared.js?v=a337b552"></script>
+  <script src="/js/admin-cache.js?v=ae06819c"></script>
+  <script src="/js/admin-bookmark-list.js?v=bbdffc2f"></script>
+  <script src="/js/admin-pending.js?v=b6ae86b9"></script>
+  <script src="/js/admin-tabs.js?v=3fe16a46"></script>
+  <script src="/js/admin-bookmark-privacy.js?v=cb0fbe1c"></script>
+  <script src="/js/admin.js?v=ddc4756b"></script>
+  <script src="/js/admin-categories.js?v=6ee07657"></script>
+  <script src="/js/admin-bookmarks.js?v=2c52bc54"></script>
+  <script src="/js/admin-batch.js?v=231f596e"></script>
+  <script src="/js/wallpaper-defaults.js?v=7eebee6d"></script>
+  <script src="/js/admin-settings-defaults.js?v=ad941375"></script>
+  <script src="/js/admin-settings-form.js?v=abf715c1"></script>
+  <script src="/js/admin-settings-core.js?v=88c39833"></script>
+  <script src="/js/admin-settings-preview-shared.js?v=f036607b"></script>
+  <script src="/js/admin-settings-preview-data.js?v=649b33cc"></script>
+  <script src="/js/admin-settings-preview-nav.js?v=fbb14886"></script>
+  <script src="/js/admin-settings-preview-animation.js?v=f69111b6"></script>
+  <script src="/js/admin-settings-preview-render.js?v=c4dabbd4"></script>
+  <script src="/js/admin-settings-preview-controls.js?v=f24b2876"></script>
+  <script src="/js/admin-settings-preview.js?v=20153112"></script>
+  <script src="/js/admin-settings-wallpaper.js?v=e7168e1d"></script>
+  <script src="/js/admin-settings-ai.js?v=cc131031"></script>
+  <script src="/js/admin-settings.js?v=29f90d46"></script>
+  <script src="/js/admin-import-export.js?v=15b447db"></script>
 </body>
 
 </html>

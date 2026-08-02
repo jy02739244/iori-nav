@@ -1,0 +1,1182 @@
+/* =========================================================================
+   Apple Design Polish Layer — 管理后台
+   -------------------------------------------------------------------------
+   在 admin-*.css / tailwind.min.css 之后引入。
+   遵循 Apple 设计语言：系统字体、材质化层次、即时反馈、
+   spring 动效、模态框 materialize、尊重减少动态偏好。
+   ========================================================================= */
+
+:root {
+  --apple-font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "SF Pro Display", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --apple-ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --apple-ease-material: cubic-bezier(0.16, 1, 0.3, 1);
+  --apple-blur: blur(24px) saturate(180%);
+  --apple-hairline: rgba(0, 0, 0, 0.06);
+
+  /* Apple 语义色彩 */
+  --apple-blue: #007AFF;
+  --apple-blue-hover: #0062cc;
+  --apple-blue-pressed: #004999;
+  --apple-blue-subtle: rgba(0, 122, 255, 0.1);
+  --apple-green: #34C759;
+  --apple-green-hover: #2da84d;
+  --apple-red: #FF3B30;
+  --apple-red-hover: #d6332a;
+  --apple-orange: #FF9500;
+  --apple-orange-hover: #e68600;
+  --apple-gray-50: #f5f5f7;
+  --apple-gray-100: #e8e8ed;
+  --apple-gray-600: #636366;
+  --apple-gray-800: #3a3a3c;
+  --apple-bg: #f2f2f7;
+}
+
+/* ------------------------- 字体与画布 ------------------------- */
+body {
+  font-family: var(--apple-font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  background: linear-gradient(180deg, #f8fafc 0%, #f3f4f6 40%, #eef1f5 100%);
+  background-attachment: fixed;
+}
+
+/* 全局平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 大标题：更紧的负字距，层级分明 */
+h1, h2, .modal-content h2 {
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  line-height: 1.15;
+  font-optical-sizing: auto;
+}
+
+/* 副标题 / 正文：舒适行高 + 微正字距 */
+.admin-subtitle,
+p,
+td,
+th,
+label,
+.custom-dropdown-item {
+  letter-spacing: 0.005em;
+  line-height: 1.55;
+}
+
+/* 小字 / 标签 / 按钮内文字：微正字距 */
+.text-xs,
+.text-sm,
+button,
+.pagination button,
+.actions button,
+.logout-btn,
+.refresh-btn {
+  letter-spacing: 0.01em;
+}
+
+/* ------------------------- 材质与层次 ------------------------- */
+
+/* 顶栏：白玻璃卡片 + 顶部高光边（光打在材质上） */
+.admin-header {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: var(--apple-blur);
+  -webkit-backdrop-filter: var(--apple-blur);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 1.25rem;
+  box-shadow: 0 0 0 1px var(--apple-hairline),
+    0 20px 40px -20px rgba(15, 23, 42, 0.18);
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+/* 工具栏：与顶栏同一材质语言 */
+.import-export {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: var(--apple-blur);
+  -webkit-backdrop-filter: var(--apple-blur);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 1.25rem;
+  box-shadow: 0 0 0 1px var(--apple-hairline),
+    0 16px 32px -20px rgba(15, 23, 42, 0.16);
+}
+
+/* 表格容器：卡片化，行悬停柔和高亮 + 滚动边缘渐变遮罩 */
+.table-wrapper {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 1px var(--apple-hairline),
+    0 12px 24px -16px rgba(15, 23, 42, 0.14);
+  overflow: auto;
+  /* 横向滚动时左右淡出，纵向无遮罩（表格高度通常固定） */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6px, black calc(100% - 6px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 6px, black calc(100% - 6px), transparent 100%);
+}
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+th {
+  background: #f7f8fa;
+  font-weight: 600;
+  color: #374151;
+}
+th, td {
+  border: none;
+  border-bottom: 1px solid #eef0f3;
+}
+tr:last-child td {
+  border-bottom: none;
+}
+tbody tr {
+  transition: background-color 0.18s ease;
+}
+tbody tr:hover {
+  background-color: #f5f7fb;
+}
+
+/* 分段控件（tab）：苹果式 segmented control，选中项弹性切换 */
+.tab-buttons {
+  background-color: rgba(229, 231, 235, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 0.9rem;
+  padding: 0.3rem;
+  gap: 0.2rem;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+.tab-button {
+  transition: background-color 0.25s var(--apple-ease-spring),
+    color 0.2s ease, box-shadow 0.25s var(--apple-ease-spring),
+    transform 0.2s var(--apple-ease-spring);
+}
+.tab-button.active {
+  background-color: #fff;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.18);
+}
+
+/* 下拉菜单：更高层次阴影 + 展开动画 */
+.custom-dropdown-menu {
+  border: none;
+  border-radius: 0.85rem;
+  box-shadow: 0 0 0 1px var(--apple-hairline),
+    0 24px 48px -16px rgba(15, 23, 42, 0.28);
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.98);
+  overflow: hidden;
+}
+.custom-dropdown-menu.show {
+  animation: apple-menu-in 0.22s var(--apple-ease-material);
+}
+.custom-dropdown-item {
+  border-radius: 0.55rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.custom-dropdown-item:hover {
+  background-color: #f0f3f8;
+}
+.custom-dropdown-trigger {
+  border-radius: 0.7rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+.custom-dropdown-trigger:focus-within,
+.custom-dropdown-trigger:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+@keyframes apple-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 工具栏操作按钮：spring 过渡 + hover 微上浮 + 按下反馈 */
+.import-export button:not(.custom-dropdown-trigger),
+#importBtn, #exportBtn, #batchBtn, #addCategoryBtn, #addBookmarkBtn, #settingsBtn,
+#refreshCategories {
+  transition: background-color 0.25s ease, color 0.2s ease,
+    box-shadow 0.28s var(--apple-ease-spring),
+    transform 0.22s var(--apple-ease-spring);
+}
+.import-export button:not(.custom-dropdown-trigger):hover,
+#refreshCategories:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -6px rgba(15, 23, 42, 0.22);
+}
+.import-export button:not(.custom-dropdown-trigger):active,
+#refreshCategories:active {
+  transform: scale(0.97);
+}
+
+/* ---- Apple 语义色彩：工具栏按钮去彩虹化 ---- */
+
+/* 主要操作 → Apple 蓝 */
+#addBookmarkBtn {
+  background-color: var(--apple-blue) !important;
+}
+#addBookmarkBtn:hover {
+  background-color: var(--apple-blue-hover) !important;
+}
+
+/* 创建/新增 → Apple 绿 */
+#addCategoryBtn {
+  background-color: var(--apple-green) !important;
+}
+#addCategoryBtn:hover {
+  background-color: var(--apple-green-hover) !important;
+}
+
+/* 辅助操作（批量/导入/导出） → Apple 灰 */
+#batchBtn,
+#importBtn,
+#exportBtn {
+  background-color: var(--apple-gray-600) !important;
+}
+#batchBtn:hover,
+#importBtn:hover,
+#exportBtn:hover {
+  background-color: var(--apple-gray-800) !important;
+}
+
+/* 工具/设置 → 深灰（最低调） */
+#settingsBtn {
+  background-color: var(--apple-gray-800) !important;
+}
+#settingsBtn:hover {
+  background-color: #1c1c1e !important;
+}
+
+/* 刷新缓存 → 保持橙色（警告/工具语义） */
+.refresh-btn {
+  background-color: var(--apple-orange) !important;
+  border-color: var(--apple-orange) !important;
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--apple-orange-hover) !important;
+}
+
+/* 删除按钮 → Apple 红 */
+.del-btn {
+  background-color: var(--apple-red) !important;
+}
+.del-btn:hover {
+  background-color: var(--apple-red-hover) !important;
+}
+
+/* 编辑按钮 → Apple 蓝（次要蓝） */
+.edit-btn {
+  background-color: var(--apple-blue) !important;
+}
+.edit-btn:hover {
+  background-color: var(--apple-blue-hover) !important;
+}
+
+/* 取消/关闭保持灰色 */
+#cancelExportBtn,
+#closeDeleteConfirmModal {
+  background-color: var(--apple-gray-100) !important;
+  color: var(--apple-gray-600) !important;
+}
+
+/* 确认导出 → Apple 蓝 */
+#confirmExportBtn {
+  background-color: var(--apple-blue) !important;
+}
+#confirmExportBtn:hover {
+  background-color: var(--apple-blue-hover) !important;
+}
+
+/* 确认删除 → Apple 红 */
+#confirmDeleteBtn {
+  background-color: var(--apple-red) !important;
+}
+#confirmDeleteBtn:hover {
+  background-color: var(--apple-red-hover) !important;
+}
+
+/* 分页 / 编辑 / 删除 / 分类操作按钮：spring */
+.pagination button,
+.actions button,
+.edit-btn,
+.del-btn,
+.category-actions button {
+  transition: background-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.22s var(--apple-ease-spring),
+    transform 0.2s var(--apple-ease-spring);
+}
+.pagination button:hover,
+.actions button:hover,
+.category-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px -4px rgba(15, 23, 42, 0.18);
+}
+.pagination button:active,
+.actions button:active,
+.category-actions button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* 模态框：深一层的 scrim + 内容 materialize */
+.modal {
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.modal-content {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 1.25rem;
+  animation: apple-modal-in 0.38s var(--apple-ease-material);
+  box-shadow: 0 0 0 1px var(--apple-hairline),
+    0 40px 90px -24px rgba(15, 23, 42, 0.4);
+}
+@keyframes apple-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.95);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+.modal-close {
+  border-radius: 50%;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    transform 0.2s var(--apple-ease-spring);
+}
+.modal-close:hover {
+  background-color: rgba(15, 23, 42, 0.06);
+}
+.modal-close:active {
+  transform: scale(0.85);
+}
+
+/* ------------------------- 即时反馈 ------------------------- */
+
+/* 消除移动端高亮闪烁 */
+button, a, label, .custom-dropdown-trigger, .custom-dropdown-item {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 按下即反馈（不等待 click） */
+button:active,
+.btn:active,
+.pagination button:active,
+.actions button:active {
+  transform: scale(0.97);
+}
+.modal-close:active {
+  transform: scale(0.85);
+}
+
+/* 键盘可达性：清晰聚焦环 */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[contenteditable]:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.6);
+  outline-offset: 2px;
+}
+
+/* 表单控件：聚焦柔光（替换生硬 ring） */
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 返回首页链接：与退出按钮同风格，灰色幽灵按钮 */
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, box-shadow 0.25s var(--apple-ease-spring),
+    transform 0.22s var(--apple-ease-spring);
+}
+.home-link:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+  color: #111827;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.15);
+}
+.home-link:active {
+  transform: scale(0.97);
+}
+
+/* 主题切换按钮：与幽灵按钮同风格，图标切换 */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 0.5rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, box-shadow 0.25s var(--apple-ease-spring),
+    transform 0.22s var(--apple-ease-spring);
+}
+.theme-toggle-btn:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+  color: #111827;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.15);
+}
+.theme-toggle-btn:active {
+  transform: scale(0.92);
+}
+/* 亮色模式显示月亮图标，暗色模式显示太阳图标 */
+html:not(.dark) .theme-toggle-btn .icon-sun { display: none; }
+html.dark .theme-toggle-btn .icon-moon { display: none; }
+
+/* 暗色模式 → 主题按钮 */
+html.dark .theme-toggle-btn {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fbbf24;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html.dark .theme-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fde047;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3);
+}
+
+/* 设置入口等幽灵按钮 hover 过渡更顺滑 */
+.logout-btn,
+.refresh-btn {
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, box-shadow 0.25s var(--apple-ease-spring),
+    transform 0.22s var(--apple-ease-spring);
+}
+.logout-btn:hover,
+.refresh-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.15);
+}
+.logout-btn:active,
+.refresh-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* 搜索框（contenteditable）：聚焦 spring 抬升 */
+[contenteditable][role="searchbox"] {
+  transition: border-color 0.2s ease, box-shadow 0.25s var(--apple-ease-spring),
+    transform 0.22s var(--apple-ease-spring), background-color 0.2s ease;
+}
+[contenteditable][role="searchbox"]:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px -4px rgba(59, 130, 246, 0.2);
+}
+
+/* ------------------------- 暗色模式 ------------------------- */
+
+html.dark body {
+  background: linear-gradient(180deg, #1c1c1e 0%, #161618 40%, #121214 100%) !important;
+  color: #e5e7eb;
+}
+
+/* 顶栏：深色玻璃 */
+html.dark .admin-header {
+  background: rgba(28, 28, 30, 0.82) !important;
+  backdrop-filter: var(--apple-blur) !important;
+  -webkit-backdrop-filter: var(--apple-blur) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 20px 40px -20px rgba(0, 0, 0, 0.5) !important;
+}
+html.dark .admin-header h1 {
+  color: #f3f4f6 !important;
+}
+html.dark .admin-subtitle {
+  color: #9ca3af;
+}
+
+/* 工具栏：深色玻璃 */
+html.dark .import-export {
+  background: rgba(28, 28, 30, 0.85) !important;
+  backdrop-filter: var(--apple-blur) !important;
+  -webkit-backdrop-filter: var(--apple-blur) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 16px 32px -20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 搜索框暗色 */
+html.dark [contenteditable][role="searchbox"] {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #e5e7eb !important;
+}
+html.dark [contenteditable][role="searchbox"][data-empty="true"]::before {
+  color: #6b7280 !important;
+}
+html.dark [contenteditable][role="searchbox"]:focus {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(96, 165, 250, 0.5) !important;
+  box-shadow: 0 4px 14px -4px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* 表格容器暗色 */
+html.dark .table-wrapper {
+  background: rgba(28, 28, 30, 0.9) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 12px 24px -16px rgba(0, 0, 0, 0.4) !important;
+}
+html.dark th {
+  background: #1c1c1e !important;
+  color: #d1d5db !important;
+}
+html.dark th,
+html.dark td {
+  border-bottom-color: #2c2c2e !important;
+}
+html.dark tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+html.dark table {
+  color: #e5e7eb !important;
+}
+
+/* 分段控件暗色 */
+html.dark .tab-buttons {
+  background-color: rgba(44, 44, 46, 0.75) !important;
+}
+html.dark .tab-button {
+  color: #9ca3af !important;
+}
+html.dark .tab-button:hover:not(.active) {
+  color: #e5e7eb !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .tab-button.active {
+  background-color: #3a3a3c !important;
+  color: #f3f4f6 !important;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 下拉菜单暗色 */
+html.dark .custom-dropdown-menu {
+  background: rgba(44, 44, 46, 0.98) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 24px 48px -16px rgba(0, 0, 0, 0.5) !important;
+  color: #e5e7eb !important;
+}
+html.dark .custom-dropdown-item {
+  color: #d1d5db !important;
+}
+html.dark .custom-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+html.dark .custom-dropdown-trigger {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #e5e7eb !important;
+}
+
+/* 模态框暗色 */
+html.dark .modal {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+html.dark .modal-content {
+  background: rgba(28, 28, 30, 0.97) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 40px 90px -24px rgba(0, 0, 0, 0.7) !important;
+  color: #e5e7eb !important;
+}
+html.dark .modal-content h2 {
+  color: #f3f4f6 !important;
+}
+html.dark .modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .modal p,
+html.dark .modal .text-sm,
+html.dark .modal .text-gray-600 {
+  color: #9ca3af !important;
+}
+html.dark .modal-content .bg-gray-50 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .modal-content .bg-white {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark .modal-content input[type="text"],
+html.dark .modal-content input[type="number"],
+html.dark .modal-content select,
+html.dark .modal-content textarea {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #e5e7eb !important;
+}
+html.dark .modal-content label,
+html.dark .modal-content .text-gray-700 {
+  color: #d1d5db !important;
+}
+html.dark .modal-content .text-gray-500,
+html.dark .modal-content .text-gray-400 {
+  color: #6b7280 !important;
+}
+html.dark .modal-content .border-gray-100,
+html.dark .modal-content .border {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 幽灵按钮暗色：返回首页 / 退出登录 */
+html.dark .home-link,
+html.dark .logout-btn {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #d1d5db !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark .home-link:hover,
+html.dark .logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #f3f4f6 !important;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 刷新缓存暗色 */
+html.dark .refresh-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 表单控件暗色 */
+html.dark input[type="text"],
+html.dark input[type="number"],
+html.dark input[type="search"],
+html.dark select,
+html.dark textarea {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #e5e7eb !important;
+}
+html.dark input[type="text"]:focus,
+html.dark input[type="number"]:focus,
+html.dark input[type="search"]:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: rgba(96, 165, 250, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+}
+
+/* 分页暗色 */
+html.dark .pagination button {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #d1d5db !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .pagination button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
+html.dark .pagination button:disabled {
+  opacity: 0.4;
+}
+
+/* 编辑/删除按钮暗色 */
+html.dark .edit-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+html.dark .del-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 工具栏按钮暗色阴影 */
+html.dark .import-export button:not(.custom-dropdown-trigger) {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* toggle switch 暗色 */
+html.dark .switch .slider {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+html.dark .switch input:checked + .slider {
+  background-color: var(--apple-blue) !important;
+}
+
+/* 分类操作区暗色 */
+html.dark .category-toolbar .category-hint {
+  color: #9ca3af !important;
+}
+html.dark #refreshCategories {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #d1d5db !important;
+}
+html.dark #refreshCategories:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 书签列表卡片暗色 */
+html.dark .site-card {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .site-card:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+html.dark .site-card .site-title {
+  color: #e5e7eb !important;
+}
+html.dark .site-card .inline-flex,
+html.dark .site-card .bg-gray-100 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+}
+html.dark .site-card p,
+html.dark .site-card .text-gray-500 {
+  color: #9ca3af !important;
+}
+html.dark .site-card .text-gray-400 {
+  color: #6b7280 !important;
+}
+html.dark .site-card .border-t,
+html.dark .site-card .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark .site-card .bg-gray-50 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+html.dark .site-card .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .site-card img[src] {
+  opacity: 0.9;
+}
+
+/* 设置面板暗色 */
+html.dark .settings-modal {
+  color: #e5e7eb !important;
+}
+html.dark .settings-preview-pane {
+  background: #1a1a1d !important;
+}
+html.dark .settings-preview-header {
+  color: #e5e7eb !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .settings-preview-kicker {
+  color: #6b7280 !important;
+}
+html.dark .settings-preview-header h3 {
+  color: #f3f4f6 !important;
+}
+html.dark .preview-device-btn {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #9ca3af !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .preview-device-btn.active {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #f3f4f6 !important;
+}
+html.dark .preview-device-btn:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* 设置面板左侧表单区域暗色 */
+html.dark .settings-panel-pane {
+  background: #1c1c1e !important;
+  color: #e5e7eb !important;
+}
+html.dark .settings-modal .modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .settings-modal .modal-header h3,
+html.dark .settings-modal .modal-title {
+  color: #f3f4f6 !important;
+}
+html.dark .settings-modal .modal-close-btn {
+  color: #9ca3af !important;
+}
+html.dark .settings-modal .modal-close-btn:hover {
+  color: #e5e7eb !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+/* 设置标签页按钮 */
+html.dark .settings-tab-btn {
+  color: #9ca3af !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .settings-tab-btn:hover {
+  color: #e5e7eb !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark .settings-tab-btn.active {
+  color: #f3f4f6 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+/* 设置面板内所有灰底卡片 */
+html.dark .settings-panel-pane .bg-gray-50 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark .settings-panel-pane .hover\\:bg-gray-50:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+html.dark .settings-panel-pane .bg-white {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+/* 设置面板内所有文字 */
+html.dark .settings-panel-pane label,
+html.dark .settings-panel-pane .text-gray-700,
+html.dark .settings-panel-pane .font-medium {
+  color: #d1d5db !important;
+}
+html.dark .settings-panel-pane .text-gray-500,
+html.dark .settings-panel-pane .text-gray-400,
+html.dark .settings-panel-pane .text-xs.text-gray-500 {
+  color: #6b7280 !important;
+}
+html.dark .settings-panel-pane .text-sm.font-bold {
+  color: #d1d5db !important;
+}
+html.dark .settings-panel-pane h4 {
+  color: #d1d5db !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+/* 设置面板内所有边框 */
+html.dark .settings-panel-pane .border-gray-200,
+html.dark .settings-panel-pane .border-gray-100,
+html.dark .settings-panel-pane .border-b {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+/* 分段控件按钮（桌面/手机、列数、风格） */
+html.dark .card-segment-option {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #9ca3af !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .card-segment-option.active,
+html.dark .card-segment-option[aria-pressed="true"],
+html.dark .card-segment-option[aria-selected="true"] {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #f3f4f6 !important;
+}
+html.dark .card-segment-option:hover:not(.active):not([aria-pressed="true"]):not([aria-selected="true"]) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* 卡片风格按钮 */
+html.dark .card-style-btn {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #9ca3af !important;
+}
+html.dark .card-style-btn.active {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #f3f4f6 !important;
+}
+/* 动画选项按钮 */
+html.dark .card-animation-option {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #9ca3af !important;
+}
+html.dark .card-animation-option.active,
+html.dark .card-animation-option[aria-pressed="true"] {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #f3f4f6 !important;
+}
+/* 设置面板内的表单控件 — 覆盖所有类型 */
+html.dark .settings-modal select,
+html.dark .settings-modal input[type="text"],
+html.dark .settings-modal input[type="password"],
+html.dark .settings-modal input[type="number"],
+html.dark .settings-modal input[type="url"],
+html.dark .settings-modal input[type="color"],
+html.dark .settings-modal textarea,
+html.dark .settings-modal .form-input,
+html.dark .settings-panel-pane select,
+html.dark .settings-panel-pane input[type="text"],
+html.dark .settings-panel-pane input[type="password"],
+html.dark .settings-panel-pane input[type="number"],
+html.dark .settings-panel-pane input[type="url"],
+html.dark .settings-panel-pane input[type="color"],
+html.dark .settings-panel-pane textarea,
+html.dark .settings-panel-pane .form-input {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #e5e7eb !important;
+}
+/* option 下拉选项暗色 */
+html.dark .settings-modal select option,
+html.dark .settings-panel-pane select option {
+  background-color: #1c1c1e !important;
+  color: #e5e7eb !important;
+}
+html.dark .settings-modal select:focus,
+html.dark .settings-modal input:focus,
+html.dark .settings-modal textarea:focus,
+html.dark .settings-modal .form-input:focus,
+html.dark .settings-panel-pane select:focus,
+html.dark .settings-panel-pane input:focus,
+html.dark .settings-panel-pane textarea:focus {
+  border-color: rgba(96, 165, 250, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+}
+/* placeholder 暗色 */
+html.dark .settings-modal input::placeholder,
+html.dark .settings-modal .form-input::placeholder {
+  color: #6b7280 !important;
+}
+/* range 滑条 */
+html.dark .settings-panel-pane input[type="range"] {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* 卡片预览区 */
+html.dark #previewWrapper {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+/* 设置面板内的 switch 标签文字 */
+html.dark .settings-panel-pane .cursor-pointer.select-none {
+  color: #d1d5db !important;
+}
+/* 设置面板内的提示小字 */
+html.dark .settings-panel-pane .form-hint,
+html.dark .settings-panel-pane p.text-xs {
+  color: #6b7280 !important;
+}
+/* modal-footer 暗色 */
+html.dark .modal-footer {
+  background-color: #1c1c1e !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 修复预览区域（首页预览/移动预览）暗色 */
+html.dark .home-live-preview,
+body.dark .home-live-preview,
+html.dark .settings-preview-pane .home-live-preview,
+body.dark .settings-preview-pane .home-live-preview {
+  background: #121214 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+}
+html.dark .home-live-preview-bg,
+body.dark .home-live-preview-bg,
+html.dark .settings-preview-pane .home-live-preview-bg,
+body.dark .settings-preview-pane .home-live-preview-bg {
+  background-color: transparent !important;
+  filter: none !important;
+}
+html.dark .home-live-preview-vignette,
+body.dark .home-live-preview-vignette,
+html.dark .settings-preview-pane .home-live-preview-vignette,
+body.dark .settings-preview-pane .home-live-preview-vignette {
+  background: rgba(0, 0, 0, 0.28) !important;
+  opacity: 1 !important;
+}
+html.dark .home-live-preview.has-wallpaper .home-live-preview-vignette,
+body.dark .home-live-preview.has-wallpaper .home-live-preview-vignette,
+html.dark .settings-preview-pane .home-live-preview.has-wallpaper .home-live-preview-vignette,
+body.dark .settings-preview-pane .home-live-preview.has-wallpaper .home-live-preview-vignette {
+  background: rgba(0, 0, 0, 0.32) !important;
+  opacity: 1 !important;
+}
+html.dark .home-live-preview-frame,
+body.dark .home-live-preview-frame,
+html.dark .settings-preview-pane .home-live-preview-frame,
+body.dark .settings-preview-pane .home-live-preview-frame {
+  color: #e5e7eb !important;
+}
+html.dark .live-preview-sidebar,
+body.dark .live-preview-sidebar,
+html.dark .settings-preview-pane .live-preview-sidebar,
+body.dark .settings-preview-pane .live-preview-sidebar {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-right-color: rgba(255, 255, 255, 0.05) !important;
+  color: #d1d5db !important;
+}
+html.dark .live-preview-mobile-overlay,
+body.dark .live-preview-mobile-overlay,
+html.dark .settings-preview-pane .live-preview-mobile-overlay,
+body.dark .settings-preview-pane .live-preview-mobile-overlay {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+html.dark .modal-footer .button-tertiary {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #d1d5db !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* 设置面板内所有浅色背景元素 */
+html.dark .settings-panel-pane [class*="bg-gray"],
+html.dark .settings-panel-pane [class*="bg-white"],
+html.dark .settings-panel-pane .card-option-panel,
+html.dark .settings-panel-pane .bulk-action-box {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+html.dark .settings-panel-pane .card-option-panel {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+/* AI 一键补全按钮 */
+html.dark .button-secondary {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #d1d5db !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark .button-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+}
+html.dark .settings-panel-pane [class*="border-gray"] {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark .settings-panel-pane [class*="text-gray-700"],
+html.dark .settings-panel-pane [class*="text-gray-800"],
+html.dark .settings-panel-pane [class*="text-gray-900"] {
+  color: #d1d5db !important;
+}
+html.dark .settings-panel-pane [class*="text-gray-400"],
+html.dark .settings-panel-pane [class*="text-gray-500"],
+html.dark .settings-panel-pane [class*="text-gray-600"] {
+  color: #6b7280 !important;
+}
+
+/* 设置面板 → 实时预览卡片暗色（覆盖内联样式） */
+html.dark .live-preview-meta h4,
+html.dark [data-preview-role="statsText"] {
+  color: #e5e7eb !important;
+}
+html.dark .live-preview-meta p,
+html.dark [data-preview-role="hitokotoText"] {
+  color: #9ca3af !important;
+}
+html.dark .live-preview-footer {
+  color: #9ca3af !important;
+}
+html.dark .live-preview-footer .live-preview-footer-separator {
+  color: rgba(255, 255, 255, 0.2) !important;
+}
+/* 预览卡片内联颜色覆盖 */
+html.dark .live-card .site-title {
+  color: #e5e7eb !important;
+}
+html.dark .live-card .preview-desc {
+  color: #9ca3af !important;
+}
+html.dark .live-card .preview-category {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+}
+html.dark .live-card .preview-links span {
+  color: #6b7280 !important;
+}
+html.dark .live-card .copy-btn {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+}
+
+/* ------------------------- 减少动态偏好 ------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .modal-content,
+  .custom-dropdown-menu,
+  .tab-content,
+  .import-export button,
+  .pagination button,
+  .actions button,
+  .table-wrapper {
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .table-wrapper {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+}
+
+/* ---- 无障碍：减少透明度 ---- */
+@media (prefers-reduced-transparency: reduce) {
+  .admin-header,
+  .import-export,
+  .table-wrapper {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .tab-buttons {
+    background-color: #e5e7eb !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .modal {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .modal-content {
+    background: #ffffff !important;
+  }
+}
+
+/* ---- 无障碍：高对比度 ---- */
+@media (prefers-contrast: more) {
+  .admin-header,
+  .import-export,
+  .table-wrapper,
+  .modal-content {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+  }
+  button, .btn, .tab-button {
+    border: 2px solid currentColor !important;
+  }
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea,
+  [contenteditable] {
+    border: 2px solid #000 !important;
+  }
+  th {
+    background: #e5e5ea !important;
+  }
+  th, td {
+    border-bottom: 2px solid #000 !important;
+  }
+}

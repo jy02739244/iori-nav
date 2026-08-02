@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iori-nav · Apple 风格方向</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif; color: #1d1d1f; background: #f5f5f7; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 44px clamp(20px, 5vw, 72px); background: radial-gradient(circle at 20% 0%, #e7efff 0, transparent 30%), #f5f5f7; }
+    h1 { margin: 0; letter-spacing: -.045em; font-size: clamp(28px, 4vw, 46px); }
+    .intro { color: #6e6e73; font-size: 17px; line-height: 1.55; margin: 12px 0 32px; }
+    .directions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    .direction { cursor: pointer; border-radius: 26px; overflow: hidden; border: 1px solid rgba(255,255,255,.85); background: rgba(255,255,255,.75); box-shadow: 0 16px 42px rgba(31, 38, 62, .12); transition: transform .24s cubic-bezier(.2,.8,.2,1), box-shadow .24s; }
+    .direction:hover, .direction.selected { transform: translateY(-6px); box-shadow: 0 25px 54px rgba(31, 38, 62, .19); }
+    .direction.selected { outline: 3px solid #007aff; outline-offset: 3px; }
+    .preview { height: 300px; padding: 15px; position: relative; overflow: hidden; }
+    .label { display: inline-block; margin: 18px 18px 6px; padding: 5px 9px; border-radius: 99px; color: #0071e3; background: #e9f3ff; font-size: 12px; font-weight: 700; }
+    h2 { margin: 5px 18px 6px; font-size: 22px; letter-spacing: -.03em; }
+    .copy { margin: 0 18px 20px; color: #6e6e73; font-size: 14px; line-height: 1.45; }
+    .canvas { height: 100%; border-radius: 17px; overflow: hidden; padding: 14px; color: #1d1d1f; }
+    .nav { display:flex; align-items:center; justify-content:space-between; font-size: 8px; font-weight: 650; }
+    .dots { display:flex; gap:4px; } .dots b { height:7px; width:7px; border-radius:50%; background:#ff5f57; } .dots b:nth-child(2){background:#febc2e}.dots b:nth-child(3){background:#28c840}
+    .hero { margin-top: 24px; font-size: 19px; font-weight: 720; line-height: .98; letter-spacing:-.06em; }
+    .sub { margin-top: 7px; font-size: 7px; color:#6e6e73; }
+    .cards { display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 17px; }
+    .site { min-height:86px; padding:10px; border-radius:13px; box-shadow: 0 6px 14px rgba(0,0,0,.06); }
+    .icon { height:22px;width:22px;border-radius:7px;background:linear-gradient(135deg,#007aff,#5ac8fa); } .site:nth-child(2) .icon{background:linear-gradient(135deg,#ff9f0a,#ff375f)} .site:nth-child(3) .icon{background:linear-gradient(135deg,#30d158,#64d2ff)}
+    .line { height:6px;border-radius:9px;background:currentColor;opacity:.8;margin-top:9px;width:66%; }.short{width:42%;opacity:.25;margin-top:6px}
+    .calm { background: linear-gradient(145deg, #f9fbff, #e7efff); }
+    .calm .site { background:rgba(255,255,255,.8); backdrop-filter: blur(14px); }
+    .calm:after { content:""; position:absolute; width:150px; height:150px; border-radius:50%; background:#b9d4ff; filter:blur(26px); opacity:.6; right:-55px; bottom:-70px; }
+    .studio { background: #111319; color:#f5f5f7; }
+    .studio .sub{color:#a1a1a6}.studio .site{background:#20242d;box-shadow:none}.studio .nav{color:#f5f5f7}.studio .line{color:#f5f5f7}.studio .icon{border-radius:50%}
+    .library { background: linear-gradient(130deg,#fbf5ed,#f1e4d3); }
+    .library .site { background:#fffcf7; border:1px solid rgba(123,91,58,.1); box-shadow:0 5px 12px rgba(99,64,20,.08); }
+    .library .hero { font-family: ui-rounded, "PingFang SC", sans-serif; }
+    .library .nav { padding-bottom:7px; border-bottom:1px solid rgba(80,50,20,.12); }
+    .next { margin-top:32px; padding:17px 20px; border-radius:18px; background:rgba(255,255,255,.65); color:#4b4b50; font-size:14px; }
+    @media(max-width:800px){ body{padding:28px 18px}.directions{grid-template-columns:1fr}.preview{height:245px;} }
+  </style>
+</head>
+<body>
+  <h1>为「灰色轨迹」选择气质</h1>
+  <p class="intro">三种都保留清晰信息层级、系统字体、即时按压反馈与减弱动态效果；区别在于内容的情绪和材料重量。点击任一卡片即可选中。</p>
+  <main class="directions">
+    <article class="direction" data-choice="calm" onclick="pick(this)">
+      <div class="preview calm canvas"><div class="nav"><span>灰色轨迹</span><span class="dots"><b></b><b></b><b></b></span></div><div class="hero">你的常用<br>目的地</div><div class="sub">快速、安静、随时可达</div><div class="cards"><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div></div></div>
+      <span class="label">推荐</span><h2>澄澈玻璃</h2><p class="copy">轻盈浅色背景、半透明导航与细腻的景深，最贴近 iOS 的平静与效率。</p>
+    </article>
+    <article class="direction" data-choice="studio" onclick="pick(this)">
+      <div class="preview studio canvas"><div class="nav"><span>灰色轨迹</span><span class="dots"><b></b><b></b><b></b></span></div><div class="hero">让灵感<br>保持专注</div><div class="sub">深色空间，内容优先</div><div class="cards"><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div></div></div>
+      <span class="label">高对比</span><h2>专注工作室</h2><p class="copy">深色石墨基底、强层次与圆形应用图标，适合长期桌面使用和深色偏好。</p>
+    </article>
+    <article class="direction" data-choice="library" onclick="pick(this)">
+      <div class="preview library canvas"><div class="nav"><span>灰色轨迹</span><span>⌕ &nbsp; ☼</span></div><div class="hero">你的数字<br>书架</div><div class="sub">把好工具留在伸手可及的地方</div><div class="cards"><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div><div class="site"><div class="icon"></div><div class="line"></div><div class="line short"></div></div></div></div>
+      <span class="label">温暖</span><h2>触感书库</h2><p class="copy">纸张般的暖白、克制的边界和较少的玻璃感，让书签收藏更有归属感。</p>
+    </article>
+  </main>
+  <p class="next">你可直接回复「A / B / C」或说出希望混合的元素。选定方向后，我会给出完整的布局、图标和动效方案供你确认。</p>
+  <script>function pick(el){document.querySelectorAll('.direction').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');fetch('/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'click',choice:el.dataset.choice,text:el.querySelector('h2').textContent,timestamp:Date.now()})});}</script>
+</body>
+</html>

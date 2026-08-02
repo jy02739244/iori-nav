@@ -204,8 +204,12 @@
       const sitesGrid = document.getElementById('sitesGrid');
       if (!sitesGrid) return;
 
-      sitesGrid.style.transition = 'opacity 0.15s ease-out';
+      // —— 分类切换过渡（Apple 风格）——
+      // 1) 旧卡片柔和淡出 + 轻微下移（materialize 消散），而非瞬时消失
+      const fadeOutMs = 160;
+      sitesGrid.style.transition = 'opacity 0.16s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)';
       sitesGrid.style.opacity = '0';
+      sitesGrid.style.transform = 'translateY(6px)';
 
       try {
         if (!window.IORI_SITES || !cardController) {
@@ -213,10 +217,12 @@
           return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, fadeOutMs));
 
+        // 2) 复位网格（新卡片将以自身 spring 交错动画从 opacity 0 浮现）
         sitesGrid.style.transition = 'none';
         sitesGrid.style.opacity = '1';
+        sitesGrid.style.transform = 'translateY(0)';
 
         const filteredSites = cardController.getSitesForCatalog(catalogId);
         cardController.setActiveCatalogId(catalogId);

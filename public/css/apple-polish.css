@@ -1,0 +1,698 @@
+/* =========================================================================
+   Apple Design Polish Layer — 首页
+   -------------------------------------------------------------------------
+   在 style.css / tailwind.min.css 之后引入。
+   遵循 Apple 设计语言：系统字体优先、材质化层次、即时反馈、
+   spring 动效、进入/退出同路径、尊重减少动态偏好。
+   ========================================================================= */
+
+:root {
+  /* 系统字体栈：内建光学尺寸、字距与行高调优 */
+  --apple-font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "SF Pro Display", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+
+  /* spring 风格的缓动曲线（近似 Apple 的 spring） */
+  --apple-ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --apple-ease-material: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 材质参数 */
+  --apple-blur: blur(20px) saturate(180%);
+  --apple-hairline: rgba(0, 0, 0, 0.06);
+
+  /* Apple 语义色彩体系（light mode） */
+  --apple-blue: #007AFF;
+  --apple-blue-hover: #0062cc;
+  --apple-blue-pressed: #004999;
+  --apple-blue-subtle: rgba(0, 122, 255, 0.1);
+  --apple-green: #34C759;
+  --apple-green-subtle: rgba(52, 199, 89, 0.1);
+  --apple-red: #FF3B30;
+  --apple-orange: #FF9500;
+  --apple-gray-50: #f5f5f7;
+  --apple-gray-100: #e8e8ed;
+  --apple-gray-200: #d2d2d7;
+  --apple-gray-400: #8e8e93;
+  --apple-gray-600: #636366;
+  --apple-gray-800: #3a3a3c;
+  --apple-bg: #f2f2f7;
+  --apple-surface: rgba(255, 255, 255, 0.82);
+  --apple-surface-solid: #ffffff;
+}
+
+/* Light mode: Apple 冷灰背景渐变（覆盖 Tailwind 的 bg-secondary-50 暖米色） */
+body {
+  background: linear-gradient(180deg, #f5f5f7 0%, #f2f2f7 30%, #ececf1 100%);
+  background-attachment: fixed;
+}
+
+/* Dark mode background */
+.dark body {
+  background: linear-gradient(180deg, #1c1c1e 0%, #161618 40%, #121214 100%);
+  background-attachment: fixed;
+}
+
+/* ------------------------- 字体与渲染 ------------------------- */
+body.font-sans {
+  font-family: var(--apple-font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* 全局：平滑滚动 + 光学尺寸 */
+html {
+  scroll-behavior: smooth;
+  font-optical-sizing: auto;
+}
+
+/* 大标题：紧行高 + 负字距；副标题松行高（排版成组） */
+.home-title-block h1 {
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-weight: 700;
+  font-optical-sizing: auto;
+}
+
+.home-title-block p {
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* 卡片标题：轻微负字距，更精致 */
+.site-card-content h3 {
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.site-card-content p,
+.preview-desc {
+  letter-spacing: 0.005em;
+  line-height: 1.55;
+}
+
+/* 页脚：统一层级 */
+#app-scroll > .main-content > footer {
+  letter-spacing: 0.01em;
+}
+
+/* 小字 / 标签：微正字距提升可读性 */
+.text-xs, .site-category, .copy-btn, .category-nav-top-wrap .nav-btn {
+  letter-spacing: 0.01em;
+}
+
+/* ------------------------- 材质与深度 ------------------------- */
+
+/* 侧边栏：玻璃材质（非壁纸模式）+ 滚动边缘渐变遮罩（Apple 风格：不硬切，柔和淡出）。
+   壁纸模式由 style.css 的规则接管 */
+.sidebar {
+  background: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: var(--apple-blur);
+  -webkit-backdrop-filter: var(--apple-blur);
+  border-right-color: var(--apple-hairline) !important;
+  box-shadow: 0 0 0 1px var(--apple-hairline),
+    12px 0 40px -16px rgba(15, 23, 42, 0.25);
+  transition: transform 0.32s var(--apple-ease-spring),
+    background-color 0.3s ease;
+  /* 滚动边缘渐变：上下两端淡出，中间全显示 */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8px, black calc(100% - 12px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 8px, black calc(100% - 12px), transparent 100%);
+}
+
+.dark .sidebar {
+  background: rgba(17, 24, 39, 0.72) !important;
+  border-right-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04),
+    12px 0 40px -16px rgba(0, 0, 0, 0.6);
+}
+
+/* 侧边栏分类项：悬停圆润高亮 */
+#sidebar a[data-id],
+#sidebar a[href="?catalog=all"] {
+  transition: background-color 0.2s ease, color 0.2s ease,
+    transform 0.25s var(--apple-ease-spring);
+}
+#sidebar a[data-id]:hover,
+#sidebar a[href="?catalog=all"]:hover {
+  transform: translateX(2px);
+}
+
+/* 头部层次：壁纸/纯色模式下统一柔和过渡 */
+header {
+  transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* 卡片阴影分层：hover 更深、更柔和的 spring 上浮。
+   关键：只动画合成器友好属性 transform / box-shadow / border-color，
+   并使用 !important 抵消 style.css 里 hover 的 border-width 1px→2px 变化
+   （border-width 变化会触发 layout，与 transform 并行导致卡顿）。 */
+.site-card {
+  transition: transform 0.3s var(--apple-ease-spring),
+    box-shadow 0.34s var(--apple-ease-spring),
+    background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  will-change: transform;
+  transform: translateZ(0);
+  border-width: 1px !important;
+}
+/* —— Apple 交互式 hover：卡片轻柔上浮（不整体放大），
+     焦点落在图标的"被抬起"与内容的点亮上，制造纵深而非弹跳 —— */
+.site-card:hover {
+  /* 固定边框宽度，只改颜色：消灭 layout，纯合成层动画 */
+  border-width: 1px !important;
+  border-style: solid;
+  border-color: var(--card-hover-border, #4a7fbf);
+  box-shadow: 0 28px 56px -16px rgba(15, 23, 42, 0.3);
+  transform: translateY(-5px);
+}
+.dark .site-card:hover {
+  box-shadow: 0 28px 56px -16px rgba(0, 0, 0, 0.6);
+  border-color: var(--card-hover-border-dark, rgba(96, 165, 250, 0.7));
+}
+
+/* hover 时图标被"抬起"：放大 + 微微旋转 + 上浮（spring），
+   与卡片的浅上浮形成层次，不再整体 scale 弹跳 */
+.site-card:not(.style-3):hover .site-icon > img,
+.site-card:not(.style-3):hover .site-icon > div {
+  transform: scale(1.12) rotate(-3deg) translateY(-1px);
+  box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.35);
+}
+.site-card.style-3:hover .site-icon > img,
+.site-card.style-3:hover .site-icon > div {
+  transform: scale(1.1);
+}
+
+/* hover 时标题点亮为 Apple 蓝（体现可互动；只动 color = paint，与合成并行流畅） */
+.site-card:hover .site-title {
+  color: var(--apple-blue) !important;
+  --hover-title: 1;
+}
+.dark .site-card:hover .site-title {
+  color: #60a5fa !important;
+}
+
+/* hover 时分类徽章高亮（只动 background/color = paint） */
+.site-card:hover .site-category {
+  background-color: var(--apple-blue-subtle) !important;
+  color: var(--apple-blue) !important;
+  border-color: rgba(0, 122, 255, 0.2) !important;
+}
+.dark .site-card:hover .site-category {
+  background-color: rgba(96, 165, 250, 0.18) !important;
+  color: #93c5fd !important;
+  border-color: rgba(96, 165, 250, 0.25) !important;
+}
+
+/* hover 时描述轻微变深，提升可读层次 */
+.site-card:hover .site-card-content p {
+  color: #4b5563;
+}
+.dark .site-card:hover .site-card-content p {
+  color: #9ca3af;
+}
+
+/* 分类导航按钮：spring 过渡 + spring 按下反馈。覆盖 style.css 的 ease */
+.nav-btn {
+  transition: background-color 0.25s ease, color 0.2s ease,
+    border-color 0.25s ease, box-shadow 0.3s var(--apple-ease-spring),
+    transform 0.22s var(--apple-ease-spring);
+}
+.nav-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.18);
+}
+.nav-btn:active {
+  transform: scale(0.95);
+}
+/* 激活态：微上浮以示当前 */
+.nav-btn.active {
+  transform: translateY(-1px);
+}
+
+/* 搜索引擎切换选项：spring */
+.search-engine-option {
+  transition: background-color 0.2s ease, color 0.2s ease,
+    transform 0.22s var(--apple-ease-spring);
+}
+.search-engine-option:hover {
+  transform: translateY(-1px);
+}
+
+/* 搜索框：聚焦时轻微抬升 + 更透亮 */
+.search-input-target {
+  transition: transform 0.25s var(--apple-ease-spring),
+    box-shadow 0.25s ease, background-color 0.25s ease,
+    border-color 0.25s ease;
+}
+.search-input-target:focus {
+  transform: translateY(-1px);
+}
+
+/* 模态框 scrim：柔焦背景，聚焦内容 */
+#addSiteModal {
+  background-color: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: opacity 0.28s ease, visibility 0.28s ease;
+}
+
+/* 模态框内容：materialize（材质到达），进入/退出同一路径 */
+#addSiteModal .max-w-md {
+  transform: scale(1);
+  transition: transform 0.34s var(--apple-ease-material),
+    opacity 0.26s ease;
+  box-shadow: 0 0 0 1px var(--apple-hairline),
+    0 40px 80px -20px rgba(15, 23, 42, 0.35);
+}
+#addSiteModal .max-w-md.translate-y-8 {
+  transform: translateY(28px) scale(0.96);
+  opacity: 0;
+}
+
+/* ------------------------- 即时反馈 ------------------------- */
+
+/* 消除移动端点击高亮闪烁 */
+a, button, label, .nav-btn, .search-engine-option, .top-action-icon {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 指针按下瞬间反馈（不必等 click） */
+.site-card:active {
+  transform: translateY(-2px) scale(0.985);
+}
+.nav-btn:active,
+.search-engine-option:active {
+  transform: scale(0.96);
+}
+.top-action-icon:active {
+  transform: scale(0.88);
+}
+#backToTop:active,
+#addSiteBtnFloating:active {
+  transform: scale(0.92);
+}
+
+/* 键盘可达性：清晰聚焦环 */
+.site-card:focus-visible,
+.nav-btn:focus-visible,
+.top-action-icon:focus-visible,
+.search-input-target:focus-visible {
+  outline: 2px solid rgba(65, 109, 157, 0.6);
+  outline-offset: 3px;
+}
+
+/* 回到顶部 / 浮动按钮：柔光层次 + spring 弹出/消失 */
+#backToTop,
+#addSiteBtnFloating {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.35s var(--apple-ease-spring), opacity 0.25s ease,
+    box-shadow 0.25s ease, background-color 0.25s ease;
+}
+/* 隐藏态：缩小 + 淡出，而非仅 opacity */
+#backToTop.opacity-0,
+#addSiteBtnFloating.opacity-0 {
+  transform: scale(0.5);
+  pointer-events: none;
+}
+#backToTop:hover,
+#addSiteBtnFloating:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.3);
+}
+
+/* ------------------------- 动效：spring 化 ------------------------- */
+
+/* 卡片进场动画：统一 spring 收尾，取消过度弹性 */
+.card-anim-enter {
+  animation-duration: 0.5s;
+  animation-timing-function: var(--apple-ease-spring);
+}
+.card-anim-radial {
+  animation-duration: 0.42s;
+}
+
+/* 覆盖 style.css 的默认径向进场：去掉 scale(0.3→1.1→1) 的过冲弹跳，
+   改为 Apple 平滑的「上浮 + 淡入 + 微缩无过冲」（materialize 进场） */
+@keyframes cardRadialIn {
+  0% { opacity: 0; transform: translateY(22px) scale(0.97); }
+  60% { opacity: 1; transform: translateY(-2px) scale(1.008); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 覆盖常用的弹跳进场，统一为无过冲的 spring 收尾 */
+@keyframes cardSlideUpIn {
+  0% { opacity: 0; transform: translateY(26px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes cardFlipShellIn {
+  0% { opacity: 0; transform: translateY(18px) scale(0.985); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes cardFrostedFlipShellIn {
+  0% { opacity: 0; transform: translateY(18px) scale(0.985); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 复制提示：柔和浮现 */
+.copy-success-animation {
+  animation-duration: 1.8s;
+}
+
+/* 主题切换：已有 View Transition，仅保证时长为温和 spring */
+.theme-animating::view-transition-group(root) {
+  animation-duration: 0.45s;
+}
+
+/* ------------------------- 减少动态偏好 ------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .card-anim-enter,
+  .site-card,
+  #addSiteModal,
+  #addSiteModal .max-w-md,
+  .sidebar,
+  .search-input-target,
+  .nav-btn,
+  #backToTop,
+  #addSiteBtnFloating {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .sidebar {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+}
+
+/* 壁纸模式：接管既有玻璃（保留模糊/透明度），统一发丝线与柔和阴影 */
+html:not(.dark) body.custom-wallpaper .sidebar,
+html.dark body.custom-wallpaper .sidebar {
+  border-right-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06),
+    12px 0 40px -16px rgba(0, 0, 0, 0.35);
+  transition: transform 0.32s var(--apple-ease-spring),
+    background-color 0.3s ease;
+}
+
+/* =========================================================================
+   图标与细节动效（Apple 风格）
+   -------------------------------------------------------------------------
+   图标容器质感、hover/按下的即时反馈、加载淡入、SVG 图标统一平滑过渡。
+   全部只改视觉/动效，不触碰 DOM 结构。
+   ========================================================================= */
+
+/* 卡片图标容器：Apple 大圆角 + 柔和内阴影质感 */
+.site-card .site-icon {
+  transition: transform 0.3s var(--apple-ease-spring),
+    opacity 0.3s ease;
+  will-change: transform;
+}
+.site-card .site-icon img,
+.site-card .site-icon div {
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04),
+    inset 0 1px 3px rgba(15, 23, 42, 0.06);
+  background-clip: padding-box;
+}
+
+/* 图标（logo）加载：轻量淡入而非闪烁 */
+.site-card .site-icon img[src] {
+  animation: iconFadeIn 0.3s ease;
+}
+@keyframes iconFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 首字母占位图标：柔和渐变底，而非生硬纯色 */
+.site-card .site-icon div.w-10,
+.site-card .site-icon div[class*="rounded"] {
+  background: linear-gradient(135deg, #416d9d 0%, #305580 100%);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+/* 复制按钮：hover 图标轻微位移 + spring，按下缩放 */
+.copy-btn {
+  transition: background-color 0.2s ease, color 0.2s ease,
+    transform 0.2s var(--apple-ease-spring), box-shadow 0.2s ease;
+}
+.copy-btn:not([disabled]) {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.copy-btn:not([disabled]):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px -2px rgba(15, 23, 42, 0.14);
+}
+.copy-btn:not([disabled]):active {
+  transform: scale(0.9);
+}
+.copy-btn svg {
+  transition: transform 0.3s var(--apple-ease-spring);
+}
+.copy-btn:not([disabled]):hover svg {
+  transform: translateY(1px);
+}
+
+/* 复制成功提示：从原点柔和弹出（spring），非生硬淡入 */
+.copy-success {
+  transform-origin: top right;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.copy-success-animation {
+  animation-name: copyToastPop;
+  transform-origin: top right;
+}
+@keyframes copyToastPop {
+  0% { opacity: 0; transform: translateY(6px) scale(0.9); }
+  18% { opacity: 1; transform: translateY(0) scale(1.02); }
+  30% { transform: translateY(0) scale(1); }
+  82% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+/* 顶栏操作图标（主题/后台/侧边栏）：hover 位移 + 图标脉冲 */
+.top-action-icon {
+  transition: color 0.2s ease, opacity 0.2s ease,
+    transform 0.28s var(--apple-ease-spring), background-color 0.2s ease;
+}
+.top-action-icon:hover {
+  transform: translateY(-1px) scale(1.06);
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.top-action-icon:active {
+  transform: scale(0.88);
+}
+.top-action-icon svg {
+  transition: transform 0.4s var(--apple-ease-spring);
+}
+.theme-action-icon:hover svg {
+  transform: rotate(12deg) scale(1.08);
+}
+.admin-action-icon:hover svg {
+  transform: scale(1.08);
+}
+
+/* 桌面侧边栏开关按钮：hover/active spring 反馈 */
+.fixed.top-4.left-4 label {
+  transition: transform 0.22s var(--apple-ease-spring),
+    background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.fixed.top-4.left-4 label:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.2);
+}
+.fixed.top-4.left-4 label:active {
+  transform: scale(0.92);
+}
+
+/* 搜索图标：输入聚焦时轻微过渡（跟随输入框抬升） */
+.search-input-target:focus + .home-search-icon,
+.search-input-target:focus ~ .home-search-icon {
+  transition: transform 0.25s var(--apple-ease-spring), color 0.2s ease;
+}
+.search-input-target:focus + .home-search-icon {
+  transform: translateY(-1px) scale(1.05);
+}
+
+/* 侧边栏分类图标：hover 时图标滑入（空间一致地指向内容） */
+#sidebar a[data-id] svg,
+#sidebar a[href="?catalog=all"] svg {
+  transition: transform 0.28s var(--apple-ease-spring);
+}
+#sidebar a[data-id]:hover svg,
+#sidebar a[href="?catalog=all"]:hover svg {
+  transform: translateX(2px);
+}
+
+/* 普通 SVG 图标统一平滑过渡（避免直跳） */
+.site-card a svg,
+.nav-btn svg,
+.search-engine-option svg,
+.back-to-top-btn svg {
+  transition: transform 0.3s var(--apple-ease-spring);
+}
+
+/* 减少动效：图标也归位 */
+@media (prefers-reduced-motion: reduce) {
+  .site-card .site-icon svg,
+  .site-card .site-icon img,
+  .site-card .site-icon div,
+  .copy-btn,
+  .copy-btn svg,
+  .top-action-icon,
+  .top-action-icon svg,
+  #backToTop svg,
+  #addSiteBtnFloating svg {
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+/* =========================================================================
+   Apple 色彩覆写 — 语义化 + 无障碍
+   ========================================================================= */
+
+/* 主操作按钮：从绿色（accent）→ Apple 蓝 */
+#backToTop,
+#addSiteBtnFloating,
+#addSiteBtnSidebar {
+  background-color: var(--apple-blue) !important;
+}
+#backToTop:hover,
+#addSiteBtnFloating:hover,
+#addSiteBtnSidebar:hover {
+  background-color: var(--apple-blue-hover) !important;
+}
+#backToTop:active,
+#addSiteBtnFloating:active,
+#addSiteBtnSidebar:active {
+  background-color: var(--apple-blue-pressed) !important;
+}
+
+/* 主题切换 hover — 暖橙而非纯橙 */
+.theme-action-icon:hover {
+  color: var(--apple-orange);
+}
+.dark .theme-action-icon:hover {
+  color: #fbbf24;
+}
+
+/* 卡片 hover 边框 → Apple 蓝 */
+.site-card:hover {
+  border-color: var(--apple-blue) !important;
+}
+
+/* 侧边栏 "全部" / 分类项激活态 → Apple 蓝 */
+#sidebar a[data-id].active,
+#sidebar a[href="?catalog=all"].active {
+  color: var(--apple-blue) !important;
+  background-color: var(--apple-blue-subtle) !important;
+}
+
+/* 复制成功提示 → Apple 蓝 */
+.copy-success {
+  background-color: var(--apple-blue) !important;
+}
+
+/* 分类导航激活胶囊 → Apple 蓝 */
+.nav-btn.active {
+  background-color: var(--apple-blue) !important;
+  color: #ffffff !important;
+}
+.dark .nav-btn.active {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  color: #60a5fa !important;
+}
+
+/* 空状态 CTA 按钮 → Apple 蓝（覆盖 card-renderer 的 bg-primary-600） */
+.animate-fade-in a.bg-primary-600 {
+  background-color: var(--apple-blue) !important;
+}
+.animate-fade-in a.bg-primary-600:hover {
+  background-color: var(--apple-blue-hover) !important;
+}
+
+/* Deep-custom-wallpaper 模式下非壁纸时的 header 辅助色 */
+body:not(.custom-wallpaper) header {
+  background-color: var(--apple-gray-800);
+}
+
+/* ---- 无障碍：减少透明度 ---- */
+@media (prefers-reduced-transparency: reduce) {
+  .sidebar {
+    background: var(--apple-surface-solid) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .dark .sidebar {
+    background: #1c1c1e !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  #backToTop,
+  #addSiteBtnFloating {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .site-card.frosted-glass-effect {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .dark .site-card.frosted-glass-effect {
+    background-color: rgba(30, 41, 59, 0.75) !important;
+  }
+}
+
+/* ---- 无障碍：高对比度 ---- */
+@media (prefers-contrast: more) {
+  .sidebar {
+    background: var(--apple-surface-solid) !important;
+    border-right: 2px solid #000 !important;
+    box-shadow: none !important;
+  }
+  .dark .sidebar {
+    background: #000 !important;
+    border-right-color: #fff !important;
+  }
+  .site-card {
+    border-width: 2px !important;
+    border-color: #000 !important;
+  }
+  .dark .site-card {
+    border-color: #fff !important;
+  }
+  .site-card:hover {
+    border-color: var(--apple-blue) !important;
+    box-shadow: none !important;
+  }
+  .nav-btn {
+    border: 2px solid #000 !important;
+  }
+  .dark .nav-btn {
+    border-color: #fff !important;
+  }
+  #backToTop,
+  #addSiteBtnFloating {
+    border: 2px solid #000 !important;
+  }
+  .dark #backToTop,
+  .dark #addSiteBtnFloating {
+    border-color: #fff !important;
+  }
+}

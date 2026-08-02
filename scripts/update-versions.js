@@ -22,6 +22,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const HTML_FILES = {
   'public/index.html': [
     { file: 'public/css/style.css', pattern: /\/css\/style\.css\?v=[a-zA-Z0-9]+/ },
+    { file: 'public/css/apple-polish.css', pattern: /\/css\/apple-polish\.css\?v=[a-zA-Z0-9]+/ },
     { file: 'public/css/tailwind.min.css', pattern: /\/css\/tailwind\.min\.css\?v=[a-zA-Z0-9]+/ },
     { file: 'public/js/home-ui.js', pattern: /\/js\/home-ui\.js\?v=[a-zA-Z0-9]+/ },
     { file: 'public/js/home-cards.js', pattern: /\/js\/home-cards\.js\?v=[a-zA-Z0-9]+/ },
@@ -42,6 +43,7 @@ const HTML_FILES = {
     { file: 'public/css/admin-card-preview.css', pattern: /\/css\/admin-card-preview\.css\?v=[a-zA-Z0-9]+/ },
     { file: 'public/css/admin-feedback.css', pattern: /\/css\/admin-feedback\.css\?v=[a-zA-Z0-9]+/ },
     { file: 'public/css/admin-dropdown.css', pattern: /\/css\/admin-dropdown\.css\?v=[a-zA-Z0-9]+/ },
+    { file: 'public/css/admin-apple.css', pattern: /\/css\/admin-apple\.css\?v=[a-zA-Z0-9]+/ },
     { file: 'public/css/tailwind.min.css', pattern: /\/css\/tailwind\.min\.css\?v=[a-zA-Z0-9]+/ },
     { file: 'public/js/admin-shared.js', pattern: /\/js\/admin-shared\.js\?v=[a-zA-Z0-9]+/ },
     { file: 'public/js/admin-cache.js', pattern: /\/js\/admin-cache\.js\?v=[a-zA-Z0-9]+/ },
