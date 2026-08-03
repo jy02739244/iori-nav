@@ -6,14 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>书签管理页面</title>
   <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
-  <script>
+<script>
     // 初始化暗色模式（在 CSS 加载前执行，防止闪烁）
     if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.classList.add('dark');
     }
   </script>
   <link rel="stylesheet" href="/css/admin-layout.css?v=768f9ade" />
-  <link rel="stylesheet" href="/css/admin-forms.css?v=4b439f93" />
+  <link rel="stylesheet" href="/css/admin-forms.css?v=cec6dd62" />
   <link rel="stylesheet" href="/css/admin-card-options.css?v=32c2dfc2" />
   <link rel="stylesheet" href="/css/admin-preview-shell.css?v=dd018be2" />
   <link rel="stylesheet" href="/css/admin-preview-controls.css?v=2fbbc84e" />
@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/css/admin-card-preview.css?v=0d44f94c" />
   <link rel="stylesheet" href="/css/admin-feedback.css?v=7f73bd85" />
   <link rel="stylesheet" href="/css/admin-dropdown.css?v=a8270a59" />
-  <link rel="stylesheet" href="/css/tailwind.min.css?v=f582695f">
+  <link rel="stylesheet" href="/css/tailwind.min.css?v=ebc3bac5">
   <link rel="stylesheet" href="/css/admin-apple.css?v=5d93d2ca">
 </head>
 
@@ -129,6 +129,45 @@
             class="px-4 py-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm">取消</button>
           <button id="confirmExportBtn"
             class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">确认导出</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导入来源模态框 -->
+    <div id="importSourceModal" class="modal" style="display: none; z-index: 2000;">
+      <div class="modal-content" style="max-width: 480px;">
+        <span class="modal-close" id="closeImportSourceModal">×</span>
+        <h2>选择导入方式</h2>
+        <p class="text-sm text-gray-500 mb-4">请选择书签数据的来源。</p>
+        <div class="library-list">
+          <button type="button" class="library-item" id="importFromFileBtn">
+            <div>
+              <div class="library-name">上传文件</div>
+              <div class="library-desc">导入本地 .html 或 .json 文件</div>
+            </div>
+          </button>
+          <button type="button" class="library-item" id="importFromLibraryBtn">
+            <div>
+              <div class="library-name">公共书签库</div>
+              <div class="library-desc">从独立维护的公共书签库导入</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 公共书签库模态框 -->
+    <div id="publicLibraryModal" class="modal" style="display: none; z-index: 2000;">
+      <div class="modal-content" style="max-width: 520px;">
+        <span class="modal-close" id="closeLibraryModal">×</span>
+        <h2>从公共书签库导入</h2>
+        <p class="text-sm text-gray-500 mb-4">选择一个书签库，将其中所有书签导入当前导航。</p>
+        <div id="libraryLoading" class="text-sm text-gray-500 my-4">正在加载书签库...</div>
+        <div id="libraryError" class="error" style="display: none; padding: 10px; border-radius: 4px; margin: 0 0 12px; font-size: 14px;"></div>
+        <div id="libraryList" class="library-list"></div>
+        <div class="flex justify-end gap-3 mt-4">
+          <button id="cancelLibraryBtn"
+            class="px-4 py-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm">取消</button>
         </div>
       </div>
     </div>
@@ -1593,7 +1632,7 @@
     </div>
   </div>
 
-  <script src="/js/admin-shared.js?v=a337b552"></script>
+<script src="/js/admin-shared.js?v=a337b552"></script>
   <script src="/js/admin-cache.js?v=ae06819c"></script>
   <script src="/js/admin-bookmark-list.js?v=bbdffc2f"></script>
   <script src="/js/admin-pending.js?v=b6ae86b9"></script>
@@ -1617,7 +1656,7 @@
   <script src="/js/admin-settings-wallpaper.js?v=e7168e1d"></script>
   <script src="/js/admin-settings-ai.js?v=cc131031"></script>
   <script src="/js/admin-settings.js?v=29f90d46"></script>
-  <script src="/js/admin-import-export.js?v=15b447db"></script>
+  <script src="/js/admin-import-export.js?v=8e882377"></script>
 </body>
 
 </html>

@@ -155,6 +155,52 @@
   margin-bottom: 1.5rem;
 }
 
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.library-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.library-item:hover {
+  border-color: #14b8a6;
+  background: #f0fdfa;
+}
+
+.library-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.library-desc {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.library-count {
+  font-size: 0.8rem;
+  color: #0d9488;
+  background: #ccfbf1;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
 .form-group {
   display: flex;
   align-items: center;
@@ -267,6 +313,5 @@
   background-color: #e9ecef;
   cursor: not-allowed;
 }
-
 
 

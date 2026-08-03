@@ -76,6 +76,11 @@ export function getUrlMatchCandidates(url) {
             const authority = getUrlAuthority(parsed);
             candidates.add(`${authority}${parsed.search}${parsed.hash}`);
             candidates.add(`${authority}/${parsed.search}${parsed.hash}`);
+        } else {
+            // 非根路径同样处理末尾斜杠，避免 /path 和 /path/ 被视为不同书签
+            const base = `${getUrlAuthority(parsed)}${parsed.pathname.replace(/\/$/, '')}`;
+            candidates.add(`${base}${parsed.search}${parsed.hash}`);
+            candidates.add(`${base}/${parsed.search}${parsed.hash}`);
         }
     } catch {
         // normalizedUrl 已经过 sanitizeUrl 校验，这里仅做防御

@@ -7,12 +7,43 @@
 const importBtn = document.getElementById('importBtn');
 const importFile = document.getElementById('importFile');
 const exportBtn = document.getElementById('exportBtn');
+const importSourceModal = document.getElementById('importSourceModal');
+const importFromFileBtn = document.getElementById('importFromFileBtn');
+const importFromLibraryBtn = document.getElementById('importFromLibraryBtn');
+const closeImportSourceModal = document.getElementById('closeImportSourceModal');
 
 // 导入按钮点击事件
 if (importBtn) {
   importBtn.addEventListener('click', () => {
+    if (importSourceModal) importSourceModal.style.display = 'block';
+    document.body.classList.add('modal-open');
+  });
+}
+
+function closeImportSource() {
+  if (importSourceModal) importSourceModal.style.display = 'none';
+  document.body.classList.remove('modal-open');
+}
+
+if (importFromFileBtn) {
+  importFromFileBtn.addEventListener('click', () => {
+    closeImportSource();
     if (importFile) importFile.click();
   });
+}
+
+if (importFromLibraryBtn) {
+  importFromLibraryBtn.addEventListener('click', () => {
+    closeImportSource();
+    openPublicLibrary();
+  });
+}
+
+if (closeImportSourceModal) closeImportSourceModal.onclick = closeImportSource;
+if (importSourceModal) {
+  importSourceModal.onclick = e => {
+    if (e.target === importSourceModal) closeImportSource();
+  };
 }
 
 // 文件选择事件
@@ -146,6 +177,127 @@ if (confirmExportBtn) {
         exportModal.style.display = 'none';
       });
   });
+}
+
+// ===================================
+// 公共书签库 (Public Bookmark Library)
+// ===================================
+
+const PUBLIC_LIBRARY_SOURCE = {
+  owner: 'jy02739244',
+  repo: 'bookmark-library',
+  ref: 'main',
+};
+
+const publicLibraryModal = document.getElementById('publicLibraryModal');
+const libraryListEl = document.getElementById('libraryList');
+const libraryLoadingEl = document.getElementById('libraryLoading');
+const libraryErrorEl = document.getElementById('libraryError');
+const closeLibraryModal = document.getElementById('closeLibraryModal');
+const cancelLibraryBtn = document.getElementById('cancelLibraryBtn');
+
+function buildLibraryUrl(useCdn, path) {
+  const { owner, repo, ref } = PUBLIC_LIBRARY_SOURCE;
+  return useCdn
+    ? `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${ref}/${path}`
+    : `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
+}
+
+async function fetchPublicLibraryJson(path) {
+  // 加时间戳绕过浏览器缓存，确保每次都能拿到最新书签库内容
+  const cacheBuster = `?ts=${Date.now()}`;
+  const primaryRes = await fetch(buildLibraryUrl(true, path) + cacheBuster, { cache: 'no-store' });
+  if (primaryRes.ok) return primaryRes.json();
+
+  const fallbackRes = await fetch(buildLibraryUrl(false, path) + cacheBuster, { cache: 'no-store' });
+  if (!fallbackRes.ok) throw new Error(`HTTP ${fallbackRes.status}`);
+  return fallbackRes.json();
+}
+
+function normalizePublicPreviewData(data) {
+  const categories = (data.category || []).map((c, i) => ({
+    ...c,
+    id: c.id !== undefined && c.id !== null ? Number(c.id) : (i + 1),
+    parent_id: c.parent_id ? Number(c.parent_id) : 0,
+  }));
+
+  const defaultCatId = categories.length > 0 ? categories[0].id : 0;
+
+  const sites = (data.sites || []).map(s => ({
+    ...s,
+    catelog_id: s.catelog_id !== undefined && s.catelog_id !== null
+      ? Number(s.catelog_id)
+      : defaultCatId,
+  }));
+
+  return { category: categories, sites };
+}
+
+function closePublicLibrary() {
+  if (publicLibraryModal) publicLibraryModal.style.display = 'none';
+  document.body.classList.remove('modal-open');
+}
+
+async function openPublicLibrary() {
+  if (libraryListEl) libraryListEl.innerHTML = '';
+  if (libraryLoadingEl) libraryLoadingEl.style.display = 'block';
+  if (libraryErrorEl) libraryErrorEl.style.display = 'none';
+  if (publicLibraryModal) publicLibraryModal.style.display = 'block';
+  document.body.classList.add('modal-open');
+
+  try {
+    const manifest = await fetchPublicLibraryJson('index.json');
+    const libraries = (manifest && Array.isArray(manifest.libraries)) ? manifest.libraries : [];
+    if (libraries.length === 0) throw new Error('该书签库清单为空');
+
+    if (libraryLoadingEl) libraryLoadingEl.style.display = 'none';
+    libraryListEl.innerHTML = libraries.map((lib, index) => `
+      <button type="button" class="library-item" data-index="${index}">
+        <div>
+          <div class="library-name">${escapeHTML(lib.name || '未命名')}</div>
+          ${lib.description ? `<div class="library-desc">${escapeHTML(lib.description)}</div>` : ''}
+        </div>
+        <span class="library-count">${Number(lib.count) || 0} 条</span>
+      </button>
+    `).join('');
+
+    libraryListEl.querySelectorAll('.library-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const library = libraries[Number(btn.dataset.index)];
+        closePublicLibrary();
+        loadPublicLibrary(library);
+      });
+    });
+  } catch (err) {
+    if (libraryLoadingEl) libraryLoadingEl.style.display = 'none';
+    if (libraryErrorEl) {
+      libraryErrorEl.style.display = 'block';
+      libraryErrorEl.textContent = '无法加载公共书签库: ' + (err.message || '网络错误');
+    }
+  }
+}
+
+async function loadPublicLibrary(library) {
+  try {
+    const data = await fetchPublicLibraryJson(library.file);
+    const previewData = normalizePublicPreviewData(data);
+    const siteCount = Array.isArray(previewData.sites) ? previewData.sites.length : 0;
+    if (siteCount === 0) {
+      showMessage('该书签库没有有效的书签', 'error');
+      return;
+    }
+    showImportPreview(previewData);
+  } catch (err) {
+    showMessage('加载书签库失败: ' + (err.message || '网络错误'), 'error');
+  }
+}
+
+if (closeLibraryModal) closeLibraryModal.onclick = closePublicLibrary;
+if (cancelLibraryBtn) cancelLibraryBtn.onclick = closePublicLibrary;
+if (publicLibraryModal) {
+  publicLibraryModal.onclick = e => {
+    if (e.target === publicLibraryModal) closePublicLibrary();
+  };
 }
 
 // 解析 Chrome 书签 HTML

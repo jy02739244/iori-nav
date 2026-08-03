@@ -298,6 +298,7 @@ export async function onRequestPost(context) {
     let itemsUpdated = 0;
     let itemsSkipped = 0;
     const iconAPI = env.ICON_API || 'https://faviconsnap.com/api/favicon?url=';
+    const processedUrls = new Set();
 
     for (const site of sitesToImport) {
         const nameResult = normalizeBookmarkName(site.name);
@@ -312,9 +313,14 @@ export async function onRequestPost(context) {
 
         const rawUrl = urlResult.value;
         const sanitizedUrl = normalizeUrlForStorage(rawUrl);
+        const dedupKey = sanitizedUrl.endsWith('/') ? sanitizedUrl.slice(0, -1) : sanitizedUrl;
         const sanitizedName = nameResult.value;
 
         if (!sanitizedUrl) {
+            itemsSkipped++;
+            continue;
+        }
+        if (processedUrls.has(dedupKey)) {
             itemsSkipped++;
             continue;
         }
@@ -372,6 +378,10 @@ export async function onRequestPost(context) {
 
         const sanitizedDesc = descResult.value;
         const sortOrderValue = normalizeSortOrder(site.sort_order);
+        // 覆盖更新时，若导入数据未提供排序值，则保留已有书签的排序值
+        const sortOrderUpdate = (site.sort_order === undefined || site.sort_order === null)
+            ? null
+            : sortOrderValue;
         
         // Handle Privacy Logic
         let finalIsPrivate = site.is_private ? 1 : 0;
@@ -381,13 +391,15 @@ export async function onRequestPost(context) {
         }
 
         if (exists && override) {
+            processedUrls.add(dedupKey);
             // Update
             batchStmts.push(
-                db.prepare('UPDATE sites SET name=?, logo=?, desc=?, catelog_id=?, catelog_name=?, sort_order=?, is_private=?, update_time=CURRENT_TIMESTAMP WHERE url=?')
-                  .bind(sanitizedName, sanitizedLogo, sanitizedDesc, newCatId, catNameForDb, sortOrderValue, finalIsPrivate, existingDbUrl)
+                db.prepare('UPDATE sites SET name=?, logo=?, desc=?, catelog_id=?, catelog_name=?, sort_order=COALESCE(?, sort_order), is_private=?, update_time=CURRENT_TIMESTAMP WHERE url=?')
+                  .bind(sanitizedName, sanitizedLogo, sanitizedDesc, newCatId, catNameForDb, sortOrderUpdate, finalIsPrivate, existingDbUrl)
             );
             itemsUpdated++;
         } else {
+            processedUrls.add(dedupKey);
             // Insert
             batchStmts.push(
                 db.prepare('INSERT INTO sites (name, url, logo, desc, catelog_id, catelog_name, sort_order, is_private) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
