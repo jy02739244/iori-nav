@@ -336,4 +336,4 @@ npx wrangler d1 execute book --local --file=schema.sql
 
 ## ⭐ Star 趋势
 
-[![Star History Chart](https://api.star-history.com/svg?repos=jy02739244/iori-nav&type=date&legend=top-left)](https://www.star-history.com/#jy02739244/iori-nav&type=date&legend=top-left)
+[![Star History Chart](https://star-history.dera.page/svg?repos=jy02739244/iori-nav&type=date&legend=top-left)](https://star-history.dera.page/#jy02739244/iori-nav&type=date&legend=top-left)
