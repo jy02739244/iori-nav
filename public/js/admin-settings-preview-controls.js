@@ -11,9 +11,11 @@
     if (/^#[0-9A-F]{6}$/i.test(textInput.value)) {
       pickerInput.value = textInput.value;
     }
+    syncColorFollowDefaultState(pickerInput, textInput, textInput.value);
 
     pickerInput.addEventListener('input', () => {
       textInput.value = pickerInput.value;
+      syncColorFollowDefaultState(pickerInput, textInput, pickerInput.value);
       scheduleRender();
     });
 
@@ -22,8 +24,24 @@
       if (/^#[0-9A-F]{6}$/i.test(val)) {
         pickerInput.value = val;
       }
+      syncColorFollowDefaultState(pickerInput, textInput, val);
       scheduleRender();
     });
+  }
+
+  function syncColorFollowDefaultState(pickerInput, textInput, value) {
+    // 命名色、rgb()/rgba() 等也是有效自定义色，只有真正留空才跟随默认。
+    const isEmpty = String(value ?? '').trim() === '';
+    if (isEmpty) {
+      pickerInput.value = getPlaceholderColor(textInput) || pickerInput.value;
+    }
+    pickerInput.classList.toggle('color-picker-follow-default', isEmpty);
+    pickerInput.title = isEmpty ? '留空时跟随默认颜色' : '';
+  }
+
+  function getPlaceholderColor(input) {
+    const placeholder = String(input?.placeholder ?? '').trim();
+    return /^#[0-9A-F]{6}$/i.test(placeholder) ? placeholder : '';
   }
 
  function updatePreviewCards() {

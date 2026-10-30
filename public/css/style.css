@@ -1903,6 +1903,11 @@ html:not(.dark) .dropdown-item.active {
   flex: 1;
 }
 
+/* 压过 md:block 与上面的 display: flex，保证隐藏设置和加载失败时确实不显示 */
+#hitokoto-parent.hidden {
+  display: none;
+}
+
 [data-role="list-heading"] {
   white-space: nowrap; 
   flex-shrink: 0; 

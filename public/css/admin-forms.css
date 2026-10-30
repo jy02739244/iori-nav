@@ -382,3 +382,13 @@
   background-color: #e9ecef;
   cursor: not-allowed;
 }
+
+/* 颜色留空表示跟随默认颜色：弱化取色器，提示它展示的只是默认色参考 */
+.color-picker-follow-default {
+  opacity: 0.45;
+}
+
+.color-picker-follow-default:hover,
+.color-picker-follow-default:focus {
+  opacity: 1;
+}

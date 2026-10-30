@@ -9,6 +9,12 @@ wrangler.toml
 test-data.sql
 clear-data.sql
 
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
 # Husky internal files
 .husky/_
 

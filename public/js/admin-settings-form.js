@@ -114,9 +114,24 @@
   function setColorInputs(textInput, pickerInput, value) {
     if (!textInput) return;
     textInput.value = value;
-    if (pickerInput && /^#[0-9A-F]{6}$/i.test(value)) {
+    if (!pickerInput) return;
+
+    const isEmpty = String(value ?? '').trim() === '';
+    // 留空表示跟随卡片风格默认色，取色器不能为空，回退到文本框 placeholder 的提示色，
+    // 并标记为“跟随默认”，避免继续展示上一次保存的颜色被误认为当前生效色。
+    // 命名色、rgb()/rgba() 等后端允许的写法也算自定义色，不能当成留空处理。
+    if (isEmpty) {
+      pickerInput.value = getPlaceholderColor(textInput) || '#000000';
+    } else if (/^#[0-9A-F]{6}$/i.test(value)) {
       pickerInput.value = value;
     }
+    pickerInput.classList.toggle('color-picker-follow-default', isEmpty);
+    pickerInput.title = isEmpty ? '留空时跟随默认颜色' : '';
+  }
+
+  function getPlaceholderColor(input) {
+    const placeholder = String(input?.placeholder ?? '').trim();
+    return /^#[0-9A-F]{6}$/i.test(placeholder) ? placeholder : '';
   }
 
   function setRangeValue(rangeInput, valueLabel, value) {
@@ -446,7 +461,8 @@
     setRangeValue(refs.cardRadiusInput, refs.cardRadiusValue, currentSettings.layout_card_border_radius || '12');
     setValue(refs.cardTitleFontInput, currentSettings.card_title_font || '');
     setValue(refs.cardTitleSizeInput, currentSettings.card_title_size || '16');
-    setColorInputs(refs.cardTitleColorInput, refs.cardTitleColorPicker, currentSettings.card_title_color || '#111827');
+    // 留空表示跟随卡片风格默认色；不要回填 #111827，否则保存后会在风格三的深色背景上固化成深色文字
+    setColorInputs(refs.cardTitleColorInput, refs.cardTitleColorPicker, currentSettings.card_title_color || '');
     setValue(refs.cardDescFontInput, currentSettings.card_desc_font || '');
     setValue(refs.cardDescSizeInput, currentSettings.card_desc_size || '14');
     setColorInputs(refs.cardDescColorInput, refs.cardDescColorPicker, currentSettings.card_desc_color || '');
@@ -461,7 +477,7 @@
     setRangeValue(refs.mobileCardRadiusInput, refs.mobileCardRadiusValue, currentSettings.mobile_layout_card_border_radius || '12');
     setValue(refs.mobileCardTitleFontInput, currentSettings.mobile_card_title_font || '');
     setValue(refs.mobileCardTitleSizeInput, currentSettings.mobile_card_title_size || '13');
-    setColorInputs(refs.mobileCardTitleColorInput, refs.mobileCardTitleColorPicker, currentSettings.mobile_card_title_color || '#111827');
+    setColorInputs(refs.mobileCardTitleColorInput, refs.mobileCardTitleColorPicker, currentSettings.mobile_card_title_color || '');
     setValue(refs.mobileCardDescFontInput, currentSettings.mobile_card_desc_font || '');
     setValue(refs.mobileCardDescSizeInput, currentSettings.mobile_card_desc_size || '11');
     setColorInputs(refs.mobileCardDescColorInput, refs.mobileCardDescColorPicker, currentSettings.mobile_card_desc_color || '');

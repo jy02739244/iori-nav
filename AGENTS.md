@@ -44,6 +44,15 @@ npm run build:css
 # 启动本地开发服务器
 npm run dev
 
+# 安装 Playwright 浏览器（首次运行 e2e 前执行一次）
+npx playwright install chromium
+
+# 端到端测试（Playwright，会自动拉起本地 dev server 并在结束后关闭）
+npm run test:e2e
+
+# 含后台管理用例（凭据从环境变量读取，未设置时登录相关用例自动跳过）
+E2E_ADMIN_USER=xxx E2E_ADMIN_PASS=yyy npm run test:e2e
+
 # 本地执行 SQL
 npx wrangler d1 execute book --local --file=schema.sql
 
