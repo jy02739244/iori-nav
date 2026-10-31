@@ -144,7 +144,18 @@ test('card hydration state shares sanitization and render config', () => {
   assert.equal(cards[0].urlHtml, 'https://example.com/');
   assert.equal(cards[0].logoUrlHtml, '');
   assert.equal(cards[0].hasValidUrl, true);
-  assert.match(cards[0].searchText, /example\.com/);
+  assert.equal(cards[0].hasDesc, true);
+  assert.equal(Object.prototype.hasOwnProperty.call(cards[0], 'searchText'), false);
+  assert.match(cards[0].urlHtml, /example\.com/);
+});
+
+test('card hydration state marks missing descriptions', () => {
+  const { cards } = buildCardHydrationState([
+    { id: 8, name: 'No desc', url: 'https://example.org', catelog_id: 3 },
+  ], {});
+
+  assert.equal(cards[0].hasDesc, false);
+  assert.equal(cards[0].descHtml, '暂无描述');
 });
 
 test('card hydration state exposes mobile card config separately', () => {

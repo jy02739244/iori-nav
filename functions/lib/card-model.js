@@ -1,17 +1,5 @@
 import { escapeHTML, sanitizeUrl } from './utils';
 
-function buildSearchText(site, normalizedUrl) {
-  return [
-    site?.name,
-    site?.url,
-    normalizedUrl || '',
-    site?.catelog_name || site?.catelog || '未分类',
-    site?.desc,
-  ]
-    .map(value => String(value ?? '').toLowerCase())
-    .join('\u0000');
-}
-
 function getDeviceSetting(settings, device, key, fallback = '') {
   const mobileKey = `mobile_${key}`;
   if (device === 'mobile' && settings[mobileKey] !== undefined) {
@@ -100,7 +88,7 @@ export function buildCardViewModel(site) {
     logoUrlHtml: escapeHTML(normalizedLogo),
     cardInitialHtml: escapeHTML((rawName.trim().charAt(0) || '站').toUpperCase()),
     hasValidUrl: Boolean(normalizedUrl),
-    searchText: buildSearchText(site, normalizedUrl),
+    hasDesc: Boolean(site?.desc),
   };
 }
 

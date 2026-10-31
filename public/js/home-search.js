@@ -1,5 +1,10 @@
 (function () {
   const Home = window.IoriHome = window.IoriHome || {};
+  const HTML_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
+
+  function decodeHtmlEntities(value) {
+    return String(value ?? '').replace(/&(amp|lt|gt|quot|#39);/g, (_, entity) => HTML_ENTITIES[entity]);
+  }
 
   Home.initSearch = function () {
     const sitesGrid = document.getElementById('sitesGrid');
@@ -23,8 +28,10 @@
       searchCardCache = Array.from(cards).map(card => {
         const id = card.getAttribute('data-id');
         const s = sitesById.get(String(id)) || {};
-        const text = (s.searchText || [s.nameHtml, s.urlHtml, s.catalogHtml, s.descHtml]
-          .map(v => String(v || '').toLowerCase()).join('\0'));
+        // 兼容旧版首页缓存：新数据不再下发 searchText，改为使用已有字段现场拼接
+        const descText = s.hasDesc === false ? '' : s.descHtml;
+        const text = (s.searchText || [s.nameHtml, s.urlHtml, s.catalogHtml, descText]
+          .map(v => decodeHtmlEntities(v).toLowerCase()).join('\0'));
         return { el: card, text };
       });
       return searchCardCache;
