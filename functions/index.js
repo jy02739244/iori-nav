@@ -506,7 +506,8 @@ export async function onRequest(context) {
   // 全局站点卡片视图模型与布局配置：直接序列化后注入到 main.js 之前
   const cardHydrationState = buildCardHydrationState(allSites, S);
   const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
-  const safeCardConfigJson = JSON.stringify(cardHydrationState.config).replace(/</g, '\\u003c');
+  // 只注入桌面/手机两份配置；config 与 configs.desktop 内容相同，不再重复下发。
+  // 前端仍保留 IORI_CARD_CONFIG 兜底，用于兼容滚动发布期间 KV 里尚未刷新的旧 HTML。
   const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
   const safeLayoutConfigJson = JSON.stringify({
     hideDesc: S.layout_hide_desc,
@@ -545,7 +546,7 @@ export async function onRequest(context) {
   } else {
     html = html.replace(
       mainJsMarker,
-      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIG=${safeCardConfigJson};window.IORI_CARD_CONFIGS=${safeCardConfigsJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
+      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIGS=${safeCardConfigsJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
     );
   }
 
