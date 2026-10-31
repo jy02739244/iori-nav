@@ -20,7 +20,8 @@ export async function onRequestGet(context) {
     return new Response(jsonData, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="config.json"'
+        'Content-Disposition': 'attachment; filename="config.json"',
+        'Cache-Control': 'no-store, max-age=0'
       }
     });
   } catch (e) {
