@@ -3,6 +3,75 @@ import { DB_SCHEMA, SCHEMA_VERSION, PREVIOUS_SCHEMA_VERSION } from '../constants
 let schemaReady = false;
 let schemaReadyPromise = null;
 
+export const PRIVACY_GUARD_TRIGGER_STATEMENTS = [
+  `CREATE TRIGGER IF NOT EXISTS trg_privacy_category_insert
+  BEFORE INSERT ON category
+  WHEN COALESCE(NEW.is_private, 0) = 0
+    AND NEW.parent_id IS NOT NULL
+    AND NEW.parent_id != 0
+    AND EXISTS (
+      SELECT 1 FROM category
+      WHERE id = NEW.parent_id AND COALESCE(is_private, 0) = 1
+    )
+  BEGIN
+    SELECT RAISE(ABORT, 'privacy_guard_private_parent');
+  END`,
+  `CREATE TRIGGER IF NOT EXISTS trg_privacy_category_update
+  BEFORE UPDATE OF is_private, parent_id ON category
+  WHEN COALESCE(NEW.is_private, 0) = 0
+    AND NEW.parent_id IS NOT NULL
+    AND NEW.parent_id != 0
+    AND EXISTS (
+      SELECT 1 FROM category
+      WHERE id = NEW.parent_id AND COALESCE(is_private, 0) = 1
+    )
+  BEGIN
+    SELECT RAISE(ABORT, 'privacy_guard_private_parent');
+  END`,
+  `CREATE TRIGGER IF NOT EXISTS trg_privacy_site_insert
+  BEFORE INSERT ON sites
+  WHEN COALESCE(NEW.is_private, 0) = 0
+    AND EXISTS (
+      SELECT 1 FROM category
+      WHERE id = NEW.catelog_id AND COALESCE(is_private, 0) = 1
+    )
+  BEGIN
+    SELECT RAISE(ABORT, 'privacy_guard_private_category');
+  END`,
+  `CREATE TRIGGER IF NOT EXISTS trg_privacy_site_update
+  BEFORE UPDATE OF is_private, catelog_id ON sites
+  WHEN COALESCE(NEW.is_private, 0) = 0
+    AND EXISTS (
+      SELECT 1 FROM category
+      WHERE id = NEW.catelog_id AND COALESCE(is_private, 0) = 1
+    )
+  BEGIN
+    SELECT RAISE(ABORT, 'privacy_guard_private_category');
+  END`,
+];
+
+export const PRIVACY_GUARD_REPAIR_STATEMENTS = [
+  `WITH RECURSIVE private_categories(id) AS (
+    SELECT id FROM category WHERE COALESCE(is_private, 0) = 1
+    UNION
+    SELECT c.id
+    FROM category c
+    INNER JOIN private_categories p ON c.parent_id = p.id
+  )
+  UPDATE category
+  SET is_private = 1
+  WHERE id IN (SELECT id FROM private_categories)
+    AND COALESCE(is_private, 0) = 0`,
+  `UPDATE sites
+  SET is_private = 1
+  WHERE COALESCE(is_private, 0) = 0
+    AND EXISTS (
+      SELECT 1 FROM category
+      WHERE category.id = sites.catelog_id
+        AND COALESCE(category.is_private, 0) = 1
+    )`,
+];
+
 async function runBaseSchema(db) {
   const statements = DB_SCHEMA.split(';')
     .map(stmt => stmt.trim())
@@ -79,6 +148,11 @@ async function runIncrementalMigrations(env) {
       WHERE catelog_name IS NULL
     `).run();
   }
+
+  await env.NAV_DB.batch(
+    [...PRIVACY_GUARD_REPAIR_STATEMENTS, ...PRIVACY_GUARD_TRIGGER_STATEMENTS]
+      .map(sql => env.NAV_DB.prepare(sql))
+  );
 }
 
 export async function ensureSchemaReady(env) {

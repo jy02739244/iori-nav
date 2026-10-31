@@ -187,16 +187,6 @@ export async function clearHomeCacheDirty(env, scope = 'all', expectedValue = nu
   }
 }
 
-export async function isHomeCacheDirty(env, scope) {
-  try {
-    const value = await getHomeCacheDirtyValue(env, scope);
-    return !!value;
-  } catch (e) {
-    console.error('Failed to check home cache dirty flag:', e);
-    return false;
-  }
-}
-
 /**
  * 构建 session cookie 字符串
  * @param {string} token - session token

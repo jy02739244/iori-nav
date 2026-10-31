@@ -20,7 +20,7 @@ iori-nav/
 │   ├── constants.js        # SCHEMA_VERSION / HOME_CACHE_VERSION / DB_SCHEMA 等核心常量
 │   ├── admin/              # 管理后台（login.js, logout.js, index.js）
 │   ├── api/                # REST API（categories/, config/, pending/, cache/, settings.js, wallpaper.js 等）
-│   └── lib/                # 共用工具（card-renderer, menu-renderer, schema-migration, settings-parser, utils, wallpaper-fetcher）
+│   └── lib/                # 共用工具（card-renderer, menu-renderer, schema-migration, settings-parser, utils）
 ├── public/                 # 静态资源（构建输出目录）
 │   ├── index.html          # 首页 SSR 模板
 │   ├── _headers            # Cloudflare Pages 响应头（静态资源长缓存配置）

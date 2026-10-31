@@ -1747,6 +1747,7 @@
       <span class="modal-close" id="closeBatchPrivacyModal">×</span>
       <h3>更改隐私属性</h3>
       <p class="text-sm text-gray-500 mb-4">设置选中书签的隐私状态：</p>
+      <p class="text-xs text-amber-600 mb-4">设为公开时，会在同一事务中将书签所属的私密分类改为公开；若其上级分类仍为私密，本次批量操作会被拒绝。</p>
       <div class="flex gap-4 justify-center mb-6">
         <label class="flex items-center gap-2 cursor-pointer p-3 border rounded hover:bg-gray-50 flex-1">
           <input type="radio" name="batchPrivacyOption" value="1" class="w-4 h-4 text-blue-600">
@@ -1776,7 +1777,7 @@
   <script src="/js/admin.js?v=39f7ce60"></script>
   <script src="/js/admin-categories.js?v=aa436f47"></script>
   <script src="/js/admin-bookmarks.js?v=050f96b1"></script>
-  <script src="/js/admin-batch.js?v=807f5534"></script>
+  <script src="/js/admin-batch.js?v=db576dfe"></script>
   <script src="/js/wallpaper-defaults.js?v=b65f42d1"></script>
   <script src="/js/admin-settings-defaults.js?v=703e8e12"></script>
   <script src="/js/admin-settings-form.js?v=b06efe2a"></script>

@@ -95,7 +95,7 @@ functions/
 ├── index.js              # 首页 SSR 入口
 ├── admin/                # /admin、/admin/login、/admin/logout
 ├── api/                  # REST API（categories/, config/, pending/, cache/, settings.js, ai-chat.js, wallpaper.js …）
-└── lib/                  # 共用：card-renderer, menu-renderer, schema-migration, settings-parser, utils, wallpaper-fetcher
+└── lib/                  # 共用：card-renderer, menu-renderer, schema-migration, settings-parser, utils
 
 public/                   # Pages 静态资源（构建输出目录）
 ├── index.html            # 首页 SSR 模板（含 {{PLACEHOLDER}}）

@@ -361,50 +361,14 @@ if (closeBatchPrivacyModal) closeBatchPrivacyModal.onclick = () => batchPrivacyM
 if (cancelBatchPrivacyBtn) cancelBatchPrivacyBtn.onclick = () => batchPrivacyModal.style.display = 'none';
 
 if (confirmBatchPrivacyBtn) {
-    confirmBatchPrivacyBtn.addEventListener('click', async () => {
+    confirmBatchPrivacyBtn.addEventListener('click', () => {
         const privacyVal = document.querySelector('input[name="batchPrivacyOption"]:checked').value;
         const isPrivate = privacyVal === '1';
-        
-        // 自动更新关联的分类为公开
-        if (!isPrivate) {
-            // 找出所有选中的 Item，然后收集涉及的私密分类ID
-            const categoriesToUpdate = new Set();
-            batchSelectedIds.forEach(id => {
-                const item = batchData.find(d => d.id == id); // 注意：batchData 仅含当前页数据
-                // 如果是全选跨页操作，这里可能有问题，因为 batchData 只有当前页。
-                // 但目前的 UI 实现仅支持当前页操作 (checkboxes 都是根据 batchData 渲染的)
-                if (item && item.catelog_id) {
-                    const cat = window.categoriesData.find(c => c.id == item.catelog_id);
-                    if (cat && cat.is_private) {
-                        categoriesToUpdate.add(item.catelog_id);
-                    }
-                }
-            });
-            
-            if (categoriesToUpdate.size > 0) {
-                 window.showMessage(`正在自动公开 ${categoriesToUpdate.size} 个私密分类...`, 'info');
-                 // 并发更新分类
-                 const updates = Array.from(categoriesToUpdate).map(catId => {
-                     const cat = window.categoriesData.find(c => c.id == catId);
-                     return fetch(`/api/categories/${catId}`, {
-                         method: 'PUT',
-                         headers: { 'Content-Type': 'application/json' },
-                         body: JSON.stringify({ ...cat, is_private: false })
-                     });
-                 });
-                 
-                  try {
-                      await Promise.all(updates);
-                      // 刷新分类数据
-                      if (typeof window.loadGlobalCategories === 'function') window.loadGlobalCategories();
-                  } catch (e) {
-                     window.showMessage('自动公开分类失败', 'error');
-                     return;
-                 }
-            }
-        }
-        
-        performBatchAction('update_privacy', { isPrivate: isPrivate });
+
+        performBatchAction('update_privacy', {
+            isPrivate,
+            publicizePrivateCategories: !isPrivate
+        });
         batchPrivacyModal.style.display = 'none';
     });
 }
