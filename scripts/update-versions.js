@@ -7,7 +7,7 @@
  * 3. 更新 HTML 文件中对应的 ?v=xxx 参数
  * 
  * 使用方式：
- * - 自动：通过 Git pre-commit hook 触发
+ * - 自动：通过 Git pre-commit hook 以 --staged 模式更新暂存区
  * - 手动：node scripts/update-versions.js
  */
 
@@ -20,6 +20,11 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 
 // 需要处理的 HTML 文件及其资源映射
 const HTML_FILES = {
+  'functions/admin/login.js': [
+    { file: 'public/css/login.css', pattern: /\/css\/login\.css\?v=[a-zA-Z0-9]+/ },
+    { file: 'public/js/login.js', pattern: /\/js\/login\.js\?v=[a-zA-Z0-9]+/ },
+    { file: 'public/favicon.svg', pattern: /\/favicon\.svg\?v=[a-zA-Z0-9]+/ },
+  ],
   'public/index.html': [
     { file: 'public/css/style.css', pattern: /\/css\/style\.css\?v=[a-zA-Z0-9]+/ },
     { file: 'public/css/tailwind.min.css', pattern: /\/css\/tailwind\.min\.css\?v=[a-zA-Z0-9]+/ },
@@ -223,9 +228,12 @@ function main() {
   }
 }
 
-// 执行
-const result = main();
-
-// 如果有更新，返回非零退出码以便 Git hook 知道需要重新暂存文件
-// 但我们不返回错误码，而是让 hook 脚本处理
-process.exit(0);
+if (require.main === module) {
+  const isPostCommit = process.argv.includes('--post-commit');
+  if (process.argv.includes('--staged') || isPostCommit) {
+    const { updateStagedVersions } = require('./update-staged-versions');
+    updateStagedVersions(ROOT_DIR, HTML_FILES, { isPostCommit });
+  } else {
+    main();
+  }
+}

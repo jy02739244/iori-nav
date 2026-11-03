@@ -1,0 +1,2 @@
+# Git 完成部分提交后，再同步最终保留的索引中的资源版本号
+node scripts/update-versions.js --post-commit

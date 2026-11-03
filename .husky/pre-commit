@@ -1,5 +1,2 @@
-# 运行版本号更新脚本
-node scripts/update-versions.js
-
-# 如果有 HTML 文件被修改了，将其加入暂存区
-git add public/index.html public/admin/index.html 2>/dev/null || true
+# 根据暂存的资源更新版本号，保留未暂存的业务逻辑与模板修改
+node scripts/update-versions.js --staged

@@ -27,16 +27,17 @@ const ALLOWED_LOGIN_DURATIONS = new Set([1, 7, 30, 60, 90]);
 function renderLoginPage(message = '', env = {}) {
   const hasError = Boolean(message);
   const safeMessage = hasError ? escapeHTML(message) : '';
+  const siteName = escapeHTML(env.SITE_NAME || '灰色轨迹');
   const { siteKey, isConfigured, isComplete } = getTurnstileConfig(env);
   const shouldRenderTurnstile = isConfigured && siteKey;
   const turnstileScript = shouldRenderTurnstile
     ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
     : '';
   const turnstileWidget = shouldRenderTurnstile
-    ? `<div class="form-group turnstile-group"><div class="cf-turnstile" data-sitekey="${escapeHTML(siteKey)}" data-theme="auto"></div></div>`
+    ? `<div class="form-group turnstile-group"><div class="cf-turnstile" data-sitekey="${escapeHTML(siteKey)}" data-theme="light" data-size="flexible"></div></div>`
     : '';
   const configWarning = isConfigured && !isComplete
-    ? '<div class="error-message">Turnstile 配置不完整，请同时设置 Site Key 和 Secret Key</div>'
+    ? '<div class="error-message" role="alert">Turnstile 配置不完整，请同时设置 Site Key 和 Secret Key</div>'
     : '';
 
   const html = `<!DOCTYPE html>
@@ -44,78 +45,104 @@ function renderLoginPage(message = '', env = {}) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>管理员登录</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
-    body { display: flex; justify-content: center; align-items: center; background-color: #f8f9fa; padding: 1rem; }
-    .login-container {
-      background-color: white; padding: 2rem; border-radius: 8px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); width: 100%; max-width: 380px;
-      animation: fadeIn 0.5s ease-out;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .login-title { font-size: 1.75rem; font-weight: 700; text-align: center; margin: 0 0 1.5rem 0; color: #333; }
-    .form-group { margin-bottom: 1.25rem; }
-    .turnstile-group { display: flex; justify-content: center; min-height: 65px; margin-bottom: 1rem; }
-    label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555; }
-    input[type="text"], input[type="password"] {
-      width: 100%; padding: 0.875rem 1rem; border: 1px solid #ddd; border-radius: 6px;
-      font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus { border-color: #7209b7; outline: none; box-shadow: 0 0 0 3px rgba(114, 9, 183, 0.15); }
-    button {
-      width: 100%; padding: 0.875rem; background-color: #7209b7; color: white; border: none;
-      border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s;
-    }
-    button:hover { background-color: #5a067c; }
-    button:active { transform: scale(0.98); }
-    .error-message { color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; text-align: center; }
-    .back-link { display: block; text-align: center; margin-top: 1.5rem; color: #7209b7; text-decoration: none; font-size: 0.875rem; }
-    .back-link:hover { text-decoration: underline; }
-  </style>
+  <title>管理员登录 · ${siteName}</title>
+  <meta name="theme-color" content="#f6f4fb">
+  <link rel="icon" href="/favicon.svg?v=148aafdf" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/login.css?v=5a8cff09">
+  <script src="/js/login.js?v=72d49e8f" defer></script>
   ${turnstileScript}
 </head>
 <body>
-  <div class="login-container">
-    <h1 class="login-title">管理员登录</h1>
-    <form method="post" action="/admin/login" novalidate>
-      <div class="form-group">
-        <label for="username">用户名</label>
-        <input type="text" id="username" name="username" required autocomplete="username" autofocus>
-      </div>
-      <div class="form-group">
-        <label for="password">密码</label>
-        <input type="password" id="password" name="password" required autocomplete="current-password">
-      </div>
-      <div class="form-group">
-        <label for="duration">登录有效期</label>
-        <select id="duration" name="duration" style="width: 100%; padding: 0.875rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; background-color: white;">
-          <option value="1">1 天</option>
-          <option value="7">7 天</option>
-          <option value="30">30 天</option>
-          <option value="60">60 天</option>
-          <option value="90">90 天</option>
-        </select>
-      </div>
-      ${turnstileWidget}
-      ${configWarning}
-      ${hasError ? `<div class="error-message">${safeMessage}</div>` : ''}
-      <button type="submit">登 录</button>
-    </form>
-    <a href="/" class="back-link">返回首页</a>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-bookmark" viewBox="0 0 24 24"><path d="M6 4h12v17l-6-4-6 4V4Z"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/></symbol>
+  </svg>
+  <div class="page-shell">
+    <header class="page-header">
+      <a href="/" class="brand" aria-label="${siteName}首页">
+        <span class="brand-mark"><svg class="icon"><use href="#icon-bookmark"/></svg></span>
+        <span>${siteName}<small>IORI NAV</small></span>
+      </a>
+      <a href="/" class="back-link"><span aria-hidden="true">←</span> 返回首页</a>
+    </header>
+    <main class="login-layout">
+      <section class="intro" aria-labelledby="intro-title">
+        <p class="eyebrow"><span></span> 你的世界，井然有序</p>
+        <h2 id="intro-title">收藏每一份灵感，<br><span>留下自己的轨迹。</span></h2>
+        <p class="intro-description">让散落的好网站有处可归。<br>从这里，继续整理你喜欢的世界。</p>
+        <div class="bookmark-scene" aria-hidden="true">
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <span class="scene-dot dot-one"></span><span class="scene-dot dot-two"></span>
+          <div class="collection-window">
+            <div class="window-bar"><span class="window-dots"><i></i><i></i><i></i></span><span>我的收藏夹</span><svg class="icon"><use href="#icon-bookmark"/></svg></div>
+            <div class="window-content">
+              <p class="collection-label">为热爱，留一个位置</p>
+              <div class="collection-row"><span class="tile-icon tile-purple"><svg class="icon"><use href="#icon-spark"/></svg></span><span><b>灵感与创意</b><small>让好想法随时发生</small></span><span class="row-arrow">↗</span></div>
+              <div class="collection-row"><span class="tile-icon tile-blue"><svg class="icon"><use href="#icon-bookmark"/></svg></span><span><b>阅读与探索</b><small>总有新的世界值得发现</small></span><span class="row-arrow">↗</span></div>
+              <div class="collection-row"><span class="tile-icon tile-peach"><svg class="icon"><use href="#icon-clock"/></svg></span><span><b>日常与效率</b><small>把时间留给重要的事</small></span><span class="row-arrow">↗</span></div>
+            </div>
+          </div>
+          <div class="floating-bookmark"><svg class="icon"><use href="#icon-bookmark"/></svg></div>
+          <div class="saved-note"><span>✓</span> 美好，已收藏</div>
+          <svg class="scene-spark icon"><use href="#icon-spark"/></svg>
+        </div>
+        <p class="intro-footnote"><span></span> 一个属于你的互联网角落</p>
+      </section>
+      <section class="login-container" aria-labelledby="login-title">
+        <div class="form-heading">
+          <span class="welcome-label">WELCOME BACK</span>
+          <h1 class="login-title" id="login-title">管理员登录</h1>
+          <p>欢迎回来，继续打理你的书签收藏。</p>
+        </div>
+        <form method="post" action="/admin/login" novalidate>
+          <div class="form-group">
+            <label for="username">用户名</label>
+            <div class="input-wrap">
+              <svg class="icon input-icon" aria-hidden="true"><use href="#icon-user"/></svg>
+              <input type="text" id="username" name="username" required autocomplete="username" placeholder="请输入用户名" autofocus>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="password">密码</label>
+            <div class="input-wrap">
+              <svg class="icon input-icon" aria-hidden="true"><use href="#icon-lock"/></svg>
+              <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="请输入密码">
+              <button type="button" class="password-toggle" id="passwordToggle" aria-label="显示密码" aria-pressed="false" aria-controls="password" hidden>
+                <svg class="icon" aria-hidden="true"><use href="#icon-eye"/><path class="eye-slash" d="m3 3 18 18"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="duration" class="duration-label">登录有效期 <span>按你的使用习惯选择</span></label>
+            <div class="input-wrap">
+              <svg class="icon input-icon" aria-hidden="true"><use href="#icon-clock"/></svg>
+              <select id="duration" name="duration" aria-describedby="duration-hint">
+                <option value="1">1 天</option>
+                <option value="7">7 天</option>
+                <option value="30">30 天</option>
+                <option value="60">60 天</option>
+                <option value="90">90 天</option>
+              </select>
+              <svg class="icon select-chevron" aria-hidden="true"><use href="#icon-chevron"/></svg>
+            </div>
+            <p id="duration-hint" class="field-hint">公共设备建议选择 1 天，并在使用后退出。</p>
+          </div>
+          ${turnstileWidget}
+          ${configWarning}
+          ${hasError ? `<div class="error-message" role="alert">${safeMessage}</div>` : ''}
+          <button type="submit" class="login-button"><span class="button-label">登 录</span><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+        </form>
+        <div class="form-footer"><svg class="icon" aria-hidden="true"><use href="#icon-lock"/></svg><span>仅限管理员访问 · 妥善保管你的账号</span></div>
+      </section>
+    </main>
+    <footer class="page-footer"><span>${siteName}</span><span>把喜欢的世界，留在这里。</span></footer>
   </div>
-  <script>
-    const durationSelect = document.getElementById('duration');
-    const savedDuration = localStorage.getItem('login_duration');
-    if (savedDuration) {
-        durationSelect.value = savedDuration;
-    }
-    document.querySelector('form').addEventListener('submit', function() {
-      localStorage.setItem('login_duration', durationSelect.value);
-    });
-  </script>
 </body>
 </html>`;
 
