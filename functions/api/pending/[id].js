@@ -114,8 +114,13 @@ export async function onRequestDelete(context) {
   }
 
   try {
-    await env.NAV_DB.prepare('DELETE FROM pending_sites WHERE id = ?').bind(id).run();
-    
+    const result = await env.NAV_DB.prepare('DELETE FROM pending_sites WHERE id = ?').bind(id).run();
+    // 只有确定「0 行受影响」才返回 404；meta 缺失时不要误判成删除失败，
+    // 否则真实删除成功也会被前端当成「条目已不存在」。
+    if (result?.meta?.changes === 0) {
+      return errorResponse('Pending config not found', 404);
+    }
+
     return jsonResponse({
       code: 200,
       message: 'Pending config rejected successfully',

@@ -24,10 +24,19 @@ export const SCHEMA_VERSION = 'v6';
 export const PREVIOUS_SCHEMA_VERSION = 'v5';
 
 // 首页 HTML 缓存版本 - 修改此值会强制刷新首页缓存
-export const HOME_CACHE_VERSION = 'v41';
+// v42：TTL 从 30 天缩短到 6 小时。缓存键还带 D1 generation，数据写入后轮换。
+export const HOME_CACHE_VERSION = 'v42';
 
-// 首页 HTML 缓存与 dirty 标记 TTL（30 天）
-export const HOME_CACHE_TTL = 2592000;
+// 首页 HTML 缓存与 dirty 标记 TTL（6 小时）
+//
+// 不变式：HTML 缓存与 dirty 标记必须共用同一个 TTL。dirty 标记的写入时间总是
+// 晚于被它标记的 HTML，两者 TTL 相同即可保证「dirty 过期之前 HTML 一定先过期」，
+// 不会出现「旧 HTML 还活着但已无 dirty 标记」的脏读。
+//
+// 之所以不再用 30 天：markHomeCacheDirty 在 KV 写入失败时会退化为直接删除 HTML，
+// 此时若 D1 generation 轮换也失败，旧请求仍可能在原版本下回填。TTL 限制这类
+// 故障下的陈旧窗口；正常写入靠版本键隔离旧请求，不依赖 dirty 的条件清除。
+export const HOME_CACHE_TTL = 21600;
 
 // 数据库表结构定义
 export const DB_SCHEMA = `

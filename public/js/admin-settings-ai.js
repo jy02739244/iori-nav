@@ -13,6 +13,7 @@
     return {
       providerSelector: document.getElementById('providerSelector'),
       apiKeyInput: document.getElementById('apiKey'),
+      clearApiKeyBtn: document.getElementById('clearApiKeyBtn'),
       baseUrlInput: document.getElementById('baseUrl'),
       modelNameInput: document.getElementById('modelName'),
       bulkIdleView: document.getElementById('bulkGenerateIdle'),
@@ -246,6 +247,56 @@
     shouldStopBulkGeneration = true;
   }
 
+  // 后端密钥字段是三态：null = 清除、'' = 保留。输入框留空后保存只是「不修改」，
+  // 所以删除已存密钥需要一个显式动作，否则界面上根本没有清除路径。
+  function syncApiKeyField() {
+    const btn = document.getElementById('clearApiKeyBtn');
+    if (!btn) return;
+    btn.style.display = getCurrentSettings().has_api_key ? 'inline-block' : 'none';
+  }
+
+  async function clearApiKey() {
+    const btn = document.getElementById('clearApiKeyBtn');
+    if (!btn || btn.disabled) return;
+
+    const input = document.getElementById('apiKey');
+    // 输入框里有还没保存的新密钥时，要明确说它也会一起丢；
+    // 否则用户会以为这个按钮只删已存的那个。
+    const confirmText = (input?.value.trim() || '') !== ''
+      ? '确认清除 API Key？输入框里还没保存的密钥也会被丢弃。'
+      : '确认清除已保存的 API Key？清除后 AI 功能将不可用。';
+    if (!window.confirm(confirmText)) return;
+
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: null }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.code !== 200) {
+        throw new Error(data.message || '清除 API Key 失败');
+      }
+
+      const currentSettings = getCurrentSettings();
+      currentSettings.has_api_key = false;
+      delete currentSettings.apiKey;
+      if (input) {
+        input.value = '';
+        // 占位文案与 updateProviderUI 里的规则保持一致：
+        // 已经清空却仍写着「已配置」会让人以为没删掉。
+        input.placeholder = '请输入 API Key';
+      }
+      syncApiKeyField();
+      window.showMessage('API Key 已清除', 'success');
+    } catch (error) {
+      window.showMessage(error.message || '清除 API Key 失败', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   function bindEvents() {
     const refs = getRefs();
 
@@ -266,6 +317,8 @@
     refs.reviewPendingAiBtn?.addEventListener('click', () => {
       handleSingleGenerate('reviewPendingName', 'reviewPendingUrl', 'reviewPendingDesc', 'reviewPendingAiBtn');
     });
+
+    refs.clearApiKeyBtn?.addEventListener('click', clearApiKey);
   }
 
   function init() {
@@ -273,6 +326,7 @@
     initialized = true;
     fetchPublicConfig();
     bindEvents();
+    syncApiKeyField();
   }
 
   ns.ai = {
@@ -281,5 +335,7 @@
     requestStop,
     getAIDescription,
     handleBulkGenerate,
+    clearApiKey,
+    syncApiKeyField,
   };
 })();

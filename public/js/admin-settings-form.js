@@ -403,6 +403,8 @@
     const refs = getRefs();
 
     updateProviderUI(refs);
+    // 「清除已保存的密钥」按钮只看 has_api_key，每次刷新设置都同步一次
+    window.AdminSettings?.ai?.syncApiKeyField?.();
     // 备份表单只在服务端设置加载完成后回填。AI provider 等无关设置变化也会调用本函数，
     // 若每次都回填会覆盖用户尚未保存的 WebDAV 地址、目录，并清空刚输入的密码。
     if (options.includeBackup) updateBackupUI();

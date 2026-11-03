@@ -50,6 +50,61 @@ test.describe('首页 SSR', () => {
     expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
   });
 
+  test('首页与静态资源响应带基础安全头', async ({ request }) => {
+    const home = await request.get('/');
+    expect(home.headers()['x-frame-options']).toBe('SAMEORIGIN');
+    expect(home.headers()['content-security-policy']).toBe("frame-ancestors 'self'");
+    expect(home.headers()['x-content-type-options']).toBe('nosniff');
+    expect(home.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+    expect(home.headers()['permissions-policy']).toContain('camera=()');
+
+    const asset = await request.get('/js/home-cards.js');
+    expect(asset.headers()['x-content-type-options']).toBe('nosniff');
+    expect(asset.headers()['x-frame-options']).toBe('SAMEORIGIN');
+    expect(asset.headers()['content-security-policy']).toBe("frame-ancestors 'self'");
+  });
+
+  test('首页缓存写入后能命中，且 HIT 路径同样带安全头', async ({ request }) => {
+    // 首次请求可能是 MISS 并靠 waitUntil 异步回填，所以轮询等 HIT。
+    // 这条用例覆盖「SSR 渲染 → 写 KV → 下次命中」整条链路：单测里的 KV 是
+    // 同步假对象，摸不到 waitUntil 这段回填时序。
+    let cacheHeader = null;
+    let hitResponse = null;
+
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const res = await request.get('/');
+      cacheHeader = res.headers()['x-cache'];
+      if (cacheHeader === 'HIT') {
+        hitResponse = res;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+
+    expect(cacheHeader, '首页应在若干次请求内命中缓存').toBe('HIT');
+    // 命中缓存时响应仍由中间件重包，安全头不能丢
+    expect(hitResponse.headers()['content-security-policy']).toBe("frame-ancestors 'self'");
+    expect(hitResponse.headers()['x-frame-options']).toBe('SAMEORIGIN');
+    expect((await hitResponse.text()).length).toBeGreaterThan(0);
+  });
+
+  test('未知 API 方法与路径不再回退首页', async ({ request }) => {
+    const getApi = await request.get('/api/settings');
+    expect(getApi.status()).toBe(401);
+    expect(getApi.headers()['x-frame-options']).toBe('SAMEORIGIN');
+
+    const headApi = await request.head('/api/settings');
+    expect(headApi.status()).toBe(405);
+    expect(headApi.headers()['allow']).toContain('GET');
+
+    // 兜底路由不能抢在具体路由前面：多级路径也要走到自己的 handler
+    const pendingApi = await request.get('/api/pending');
+    expect(pendingApi.status()).toBe(401);
+
+    const unknownApi = await request.get('/api/definitely-not-here');
+    expect(unknownApi.status()).toBe(404);
+  });
+
   test('渲染出书签网格且页脚有文案', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 

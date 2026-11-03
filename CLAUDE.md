@@ -55,9 +55,12 @@ npx wrangler d1 execute book --remote --file=schema.sql
 
 `functions/index.js` 才是首页 handler。`public/index.html` 只是模板，里面散落着 `{{PLACEHOLDER}}`，由 `index.js` 用数据库内容、settings、菜单 / 卡片渲染器（`functions/lib/{card,menu}-renderer.js`）填充。
 
-- 公私两份缓存：`home_html_public_v8` / `home_html_private_v8`（key 由 `getHomeCacheKey(scope)` 生成）
+- 公私两份缓存：`home_html_{public,private}_{HOME_CACHE_VERSION}_{generation}`（key 由 `getHomeCacheKey(scope, generation)` 生成）；generation 复用 D1 `settings.graph_cache_generation`，首页读取前必须先保证 schema 就绪，不要缓存这个版本号到 KV
+- 两份缓存与 dirty 标记共用 `HOME_CACHE_TTL`（6 小时）。**不要单独调长 HTML 那份**：dirty 标记必须不比 HTML 活得短，否则会出现「旧 HTML 还在、dirty 已过期」的脏读窗口
 - 写操作（增删改 site / category / settings）必须调用 `markHomeCacheDirty(env, scope)` 标记 dirty，下一次 GET 才会重渲染并回填缓存
-- 写完不要主动 delete 缓存——下一次 GET 会替换；dirty 标记在新 HTML 写回时再 `clearHomeCacheDirty(..., expectedValue)` 做条件清除（防止竞态）
+- 写完不要主动 delete 缓存——`markHomeCacheDirty` 先轮换 D1 generation；回填走 `writeHomeCacheIfUnchanged(env, scope, html, expectedGeneration)`，版本变了就不写。即使版本在检查后变更，旧 HTML 也只能写入旧版本的键，无法覆盖新版本页面
+- 冷缓存直接按 D1 版本回填（初始版本为 `'0'`），不要在 KV 占位后要求立即读回 token：KV 的负缓存与最终一致性不保证写后读。版本读取失败时跳过缓存；每次首页 HIT 也需要一次 D1 版本查询
+- KV dirty 标记保留为设置缓存传播和版本写入失败时的兜底；渲染开始时有标记才在回填后用 `clearHomeCacheDirtyIfValue(env, scope, expectedValue)` 条件清除。管理端强制刷新先删除 HTML / 设置缓存，再用 `clearGraphCache(env, { throwOnError: true })` 轮换 generation，成功后才无条件清 dirty；版本读取或轮换失败返回 500 并保留 dirty。普通数据写入仍使用版本轮换的 best-effort 行为，让 KV dirty 兜底
 - `cachedTemplateHtml` 在 Worker 实例内缓存，避免每次 MISS 重复 `ASSETS.fetch('/index.html')`
 - 标签间空白会被 `>\s+<` → `><` 压缩，所以模板里**不要塞 `<pre>` / `<textarea>`**
 
@@ -71,7 +74,7 @@ npx wrangler d1 execute book --remote --file=schema.sql
 
 ### 5. Settings 双层缓存
 
-`functions/api/settings.js` 写设置 → 同时清除 KV `settings_cache` + 标记 home cache dirty；`functions/index.js` 读取时优先查 `settings_cache`（24h TTL），未命中再查 D1 并异步回填。
+`functions/api/settings.js` 写设置 → 同时清除 KV `settings_cache` + 标记 home cache dirty；`functions/index.js` 读取时优先查 `settings_cache`（24h TTL），未命中再查 D1 并异步回填。只改 WebDAV / AI 配置（两者都不进 `SETTINGS_SCHEMA`）时不动这两个缓存，因为它们不影响 SSR 输出。秘密字段（`apiKey` / `webdav_password`）统一三态：`null` 清除、`''` 保留、其他值写入。
 
 ### 6. 私密书签 / 分类（`is_private`）
 
@@ -128,7 +131,7 @@ wrangler.toml             # 已 gitignore，本地需自填 D1/KV id
 | `NAV_AUTH` | KV（同时存 session / CSRF / 限流计数器 / settings 缓存 / home HTML 缓存） | ✅ |
 
 可选环境变量：`ENABLE_PUBLIC_SUBMISSION`、`SITE_NAME`、`SITE_DESCRIPTION`、`FOOTER_TEXT`、`ICON_API`、`AI_REQUEST_DELAY`。
-后台凭据通过 KV 条目 `admin_username` / `admin_password` 配置。
+后台凭据通过 KV 条目 `admin_username` / `admin_password` 配置；两者长度都不得超过 `MAX_TIMING_SAFE_INPUT_LENGTH`（4096），超长会触发登录页的配置错误提示。
 
 ## 中文支持
 

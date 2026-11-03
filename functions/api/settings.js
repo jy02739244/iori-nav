@@ -11,6 +11,15 @@ const WEBDAV_SETTING_KEYS = new Set(['webdav_url', 'webdav_username', 'webdav_pa
 const IGNORED_SETTING_KEYS = new Set(['has_api_key', 'debug_api_key_info', 'has_webdav_password']);
 const ALLOWED_PROVIDERS = new Set(['workers-ai', 'gemini', 'openai']);
 
+// 读取白名单是静态的：提前序列化一次，避免每次 GET 都重建数组并重新 stringify。
+// 用单个 JSON 参数展开 IN 列表，既能绕开 D1 单查询 100 个绑定参数的上限，
+// 也仍然命中 settings.key 主键索引。
+const SETTINGS_READ_KEYS_JSON = JSON.stringify([
+  ...LAYOUT_SETTING_KEYS,
+  ...AI_SETTING_KEYS,
+  ...WEBDAV_SETTING_KEYS,
+]);
+
 function normalizeWebdavSettingValue(key, value) {
   // 密码属于不透明凭据，首尾空格可能是密码本身的一部分，不能做 trim。
   const rawText = String(value ?? '');
@@ -118,17 +127,18 @@ export async function onRequestGet(context) {
   }
 
   try {
-    // Try to get all settings
-    const { results } = await env.NAV_DB.prepare('SELECT key, value FROM settings').all();
+    // 只读取接口会返回的设置项，避免把 graph_cache_generation 等内部键带进来。
+    // 白名单在模块加载时已序列化，这里只做一次 bind。
+    const { results } = await env.NAV_DB
+      .prepare('SELECT key, value FROM settings WHERE key IN (SELECT value FROM json_each(?))')
+      .bind(SETTINGS_READ_KEYS_JSON)
+      .all();
 
     const settings = {};
     if (results) {
       results.forEach(row => {
-        // 忽略后端计算字段或调试字段，防止数据库脏数据覆盖
-        if (IGNORED_SETTING_KEYS.has(row.key)) {
-          return;
-        }
-
+        // 双重校验：SQL 已按白名单过滤过一遍，这里再挡一次数据库脏数据，
+        // 同时排除 has_api_key 这类由后端计算、不应直接下发的字段。
         if (!LAYOUT_SETTING_KEYS.has(row.key) && !AI_SETTING_KEYS.has(row.key) && !WEBDAV_SETTING_KEYS.has(row.key)) {
           return;
         }
@@ -185,13 +195,15 @@ export async function onRequestPost(context) {
       // 不要保存临时字段
       if (IGNORED_SETTING_KEYS.has(key)) continue;
 
-      // 密码字段的三种语义靠请求形状区分，不用带内哨兵值：
+      // 秘密字段统一三态语义，靠请求形状区分，不用带内哨兵值：
       //   null   → 显式清除
-      //   ''     → 不修改（前端每次加载都会清空密码框，不能让它覆盖已存密码）
-      //   其他   → 写入新密码
-      // 用 '__CLEAR__' 之类的字符串做哨兵会吞掉恰好等于该值的合法密码，
-      // 且前后端各写一份字面量时改一边就会把清除动作变成「把密码设成哨兵值」。
-      if (key === 'webdav_password') {
+      //   ''     → 不修改（前端每次加载都会清空密码 / key 输入框，不能让它覆盖已存密钥）
+      //   其他   → 写入新值
+      // 两个字段必须共用同一套规则：否则同一个接口里「清空 AI key」和「保留 WebDAV 密码」
+      // 会是相反的约定，直接调 API 的场景很容易把 key 洗掉。
+      // 用 '__CLEAR__' 之类的字符串做哨兵会吞掉恰好等于该值的合法密钥，
+      // 且前后端各写一份字面量时改一边就会把清除动作变成「把密钥设成哨兵值」。
+      if (key === 'apiKey' || key === 'webdav_password') {
         if (value === null) {
           normalizedEntries.push([key, '']);
           continue;
@@ -240,10 +252,12 @@ export async function onRequestPost(context) {
     // 保存成功后刷新设置缓存和首页缓存，避免旧缓存状态阻止设置生效。
     // 这里刻意看提交的 key 而不是 changedEntries：值没变也刷，是为了兜住
     // 「DB 与缓存不一致导致用户怎么改都不生效」的情况。
-    // 但 WebDAV 配置不进 SETTINGS_SCHEMA，index.js 的首页查询按 getSettingsKeys()
-    // 过滤，所以这几个 key 既不在 settings_cache 里也不影响 SSR 输出 —— 只改它们时
-    // 刷缓存纯属浪费，会让访客侧白等一次重新渲染。
-    const touchesRenderedSettings = normalizedEntries.some(([key]) => !WEBDAV_SETTING_KEYS.has(key));
+    // 但 WebDAV 与 AI 配置都不进 SETTINGS_SCHEMA，index.js 的首页查询按
+    // getSettingsKeys() 过滤，所以这些 key 既不在 settings_cache 里也不影响 SSR
+    // 输出 —— 只改它们时刷缓存纯属浪费，会让访客侧白等一次重新渲染。
+    const touchesRenderedSettings = normalizedEntries.some(
+      ([key]) => !WEBDAV_SETTING_KEYS.has(key) && !AI_SETTING_KEYS.has(key)
+    );
 
     if (touchesRenderedSettings) {
       try {

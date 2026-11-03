@@ -94,7 +94,6 @@ export function buildCardViewModel(site) {
 
 export function buildCardHydrationState(sites, settings = {}) {
   return {
-    config: buildCardTemplateConfig(settings, 'desktop'),
     configs: {
       desktop: buildCardTemplateConfig(settings, 'desktop'),
       mobile: buildCardTemplateConfig(settings, 'mobile'),

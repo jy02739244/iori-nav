@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { onRequestPut } from '../functions/api/pending/[id].js';
+import { onRequestDelete, onRequestPut } from '../functions/api/pending/[id].js';
 import { getHomeDirtyKey } from '../functions/_middleware.js';
 
 function createKv(initialEntries = {}) {
@@ -169,4 +169,103 @@ test('PUT /api/pending/:id leaves no partial write when the batch fails', async 
   assert.match(body.message, /D1 batch failed/);
   assert.equal(calls.filter(call => call.kind === 'batch').length, 1);
   assert.equal(env.NAV_AUTH.store.has(getHomeDirtyKey('public')), false, '全部回滚时不该打脏标记');
+});
+
+test('DELETE /api/pending/:id returns 404 in one statement when the row does not exist', async () => {
+  const calls = [];
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...params) {
+          calls.push({ sql, params });
+          return {
+            async run() {
+              return { success: true, meta: { changes: 0 } };
+            },
+          };
+        },
+      };
+    },
+  };
+  const request = new Request('https://example.com/api/pending/99', {
+    method: 'DELETE',
+    headers: { Cookie: 'admin_session=token' },
+  });
+
+  const response = await onRequestDelete({
+    request,
+    env: { NAV_AUTH: createKv({ session_token: '1' }), NAV_DB: db },
+    params: { id: '99' },
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 404);
+  assert.equal(body.code, 404);
+  assert.equal(calls.length, 1, '应只执行一条 DELETE');
+  assert.match(calls[0].sql, /^DELETE FROM pending_sites/);
+  assert.deepEqual(calls[0].params, ['99']);
+});
+
+test('DELETE /api/pending/:id deletes an existing row in one statement', async () => {
+  const calls = [];
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...params) {
+          calls.push({ sql, params });
+          return {
+            async run() {
+              return { success: true, meta: { changes: 1 } };
+            },
+          };
+        },
+      };
+    },
+  };
+  const request = new Request('https://example.com/api/pending/7', {
+    method: 'DELETE',
+    headers: { Cookie: 'admin_session=token' },
+  });
+
+  const response = await onRequestDelete({
+    request,
+    env: { NAV_AUTH: createKv({ session_token: '1' }), NAV_DB: db },
+    params: { id: '7' },
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.code, 200);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].params, ['7']);
+});
+
+test('DELETE /api/pending/:id treats a missing meta block as success', async () => {
+  const db = {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async run() {
+              // 某些驱动/包装层不返回 meta；此时不能把真实成功的删除误判为 404
+              return { success: true };
+            },
+          };
+        },
+      };
+    },
+  };
+  const request = new Request('https://example.com/api/pending/7', {
+    method: 'DELETE',
+    headers: { Cookie: 'admin_session=token' },
+  });
+
+  const response = await onRequestDelete({
+    request,
+    env: { NAV_AUTH: createKv({ session_token: '1' }), NAV_DB: db },
+    params: { id: '7' },
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).code, 200);
 });

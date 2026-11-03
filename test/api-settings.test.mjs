@@ -9,8 +9,10 @@ import { onRequestGet, onRequestPost } from '../functions/api/settings.js';
 
 function createKv(initialEntries = {}) {
   const store = new Map(Object.entries(initialEntries));
+  const deleteCalls = [];
   return {
     store,
+    deleteCalls,
     async get(key) {
       return store.get(key) ?? null;
     },
@@ -18,6 +20,7 @@ function createKv(initialEntries = {}) {
       store.set(key, value);
     },
     async delete(key) {
+      deleteCalls.push(key);
       store.delete(key);
     },
   };
@@ -26,10 +29,12 @@ function createKv(initialEntries = {}) {
 function createDb(initialSettings = {}) {
   const store = new Map(Object.entries(initialSettings));
   const runCalls = [];
+  const readCalls = [];
 
   return {
     store,
     runCalls,
+    readCalls,
     prepare(sql) {
       const createStatement = (params = []) => ({
         sql,
@@ -42,6 +47,17 @@ function createDb(initialSettings = {}) {
           return { success: true };
         },
         async all() {
+          readCalls.push({ sql, params });
+
+          if (sql.includes('json_each')) {
+            const allowedKeys = JSON.parse(params[0]);
+            return {
+              results: allowedKeys
+                .filter(key => store.has(key))
+                .map(key => ({ key, value: store.get(key) })),
+            };
+          }
+
           if (sql.includes('SELECT key, value FROM settings WHERE key IN')) {
             return {
               results: params
@@ -284,6 +300,36 @@ test('GET /api/settings never returns the WebDAV password', async () => {
   assert.equal(body.data.webdav_password, undefined);
   assert.equal(body.data.has_webdav_password, true);
   assert.equal(body.data.webdav_username, 'user');
+});
+
+test('GET /api/settings reads only allowlisted keys with one JSON binding', async () => {
+  const db = createDb({
+    home_title_size: '36',
+    graph_cache_generation: 'internal-uuid',
+    apiKey: 'secret-key',
+    webdav_password: 'secret-password',
+  });
+  const kv = createKv({ session_token: '1' });
+  const request = new Request('https://example.com/api/settings', {
+    headers: { Cookie: 'admin_session=token' },
+  });
+
+  const response = await onRequestGet({ request, env: { NAV_AUTH: kv, NAV_DB: db } });
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.data.home_title_size, '36');
+  assert.equal(body.data.has_api_key, true);
+  assert.equal(body.data.has_webdav_password, true);
+  assert.equal('graph_cache_generation' in body.data, false);
+
+  assert.equal(db.readCalls.length, 1, 'GET 应只查询一次 settings');
+  assert.equal(db.readCalls[0].params.length, 1, '白名单应作为单个 JSON 参数绑定');
+  const readKeys = JSON.parse(db.readCalls[0].params[0]);
+  assert.ok(readKeys.includes('home_title_size'));
+  assert.ok(readKeys.includes('apiKey'));
+  assert.ok(readKeys.includes('webdav_password'));
+  assert.equal(readKeys.includes('graph_cache_generation'), false);
 });
 
 test('POST /api/settings keeps the stored WebDAV password when field is empty', async () => {
@@ -529,14 +575,90 @@ test('GET /api/settings reports no password after it is cleared', async () => {
   assert.equal(body.data.has_webdav_password, false, '清空后前端应显示未配置');
 });
 
+test('POST /api/settings treats an empty API key as "keep the stored one"', async () => {
+  // 与 webdav_password 共用同一套三态语义：空值 = 不修改
+  for (const payload of [{ provider: 'openai' }, { apiKey: '', provider: 'openai' }]) {
+    const db = createDb({ apiKey: 'stored-key', provider: 'openai' });
+    const kv = createKv({ session_token: '1' });
+    const request = new Request('https://example.com/api/settings', {
+      method: 'POST',
+      headers: { Cookie: 'admin_session=token', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const response = await onRequestPost({ request, env: { NAV_AUTH: kv, NAV_DB: db } });
+    assert.equal(response.status, 200);
+    assert.equal(
+      db.store.get('apiKey'),
+      'stored-key',
+      `空 API key 不应覆盖已存值: ${JSON.stringify(payload)}`
+    );
+  }
+});
+
+test('POST /api/settings clears the API key when it is sent as null', async () => {
+  const db = createDb({ apiKey: 'stored-key' });
+  const kv = createKv({ session_token: '1' });
+  const request = new Request('https://example.com/api/settings', {
+    method: 'POST',
+    headers: { Cookie: 'admin_session=token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey: null }),
+  });
+
+  const response = await onRequestPost({ request, env: { NAV_AUTH: kv, NAV_DB: db } });
+
+  assert.equal(response.status, 200);
+  assert.equal(db.store.get('apiKey'), '', 'null 应清空已存 API key');
+});
+
+test('POST /api/settings does not refresh the home cache for AI-only changes', async () => {
+  // AI 配置不进 SETTINGS_SCHEMA，既不影响 settings_cache 也不影响 SSR 输出
+  const db = createDb({});
+  const kv = createKv({ session_token: '1', settings_cache: '[]' });
+  const request = new Request('https://example.com/api/settings', {
+    method: 'POST',
+    headers: { Cookie: 'admin_session=token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider: 'openai', baseUrl: 'https://api.example.com', model: 'gpt-4o-mini' }),
+  });
+
+  const response = await onRequestPost({ request, env: { NAV_AUTH: kv, NAV_DB: db } });
+
+  assert.equal(response.status, 200);
+  assert.equal(kv.deleteCalls.includes('settings_cache'), false, 'AI 配置不该丢掉设置缓存');
+  assert.equal(kv.store.has('settings_cache'), true, 'AI 配置不该丢掉设置缓存');
+  assert.equal(kv.store.has(getHomeDirtyKey('public')), false, 'AI 配置不该标记首页 dirty');
+  assert.equal(kv.store.has(getHomeDirtyKey('private')), false, 'AI 配置不该标记首页 dirty');
+});
+
+test('POST /api/settings still refreshes caches when layout settings change', async () => {
+  const db = createDb({});
+  const kv = createKv({ session_token: '1', settings_cache: '[]' });
+  const request = new Request('https://example.com/api/settings', {
+    method: 'POST',
+    headers: { Cookie: 'admin_session=token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ layout_hide_desc: true }),
+  });
+
+  const response = await onRequestPost({ request, env: { NAV_AUTH: kv, NAV_DB: db } });
+
+  assert.equal(response.status, 200);
+  assert.equal(kv.deleteCalls.includes('settings_cache'), true, '布局设置应清掉设置缓存');
+  assert.equal(kv.store.has('settings_cache'), false, '布局设置应清掉设置缓存');
+  assert.equal(kv.store.has(getHomeDirtyKey('public')), true, '布局设置应标记首页 dirty');
+});
+
 function createFailingDb(errorMessage) {
   return {
     prepare() {
-      return {
+      const statement = {
+        bind() {
+          return statement;
+        },
         async all() {
           throw new Error(errorMessage);
         },
       };
+      return statement;
     },
   };
 }

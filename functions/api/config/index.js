@@ -47,12 +47,13 @@ export async function onRequestGet(context) {
 
     const query = `SELECT * ${queryBase} ORDER BY sort_order ASC, create_time DESC LIMIT ? OFFSET ?`;
     const countQuery = `SELECT COUNT(*) as total ${queryBase}`;
-    
-    // 添加分页参数
+
+    // 列表与总数互不依赖，并行执行省一次 D1 往返
     const fullBindParams = [...queryBindParams, pageSize, offset];
-    const { results } = await env.NAV_DB.prepare(query).bind(...fullBindParams).all();
-    
-    const countResult = await env.NAV_DB.prepare(countQuery).bind(...queryBindParams).first();
+    const [{ results }, countResult] = await Promise.all([
+      env.NAV_DB.prepare(query).bind(...fullBindParams).all(),
+      env.NAV_DB.prepare(countQuery).bind(...queryBindParams).first(),
+    ]);
     const total = countResult ? countResult.total : 0;
 
     return jsonResponse({

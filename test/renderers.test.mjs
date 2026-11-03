@@ -57,9 +57,10 @@ test('style three renders compact navigation tiles and hides secondary content',
     { key: 'layout_card_style', value: 'style3' },
   ]);
 
-  const { config } = buildCardHydrationState([
+  const { configs } = buildCardHydrationState([
     { id: 1, name: 'Example', url: 'https://example.com', desc: 'Hidden', catelog_name: 'Tools' },
   ], settings);
+  const config = configs.desktop;
   const html = renderSiteCards([
     { id: 1, name: 'Example', url: 'https://example.com', desc: 'Hidden', catelog_name: 'Tools' },
   ], settings);
@@ -82,9 +83,10 @@ test('style three with frosted glass uses translucent treatment', () => {
     { key: 'layout_card_style', value: 'style3' },
   ]);
 
-  const { config } = buildCardHydrationState([
+  const { configs } = buildCardHydrationState([
     { id: 1, name: 'Example', url: 'https://example.com' },
   ], settings);
+  const config = configs.desktop;
   const html = renderSiteCards([
     { id: 1, name: 'Example', url: 'https://example.com' },
   ], settings);
@@ -123,7 +125,7 @@ test('card hydration state shares sanitization and render config', () => {
     { key: 'layout_grid_cols', value: '5' },
   ]);
 
-  const { config, cards } = buildCardHydrationState([
+  const { configs, cards } = buildCardHydrationState([
     {
       id: 7,
       name: '<script>alert(1)</script>',
@@ -134,6 +136,7 @@ test('card hydration state shares sanitization and render config', () => {
       catelog_name: '<Work>',
     },
   ], settings);
+  const config = configs.desktop;
 
   assert.equal(config.enableFrostedGlass, true);
   assert.equal(config.cardStyleClass, 'style-2');
@@ -167,9 +170,10 @@ test('card hydration state exposes mobile card config separately', () => {
     { key: 'mobile_layout_card_style', value: 'style2' },
   ]);
 
-  const { config, configs } = buildCardHydrationState([
+  const { configs } = buildCardHydrationState([
     { id: 1, name: 'Example', url: 'https://example.com' },
   ], settings);
+  const config = configs.desktop;
 
   assert.equal(config.gridCols, '6');
   assert.equal(config.hideDesc, false);

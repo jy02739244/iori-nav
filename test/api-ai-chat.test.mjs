@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { onRequestPost } from '../functions/api/ai-chat.js';
+import { onRequestPost, runWithTimeout } from '../functions/api/ai-chat.js';
 import { DEFAULT_WORKERS_AI_MODEL } from '../functions/lib/workers-ai-models.js';
 
 function createKv(initialEntries = {}) {
@@ -235,4 +235,170 @@ test('POST /api/ai-chat extracts bookmark JSON from verbose model output', async
     name: '1024tools',
     description: '在线实用工具与开发助手平台',
   });
+});
+
+test('POST /api/ai-chat rejects too many messages before calling the provider', async () => {
+  const response = await onRequestPost({
+    request: createRequest({
+      messages: Array.from({ length: 51 }, () => ({ role: 'user', content: 'x' })),
+    }),
+    env: {
+      NAV_AUTH: createKv({ session_token: '1' }),
+      NAV_DB: createDb({ provider: 'workers-ai' }),
+    },
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.match(body.message, /cannot exceed 50 entries/);
+});
+
+test('POST /api/ai-chat rejects oversized message content', async () => {
+  const response = await onRequestPost({
+    request: createRequest({
+      messages: [{ role: 'user', content: 'x'.repeat(100001) }],
+    }),
+    env: {
+      NAV_AUTH: createKv({ session_token: '1' }),
+      NAV_DB: createDb({ provider: 'workers-ai' }),
+    },
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 413);
+  assert.match(body.message, /cannot exceed 100000 characters/);
+});
+
+test('POST /api/ai-chat counts non-text parts toward the size limit', async () => {
+  const response = await onRequestPost({
+    request: createRequest({
+      messages: [{
+        role: 'user',
+        content: [{
+          type: 'image_url',
+          image_url: { url: `data:image/png;base64,${'x'.repeat(100000)}` },
+        }],
+      }],
+    }),
+    env: {
+      NAV_AUTH: createKv({ session_token: '1' }),
+      NAV_DB: createDb({ provider: 'workers-ai' }),
+    },
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 413);
+  assert.match(body.message, /cannot exceed 100000 characters/);
+});
+
+test('POST /api/ai-chat rejects oversized bodies before parsing them', async () => {
+  // 单条超长消息在解析后才能被字符数统计挡住；这条用例走 Content-Length 预检，
+  // 保证超大 body 不会先被 JSON.parse 吃进内存。
+  const bigBody = JSON.stringify({
+    messages: [{ role: 'user', content: 'x'.repeat(300 * 1024) }],
+  });
+
+  const response = await onRequestPost({
+    request: new Request('https://example.com/api/ai-chat', {
+      method: 'POST',
+      headers: {
+        Cookie: 'admin_session=token',
+        'Content-Type': 'application/json',
+      },
+      body: bigBody,
+    }),
+    env: {
+      NAV_AUTH: createKv({ session_token: '1' }),
+      NAV_DB: createDb({ provider: 'workers-ai' }),
+    },
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 413);
+  assert.match(body.message, /body too large/i);
+});
+
+test('POST /api/ai-chat rejects oversized chunked bodies without Content-Length', async () => {
+  // 分块上传不带 Content-Length，只能边读边计数；流足够大时必须在读完整 body
+  // 之前就被打断并返回 413，而不是等解析完再靠字符数校验兜底。
+  const encoder = new TextEncoder();
+  const chunkA = JSON.stringify({ messages: [{ role: 'user', content: 'x'.repeat(150 * 1024) }] });
+  const chunkB = 'y'.repeat(150 * 1024);
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(chunkA));
+      controller.enqueue(encoder.encode(chunkB));
+      controller.close();
+    },
+  });
+
+  const response = await onRequestPost({
+    request: new Request('https://example.com/api/ai-chat', {
+      method: 'POST',
+      headers: {
+        Cookie: 'admin_session=token',
+        'Content-Type': 'application/json',
+      },
+      body,
+      duplex: 'half',
+    }),
+    env: {
+      NAV_AUTH: createKv({ session_token: '1' }),
+      NAV_DB: createDb({ provider: 'workers-ai' }),
+    },
+  });
+  const result = await response.json();
+
+  assert.equal(response.status, 413);
+  assert.match(result.message, /body too large/i);
+});
+
+test('POST /api/ai-chat turns a broken request body into 400 instead of 500', async () => {
+  // 客户端中途断开 / 连接被重置：这属于调用方的问题，不能变成 500，
+  // 也不该把底层错误文本（Server Error: ...）回给调用方。
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode('{"messages":['));
+      controller.error(new Error('connection reset by peer'));
+    },
+  });
+
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    const response = await onRequestPost({
+      request: new Request('https://example.com/api/ai-chat', {
+        method: 'POST',
+        headers: {
+          Cookie: 'admin_session=token',
+          'Content-Type': 'application/json',
+        },
+        body,
+        duplex: 'half',
+      }),
+      env: {
+        NAV_AUTH: createKv({ session_token: '1' }),
+        NAV_DB: createDb({ provider: 'workers-ai' }),
+      },
+    });
+    const result = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.match(result.message, /Failed to read request body/);
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test('runWithTimeout rejects stalled AI calls with TimeoutError', async () => {
+  assert.equal(await runWithTimeout(Promise.resolve('ok'), 50), 'ok');
+
+  await assert.rejects(
+    runWithTimeout(new Promise(() => {}), 10),
+    (error) => {
+      assert.equal(error.name, 'TimeoutError');
+      return true;
+    }
+  );
 });

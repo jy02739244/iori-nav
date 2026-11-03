@@ -640,7 +640,7 @@ test('import deduplicates non-root URLs with and without trailing slash', async 
 });
 
 // 导入是多次 batch()/run() 的多事务写入，中途失败会留下部分变更。
-// 若首页脏标记只在成功路径打，KV 缓存会滞留到 TTL（30 天）耗尽。
+// 若首页脏标记只在成功路径打，KV 缓存会滞留到 HOME_CACHE_TTL 耗尽。
 // 同时 KV 对同一个 key 限制每秒一次写入，所以每个请求只能打一次标记。
 function createDirtyTrackingEnv({ failSiteBatchAfter = Infinity } = {}) {
   const events = [];

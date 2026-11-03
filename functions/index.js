@@ -1,6 +1,6 @@
 // functions/index.js
-import { isAdminAuthenticated, getHomeCacheKey, clearHomeCacheDirty, markHomeCacheDirty, getHomeCacheDirtyValue } from './_middleware';
-import { FONT_MAP, HOME_CACHE_TTL } from './constants';
+import { isAdminAuthenticated, getHomeCacheKey, clearHomeCacheDirtyIfValue, markHomeCacheDirty, getHomeCacheDirtyValue, getGraphCacheGeneration, writeHomeCacheIfUnchanged } from './_middleware';
+import { FONT_MAP } from './constants';
 import { escapeHTML, sanitizeUrl, normalizeSortOrder, getStyleStr, sanitizeStyleColor } from './lib/utils';
 import { getSettingsKeys, parseSettings } from './lib/settings-parser';
 import { renderHorizontalMenu, renderVerticalMenu } from './lib/menu-renderer';
@@ -52,14 +52,16 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const isHomePage = url.pathname === '/' && !url.search;
   const cacheScope = isAuthenticated ? 'private' : 'public';
-  const homeCacheKey = getHomeCacheKey(cacheScope);
   const cookies = request.headers.get('Cookie') || '';
+  // 旧版本用这两个 cookie 让前端触发一次缓存刷新，现在没有任何写入路径了；
+  // 保留读取分支只为清掉老浏览器里残留的值，可以随下次大版本一起移除。
   const hasLegacyStaleCookie = cookies.includes('iori_cache_stale=1');
   const hasPublicStaleCookie = hasLegacyStaleCookie || cookies.includes('iori_cache_public_stale=1');
   const hasPrivateStaleCookie = hasLegacyStaleCookie || cookies.includes('iori_cache_private_stale=1');
   let shouldClearCookie = false;
   let cacheDirty = false;
   let cacheDirtyValue = null;
+  let cacheGeneration = null;
 
   if (isHomePage) {
     if (isAuthenticated && (hasPublicStaleCookie || hasPrivateStaleCookie)) {
@@ -73,17 +75,23 @@ export async function onRequest(context) {
       shouldClearCookie = true;
     }
 
-    // 并行读取 dirty 标记、缓存 HTML 与 schema 就绪状态。schema 检查从中间件移到此处，
-    // 命中 schemaReady 短路时与 KV 读同步完成；冷启动首请求也只消耗一次 KV 往返（max of 三者）
+    // generation 来自 D1，必须在 schema 就绪后读取；KV 只保存按版本隔离的 HTML。
+    // 不把 generation 放进 KV，否则冷缓存的负缓存会阻止立即读回新 token。
     let cachedHtml = null;
     try {
-      [cacheDirtyValue, cachedHtml] = await Promise.all([
+      [cacheDirtyValue, cacheGeneration] = await Promise.all([
         getHomeCacheDirtyValue(env, cacheScope),
-        env.NAV_AUTH.get(homeCacheKey),
-        ensureSchemaReady(env),
+        ensureSchemaReady(env).then(() => getGraphCacheGeneration(env)),
       ]);
+      if (cacheGeneration !== null) {
+        cachedHtml = await env.NAV_AUTH.get(getHomeCacheKey(cacheScope, cacheGeneration));
+      }
     } catch (e) {
+      // 任一读失败都走 MISS 且跳过回填，避免把未知版本或未知 dirty 状态当作 HIT。
       console.warn('Failed to read home cache:', e);
+      cachedHtml = null;
+      cacheDirtyValue = null;
+      cacheGeneration = null;
     }
     cacheDirty = !!cacheDirtyValue;
 
@@ -405,10 +413,7 @@ export async function onRequest(context) {
 
   // 注入隐藏图标的 CSS
   if (S.home_hide_admin) {
-    let hideIconsCss = '<style>';
-    if (S.home_hide_admin) hideIconsCss += 'a[href^="/admin"] { display: none !important; }';
-    hideIconsCss += '</style>';
-    headInjections += hideIconsCss;
+    headInjections += '<style>a[href^="/admin"] { display: none !important; }</style>';
   }
 
   // 背景层 HTML
@@ -506,8 +511,7 @@ export async function onRequest(context) {
   // 全局站点卡片视图模型与布局配置：直接序列化后注入到 main.js 之前
   const cardHydrationState = buildCardHydrationState(allSites, S);
   const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
-  // 只注入桌面/手机两份配置；config 与 configs.desktop 内容相同，不再重复下发。
-  // 前端仍保留 IORI_CARD_CONFIG 兜底，用于兼容滚动发布期间 KV 里尚未刷新的旧 HTML。
+  // 只注入设备维度的 configs；重复的 config 字段已移除。
   const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
   const safeLayoutConfigJson = JSON.stringify({
     hideDesc: S.layout_hide_desc,
@@ -605,12 +609,13 @@ export async function onRequest(context) {
     response.headers.append('Set-Cookie', 'iori_cache_private_stale=; Path=/; Max-Age=0; SameSite=Lax');
   }
 
-  if (isHomePage) {
+  if (isHomePage && cacheGeneration !== null) {
     context.waitUntil((async () => {
       try {
-        await env.NAV_AUTH.put(homeCacheKey, html, { expirationTtl: HOME_CACHE_TTL });
-        if (cacheDirty) {
-          await clearHomeCacheDirty(env, cacheScope, cacheDirtyValue);
+        const wrote = await writeHomeCacheIfUnchanged(env, cacheScope, html, cacheGeneration);
+        if (wrote && cacheDirty) {
+          // 条件清除：渲染期间若有新写入刷新了标记，保留它让下一次请求重新渲染。
+          await clearHomeCacheDirtyIfValue(env, cacheScope, cacheDirtyValue);
         }
       } catch (e) {
         console.warn('Failed to update home cache:', e);

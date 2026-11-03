@@ -10,16 +10,14 @@
         init = init || {};
         const method = (init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
         if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-            if (init.headers instanceof Headers) {
-                if (!init.headers.has('X-CSRF-Token')) {
-                    init.headers.set('X-CSRF-Token', csrfToken);
-                }
-            } else {
-                init.headers = init.headers || {};
-                if (!init.headers['X-CSRF-Token']) {
-                    init.headers['X-CSRF-Token'] = csrfToken;
-                }
+            // input 是 Request 时，它的头必须并进来：直接给 init.headers 赋值会整片
+            // 覆盖 Request 自带的 Content-Type 等头，而 fetch(request, { headers })
+            // 正是「替换」语义。
+            const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+            if (!headers.has('X-CSRF-Token')) {
+                headers.set('X-CSRF-Token', csrfToken);
             }
+            init.headers = headers;
         }
         return originalFetch.call(this, input, init);
     };

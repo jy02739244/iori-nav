@@ -6,7 +6,7 @@ import { onRequestPost as siteBatch } from '../functions/api/config/batch.js';
 import { getHomeDirtyKey } from '../functions/_middleware.js';
 
 // reorder 把语句按 100 条一块提交，属于多事务写入：中途失败时数据库已部分变更。
-// 首页脏标记若只在成功路径打，KV 缓存会滞留到 TTL（30 天）耗尽。
+// 首页脏标记若只在成功路径打，KV 缓存会滞留到 HOME_CACHE_TTL 耗尽。
 // 同时 KV 对同一个 key 限制每秒一次写入，所以每个请求只能打一次标记。
 function createEnv({ failBatchAfter = null } = {}) {
   const events = [];

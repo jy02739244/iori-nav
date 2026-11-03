@@ -117,7 +117,7 @@
 
 3. 创建后，为此 KV 添加两个条目，用于设置后台登录的 **用户名** 和 **密码**：
     - `admin_username`：你的管理员用户名（例如 `admin`）
-    - `admin_password`：你的管理员密码
+    - `admin_password`：你的管理员密码（**长度不得超过 4096 个字符**，超长会触发配置错误提示而无法登录）
 
     <img width="2810" height="1188" alt="设置KV条目" src="https://github.com/user-attachments/assets/2114e42b-03d2-400f-a8f8-54dc156a7922" />
 
@@ -140,6 +140,21 @@
 点击项目的 **部署** 选项，在最后一次的部署后边选择 **重新部署**，等待部署完成，绑定自定义域名即可开始使用。
 
 <img width="2482" height="1374" alt="重新部署" src="https://github.com/user-attachments/assets/d2f12af3-9aba-458e-9d16-00f7468c22e9" />
+
+### 步骤 7：开启强制 HTTPS（推荐）
+
+绑定自定义域名后，进入 **SSL/TLS → Edge Certificates**，打开 **Always Use HTTPS**。
+
+项目本身已经通过 `Strict-Transport-Security: max-age=31536000`（不含 `includeSubDomains`）声明了 HSTS，但需要分清楚两层：
+
+| 机制 | 作用对象 | 负责什么 |
+| :--- | :--- | :--- |
+| HSTS | 已经访问过一次本站的浏览器 | 之后输入 `http://` 时在浏览器内部直接改写成 `https://`，明文请求不会发出 |
+| Always Use HTTPS | 首次访问、换设备、换浏览器的用户 | 服务端返回 301，把 `http://` 跳到 `https://` |
+
+只有 HSTS 而没有面板上的 301，第一次用 `http://` 打开的人仍然会先落到明文请求上；两者叠加才是完整的强制 HTTPS。
+
+> 开启前请确认自定义域名的证书已经签发成功（Pages 绑定域名后通常几分钟内自动完成），否则跳转后的 HTTPS 请求会直接失败。
 
 ---
 

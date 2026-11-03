@@ -28,10 +28,7 @@
       logoClass: 'w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-700',
       siteIconClass: 'site-icon flex-shrink-0 mr-4 transition-all duration-300',
     };
-    const cardConfigSets = window.IORI_CARD_CONFIGS || {
-      desktop: window.IORI_CARD_CONFIG || defaultCardConfig,
-      mobile: window.IORI_CARD_CONFIG || defaultCardConfig,
-    };
+    const cardConfigSets = window.IORI_CARD_CONFIGS || {};
     const cardAnimationTypes = ['slideUp', 'radial', 'fadeIn', 'slideLeft', 'slideRight', 'convergeIn', 'flipIn'];
     const cardAnimationClasses = cardAnimationTypes.map(type => `card-anim-${type}`);
     const reducedMotionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -49,7 +46,7 @@
     function getActiveCardConfig() {
       const device = getCardDevice();
       activeCardDevice = device;
-      return cardConfigSets[device] || cardConfigSets.desktop || window.IORI_CARD_CONFIG || defaultCardConfig;
+      return cardConfigSets[device] || cardConfigSets.desktop || defaultCardConfig;
     }
 
     function getSitesForCatalog(catalogId) {

@@ -1,6 +1,6 @@
 // functions/admin/login.js
 
-import { timingSafeEqual, checkLoginRateLimit, recordLoginFailure, clearLoginFailures, buildSessionCookie } from '../_middleware';
+import { timingSafeEqual, checkLoginRateLimit, recordLoginFailure, clearLoginFailures, buildSessionCookie, MAX_TIMING_SAFE_INPUT_LENGTH } from '../_middleware';
 import { getTurnstileConfig, verifyTurnstileToken } from '../lib/turnstile';
 
 function escapeHTML(str) {
@@ -152,7 +152,9 @@ export async function onRequestPost(context) {
 
     const formData = await request.formData();
     const name = (formData.get('username') || '').trim();
-    const password = (formData.get('password') || '').trim();
+    // 密码首尾空格可能属于密码本身，不能 trim；用户名仍按习惯去掉首尾空白
+    const rawPassword = formData.get('password');
+    const password = typeof rawPassword === 'string' ? rawPassword : '';
     const durationDays = Number(formData.get('duration') || '1');
     if (!ALLOWED_LOGIN_DURATIONS.has(durationDays)) {
       return renderLoginPage('登录有效期无效', env);
@@ -177,8 +179,18 @@ export async function onRequestPost(context) {
       return renderLoginPage('系统配置错误，请联系管理员', env);
     }
 
+    // timingSafeEqual 对超过上限的输入直接返回 false（防止内存放大）。KV 里的凭据
+    // 没有写入侧校验，这里显式报配置错误，避免表现为「密码明明对却永远登不上」。
+    if (storedUsername.length > MAX_TIMING_SAFE_INPUT_LENGTH || storedPassword.length > MAX_TIMING_SAFE_INPUT_LENGTH) {
+      console.error(`Admin credentials exceed the supported length (${MAX_TIMING_SAFE_INPUT_LENGTH} characters)`);
+      return renderLoginPage('系统配置错误，请联系管理员', env);
+    }
+
     // 使用恒定时间比较，防止时序攻击
-    const isValid = timingSafeEqual(name, storedUsername) && timingSafeEqual(password, storedPassword);
+    // 两个字段都做恒定时间比较，避免用户名错误时短路泄露判断结果
+    const usernameValid = timingSafeEqual(name, storedUsername);
+    const passwordValid = timingSafeEqual(password, storedPassword);
+    const isValid = usernameValid && passwordValid;
 
     if (isValid) {
       // 登录成功：清除失败计数

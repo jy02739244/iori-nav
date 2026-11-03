@@ -48,9 +48,15 @@ npm run dev
 npx playwright install chromium
 
 # 端到端测试（Playwright，会自动拉起本地 dev server 并在结束后关闭）
+# 测试跑在独立端口 8799，并使用独立的持久化目录 .wrangler/e2e-state，
+# 不会把测试数据写进本地开发用的 .wrangler/state
+# 同一台机器并行跑多组用例时，用 E2E_PORT / E2E_PERSIST_TO 各自错开端口与目录
 npm run test:e2e
 
 # 含后台管理用例（凭据从环境变量读取，未设置时登录相关用例自动跳过）
+# 因为 e2e 用的是独立 state，首次跑后台用例前需要先把凭据播种到该目录：
+#   npx wrangler kv key put admin_username xxx --binding NAV_AUTH --local --persist-to .wrangler/e2e-state
+#   npx wrangler kv key put admin_password yyy --binding NAV_AUTH --local --persist-to .wrangler/e2e-state
 E2E_ADMIN_USER=xxx E2E_ADMIN_PASS=yyy npm run test:e2e
 
 # 本地执行 SQL

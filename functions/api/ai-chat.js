@@ -1,6 +1,88 @@
 import { isAdminAuthenticated, errorResponse, jsonResponse } from '../_middleware';
 import { resolveWorkersAiModel } from '../lib/workers-ai-models';
 
+// 超时必须明显小于平台侧的请求上限，否则平台会先返回它自己的错误页，
+// 我们写的 504「AI 请求超时」永远不会被用户看到。25 秒留出安全余量。
+const AI_REQUEST_TIMEOUT_MS = 25000;
+const AI_MAX_MESSAGES = 50;
+
+// 体积相关的失败一律返回 413（Content Too Large），结构问题（条数、类型）才返回 400，
+// 避免同一个「太大了」在两种状态下表现不一致。
+//
+// 两层上限各管一件事，量纲不同，不要互相换算：
+//   1. AI_MAX_BODY_BYTES —— 传输层硬上限，只做 DoS 盾牌，按原始 UTF-8 字节算；
+//   2. AI_MAX_TOTAL_CHARS —— 业务上限，按 messages 序列化后的字符数（UTF-16 码元）算，
+//      覆盖 image_url / base64 等非文本 part。
+// 因此「字符数不超标」并不保证「body 不超标」：中文等 BMP 字符在 UTF-8 里占 3 字节，
+// 10 万字符的中文消息序列化后约 300 KB，会先撞上 256 KB 的 body 上限；带大量缩进
+// 空白的 JSON 同理。两条路径都返回 413，客户端按「太大了」统一处理即可。
+const AI_MAX_TOTAL_CHARS = 100000;
+const AI_MAX_BODY_BYTES = 256 * 1024;
+
+/**
+ * 给不返回 AbortSignal 的 AI 调用加超时保护。
+ * 超时后底层调用可能仍会继续，但至少请求会及时返回 504。
+ */
+export function runWithTimeout(promise, timeoutMs = AI_REQUEST_TIMEOUT_MS) {
+    let timer;
+
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+            const error = new Error('AI request timed out');
+            error.name = 'TimeoutError';
+            reject(error);
+        }, timeoutMs);
+    });
+
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * 带字节上限地读取请求体。
+ * 分块上传没有 Content-Length，不能等整个 body 读完再判断：这里边读边计数，
+ * 超限立即取消流并返回，避免超大上传被完整读进内存。
+ * @returns {Promise<{text?: string, tooLarge?: boolean, failed?: boolean}>}
+ */
+async function readBodyWithLimit(request, maxBytes) {
+    if (!request.body) return { text: '' };
+
+    const reader = request.body.getReader();
+    const chunks = [];
+    let total = 0;
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            total += value.byteLength;
+            if (total > maxBytes) {
+                // 主动取消，不再把剩余内容拉进内存；取消失败不影响 413 结果
+                await reader.cancel().catch(() => {});
+                return { tooLarge: true };
+            }
+            chunks.push(value);
+        }
+    } catch (e) {
+        // 客户端中断、连接被重置都走这里。这不是服务端故障，也不该让底层错误文本
+        // 顺着 500 响应回到调用方，所以单独标成 failed 交给上层转 400。
+        await reader.cancel().catch(() => {});
+        console.warn('Failed to read AI request body:', e);
+        return { failed: true };
+    }
+
+    if (chunks.length === 0) return { text: '' };
+
+    const merged = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+        merged.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+
+    return { text: new TextDecoder().decode(merged) };
+}
+
 function getMessageContentText(content) {
     if (typeof content === 'string') return content;
     if (!Array.isArray(content)) return '';
@@ -187,10 +269,46 @@ export async function onRequestPost(context) {
     }
 
     try {
-        const { messages, responseFormat } = await request.json();
+        // 解析前先按声明长度挡一层（正常请求都带 Content-Length）。
+        const declaredBytes = Number(request.headers.get('Content-Length'));
+        if (Number.isFinite(declaredBytes) && declaredBytes > AI_MAX_BODY_BYTES) {
+            return errorResponse('Request body too large', 413);
+        }
+
+        // 分块上传拿不到 Content-Length：边读边计数，超限立即中断并返回 413，
+        // 不让超大 body 被完整读进内存后再被 JSON.parse + stringify 放大。
+        const bodyResult = await readBodyWithLimit(request, AI_MAX_BODY_BYTES);
+        if (bodyResult.tooLarge) {
+            return errorResponse('Request body too large', 413);
+        }
+        if (bodyResult.failed) {
+            return errorResponse('Failed to read request body', 400);
+        }
+
+        let payload;
+        try {
+            payload = JSON.parse(bodyResult.text);
+        } catch {
+            return errorResponse('Invalid JSON body', 400);
+        }
+
+        // 顶层不是对象时（null / 数组 / 标量）按空对象处理，交给下面的校验报错
+        const { messages, responseFormat } = payload && typeof payload === 'object' ? payload : {};
 
         if (!messages || !Array.isArray(messages)) {
             return errorResponse('Messages array is required', 400);
+        }
+
+        if (messages.length > AI_MAX_MESSAGES) {
+            return errorResponse(`Messages cannot exceed ${AI_MAX_MESSAGES} entries`, 400);
+        }
+
+        // 按序列化体积统计，覆盖 image_url / base64 等非文本 part，
+        // 避免只统计 text 字段时被图片内容绕过上限。与传输层上限一致用 413，
+        // 客户端只要记住「太大了就收 413」即可。
+        const totalChars = JSON.stringify(messages).length;
+        if (totalChars > AI_MAX_TOTAL_CHARS) {
+            return errorResponse(`Messages cannot exceed ${AI_MAX_TOTAL_CHARS} characters`, 413);
         }
 
         // 2. 从数据库读取 AI 设置
@@ -218,7 +336,7 @@ export async function onRequestPost(context) {
             }
             // Workers AI 优先使用后台保存的模型，环境变量作为部署级兜底。
             const workerModel = resolveWorkersAiModel(model, env.WORKERS_AI_MODEL);
-            const response = await env.AI.run(workerModel, { messages });
+            const response = await runWithTimeout(env.AI.run(workerModel, { messages }));
             const content = formatAiContent(extractWorkersAiText(response), responseFormat);
             if (!content) {
                 return errorResponse('Workers AI response did not include generated content', 500);
@@ -239,6 +357,7 @@ export async function onRequestPost(context) {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${apiKey}`
                 },
+                signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
                 body: JSON.stringify({
                     model: model || 'gpt-3.5-turbo',
                     messages: messages,
@@ -286,6 +405,7 @@ export async function onRequestPost(context) {
             const aiResponse = await fetch(geminiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+                signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
                 body: JSON.stringify(payload)
             });
 
@@ -308,6 +428,9 @@ export async function onRequestPost(context) {
 
     } catch (e) {
         console.error('AI Chat API error:', e);
+        if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
+            return errorResponse('AI 请求超时，请稍后重试', 504);
+        }
         return errorResponse(`Server Error: ${e.message}`, 500);
     }
 }

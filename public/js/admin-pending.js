@@ -83,28 +83,42 @@
 
     document.querySelectorAll('.reject-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        handlePendingAction(this.dataset.id, 'reject');
+        if (this.disabled) return;
+        this.disabled = true;
+        this.textContent = '处理中...';
+        rejectPendingConfig(this.dataset.id).finally(() => {
+          this.disabled = false;
+          this.textContent = '拒绝';
+        });
       });
     });
   }
 
-  function handlePendingAction(id, action) {
-    const method = action === 'approve' ? 'PUT' : 'DELETE';
-    const url = `/api/pending/${id}`;
+  // 通过审核走模态框（需要补充分类等信息），这里只处理「拒绝」这一个动作。
+  async function rejectPendingConfig(id) {
+    try {
+      const res = await fetch(`/api/pending/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
 
-    fetch(url, { method })
-      .then(res => res.json())
-      .then(data => {
-        if (data.code === 200 || data.code === 201) {
-          window.showMessage(action === 'approve' ? '审核通过' : '已拒绝', 'success');
-          fetchPendingConfigs();
-          if (action === 'approve') window.fetchConfigs?.();
-          return;
-        }
+      // 另一个标签页可能已经删除了该条目；按“已处理”处理并刷新列表，
+      // 避免把正常的幂等重试显示成错误。
+      if (res.status === 404) {
+        window.showMessage('该条目已不存在，已刷新', 'info');
+        fetchPendingConfigs();
+        return;
+      }
 
-        window.showMessage(data.message, 'error');
-      })
-      .catch(() => window.showMessage('操作失败', 'error'));
+      // 以 HTTP 状态为准：将来接口改成 204 无响应体也不会被当成失败
+      if (res.ok) {
+        window.showMessage('已拒绝', 'success');
+        fetchPendingConfigs();
+        return;
+      }
+
+      window.showMessage(data.message || '操作失败', 'error');
+    } catch {
+      window.showMessage('操作失败', 'error');
+    }
   }
 
   function ensureCategoriesReady() {
@@ -205,7 +219,15 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      // 与拒绝按钮一致：条目可能已被其他标签页处理，404 不是失败。
+      if (res.status === 404) {
+        window.showMessage('该条目已不存在，已刷新', 'info');
+        closePendingReviewModal();
+        fetchPendingConfigs();
+        return;
+      }
 
       if (data.code === 200 || data.code === 201) {
         window.showMessage('审核通过', 'success');

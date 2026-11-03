@@ -183,3 +183,44 @@ test('POST /admin/login verifies Turnstile token before creating session', async
     globalThis.fetch = originalFetch;
   }
 });
+
+test('POST /admin/login reports a config error when the stored password exceeds the comparison limit', async () => {
+  // timingSafeEqual 对超长输入直接返回 false；KV 里的凭据没有写入侧校验，
+  // 必须给出明确的配置错误，否则会表现为「密码完全正确却一直登不上」。
+  const overlong = 'x'.repeat(4097);
+  const kv = createKv({
+    admin_username: 'admin',
+    admin_password: overlong,
+  });
+  const response = await onRequestPost({
+    request: createLoginRequest({
+      username: 'admin',
+      password: overlong,
+      duration: '1',
+    }),
+    env: { NAV_AUTH: kv },
+  });
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(html, /系统配置错误/);
+  assert.equal(response.headers.get('Set-Cookie'), null);
+});
+
+test('POST /admin/login preserves leading and trailing spaces in password', async () => {
+  const kv = createKv({
+    admin_username: 'admin',
+    admin_password: ' pass ',
+  });
+  const response = await onRequestPost({
+    request: createLoginRequest({
+      username: 'admin',
+      password: ' pass ',
+      duration: '1',
+    }),
+    env: { NAV_AUTH: kv },
+  });
+
+  assert.equal(response.status, 302);
+  assert.match(response.headers.get('Set-Cookie'), /admin_session=/);
+});
