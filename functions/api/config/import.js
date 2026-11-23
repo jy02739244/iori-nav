@@ -11,6 +11,7 @@ import {
     IMPORT_BODY_MAX_MB,
     validateImportSizes,
 } from '../../lib/validators';
+import { buildPrivateDescendantStatements } from '../../lib/privacy-guard';
 
 function getImportIdKey(value) {
     return String(value ?? '');
@@ -19,32 +20,6 @@ function getImportIdKey(value) {
 function getImportParentIdKey(value) {
     const key = getImportIdKey(value);
     return key === '' ? '0' : key;
-}
-
-function buildPrivateDescendantStatements(db, categoryId) {
-    const descendantsCte = `
-      WITH RECURSIVE descendants(id) AS (
-        SELECT id FROM category WHERE id = ?
-        UNION ALL
-        SELECT c.id FROM category c
-        INNER JOIN descendants d ON c.parent_id = d.id
-      )
-    `;
-
-    return [
-        db.prepare(`
-          ${descendantsCte}
-          UPDATE category
-          SET is_private = 1
-          WHERE id IN (SELECT id FROM descendants)
-        `).bind(categoryId),
-        db.prepare(`
-          ${descendantsCte}
-          UPDATE sites
-          SET is_private = 1
-          WHERE catelog_id IN (SELECT id FROM descendants)
-        `).bind(categoryId),
-    ];
 }
 
 const ROOT_IMPORT_CATEGORY_NAME = '默认';

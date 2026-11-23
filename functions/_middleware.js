@@ -2,6 +2,14 @@
 
 import { ensureSchemaReady } from './lib/schema-migration';
 import { HOME_CACHE_VERSION, HOME_CACHE_TTL } from './constants';
+import { normalizeSortOrder } from './lib/utils';
+
+// 排序值归一化只保留 lib/utils.js 一份实现。这里继续导出，是为了让既有的
+// `from '_middleware'` 调用点不必改动；新代码请直接从 lib/utils 引入。
+//
+// 先 import 再导出，而不是 `export { x } from './lib/utils'`：后者只对外转发，
+// 不会在本模块创建本地绑定，本文件里一旦调用就会在运行时抛 ReferenceError。
+export { normalizeSortOrder };
 
 export const GRAPH_CACHE_GENERATION_KEY = 'graph_cache_generation';
 
@@ -51,11 +59,6 @@ function withSecurityHeaders(response, requestUrl) {
   }
 
   return secured;
-}
-
-export function normalizeSortOrder(val) {
-  const num = Number(val);
-  return Number.isFinite(num) ? num : 9999;
 }
 
 export function isSubmissionEnabled(env) {

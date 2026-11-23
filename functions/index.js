@@ -300,12 +300,9 @@ export async function onRequest(context) {
   const safeSiteDesc = escapeHTML(siteDescription);
   const horizontalTitleHtml = S.layout_hide_title ? '' : `<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3 ${titleColorClass}" ${titleStyle}>${safeSiteName}</h1>`;
   const horizontalSubtitleHtml = S.layout_hide_subtitle ? '' : `<p class="${subTextColorClass} opacity-90 text-sm md:text-base" ${subtitleStyle}>${safeSiteDesc}</p>`;
-  const normalizeCategoryPosition = (position, menuLayout) => {
-    if (position === 'above_description') return 'top';
-    if (['below_search', 'above_search', 'left', 'top'].includes(position)) return position;
-    return menuLayout === 'vertical' ? 'left' : 'below_search';
-  };
-  const categoryPosition = normalizeCategoryPosition(S.home_category_position, S.layout_menu_layout);
+  // S.home_category_position 已由 parseSettings 归一化过（含 above_description → top 的遗留映射，
+  // 以及缺失值按 layout_menu_layout 回填），这里直接使用，不再维护第二份同样的规则。
+  const categoryPosition = S.home_category_position;
   const isHorizontalCategoryLayout = categoryPosition !== 'left';
   const categoryFlow = S.home_category_flow === 'multi_line' ? 'multi_line' : 'single_line';
   // 分类行宽度 max-w-5xl（64rem），按钮 min-width: 4em+2rem，单行约 8 个

@@ -93,6 +93,21 @@ function createDb({ categories, sites }) {
                 return categories.find(category => category.id === Number(params[0])) ?? null;
               }
 
+              if (sql.includes('WITH RECURSIVE ancestors')) {
+                // 防环检测：拒绝走回自己，也拒绝父节点祖先链自身成环。
+                // 真实实现是一条递归 CTE，这里在 JS 里复现同样的语义。
+                const [parentId, targetId] = params;
+                const seen = new Set();
+                let current = Number(parentId);
+                while (current && !seen.has(current)) {
+                  if (current === Number(targetId)) return { hit: 1 };
+                  seen.add(current);
+                  const row = categories.find(category => category.id === current);
+                  current = Number(row?.parent_id || 0);
+                }
+                return seen.has(current) ? { hit: 1 } : null;
+              }
+
               if (sql.includes('SELECT id FROM category WHERE catelog = ? AND parent_id = ? AND id != ?')) {
                 const [catelog, parentId, id] = params;
                 return categories.find(category => (
